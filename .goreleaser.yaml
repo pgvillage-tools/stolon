@@ -16,7 +16,7 @@ before:
     - go generate ./...
 
 builds:
-  - id: keeper
+  - id: stolon-keeper
     env:
       - CGO_ENABLED=0
     goos:
@@ -26,10 +26,10 @@ builds:
       - amd64
       - arm64
     main: ./cmd/keeper
-    binary: keeper
+    binary: stolon-keeper
     ldflags:
       - -s -w -X "cmd.Version={{.Version}}"
-  - id: proxy
+  - id: stolon-proxy
     env:
       - CGO_ENABLED=0
     goos:
@@ -39,10 +39,10 @@ builds:
       - amd64
       - arm64
     main: ./cmd/proxy
-    binary: proxy
+    binary: stolon-proxy
     ldflags:
       - -s -w -X "cmd.Version={{.Version}}"
-  - id: sentinel
+  - id: stolon-sentinel
     env:
       - CGO_ENABLED=0
     goos:
@@ -52,7 +52,7 @@ builds:
       - amd64
       - arm64
     main: ./cmd/sentinel
-    binary: sentinel
+    binary: stolon-sentinel
     ldflags:
       - -s -w -X "cmd.Version={{.Version}}"
   - id: stolonctl
