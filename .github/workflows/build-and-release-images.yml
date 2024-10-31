@@ -36,7 +36,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=ghcr.io/mannemsolutions/stolon-proxy,enable=true
+            name=ghcr.io/${{ github.repository_owner }}/stolon-proxy,enable=true
           tags: |
             type=semver,pattern={{raw}}
             type=raw,value=latest
@@ -83,7 +83,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=ghcr.io/mannemsolutions/stolon-sentinel,enable=true
+            name=ghcr.io/$${{ github.repository_owner }}/stolon-sentinel,enable=true
           tags: |
             type=semver,pattern={{raw}}
             type=raw,value=latest
@@ -133,7 +133,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=ghcr.io/mannemsolutions/stolon-keeper,enable=true
+            name=ghcr.io/${{ github.repository_owner }}/stolon-keeper,enable=true
           tags: |
             type=raw,value=${{ matrix.pgversion }}-latest
             type=raw,value=${{ matrix.pgversion }}-${github.ref_name}
