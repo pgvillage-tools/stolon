@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	etcdclientv3 "go.etcd.io/etcd/clientv3"
+	etcdclientv3 "github.com/coreos/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3/concurrency"
 	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 )

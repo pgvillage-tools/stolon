@@ -76,8 +76,9 @@ func (s *KubeStore) labelSelector(componentLabel ComponentLabelValue) labels.Sel
 
 func (s *KubeStore) patchKubeStatusAnnotation(annotationData []byte) error {
 	podsClient := s.client.CoreV1().Pods(s.namespace)
+	ctx := context.Background()
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		pod, err := podsClient.Get(s.podName, metav1.GetOptions{})
+		pod, err := podsClient.Get(ctx, s.podName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get latest version of pod: %v", err)
 		}
@@ -101,8 +102,7 @@ func (s *KubeStore) patchKubeStatusAnnotation(annotationData []byte) error {
 		if err != nil {
 			return fmt.Errorf("failed to create pod merge patch: %v", err)
 		}
-
-		_, err = podsClient.Patch(s.podName, types.MergePatchType, patchBytes)
+		_, err = podsClient.Patch(ctx, s.podName, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 		return err
 	})
 	if retryErr != nil {
@@ -119,7 +119,7 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cluste
 	epsClient := s.client.CoreV1().ConfigMaps(s.namespace)
 
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, err := epsClient.Get(s.resourceName, metav1.GetOptions{})
+		result, err := epsClient.Get(ctx, s.resourceName, metav1.GetOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get latest version of configmap: %v", err)
 		}
@@ -158,7 +158,7 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cluste
 				result.Annotations = map[string]string{}
 			}
 			result.Annotations[util.KubeClusterDataAnnotation] = string(cdj)
-			_, err = epsClient.Update(result)
+			_, err = epsClient.Update(ctx, result, metav1.UpdateOptions{})
 			return err
 		} else {
 			// configmap does not exists
@@ -168,12 +168,12 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cluste
 				return ErrKeyModified
 			}
 			annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-			_, err = epsClient.Create(&v1.ConfigMap{
+			_, err = epsClient.Create(ctx, &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        s.resourceName,
 					Annotations: annotations,
 				},
-			})
+			}, metav1.CreateOptions{})
 			return err
 		}
 	})
@@ -191,7 +191,7 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData)
 	epsClient := s.client.CoreV1().ConfigMaps(s.namespace)
 
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, err := epsClient.Get(s.resourceName, metav1.GetOptions{})
+		result, err := epsClient.Get(ctx, s.resourceName, metav1.GetOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get latest version of configmap: %v", err)
 		}
@@ -201,17 +201,17 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData)
 				result.Annotations = map[string]string{}
 			}
 			result.Annotations[util.KubeClusterDataAnnotation] = string(cdj)
-			_, err = epsClient.Update(result)
+			_, err = epsClient.Update(ctx, result, metav1.UpdateOptions{})
 			return err
 		} else {
 			// configmap does not exists
 			annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-			_, err = epsClient.Create(&v1.ConfigMap{
+			_, err = epsClient.Create(ctx, &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        s.resourceName,
 					Annotations: annotations,
 				},
-			})
+			}, metav1.CreateOptions{})
 			return err
 		}
 	})
@@ -223,7 +223,7 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData)
 
 func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *KVPair, error) {
 	epsClient := s.client.CoreV1().ConfigMaps(s.namespace)
-	result, err := epsClient.Get(s.resourceName, metav1.GetOptions{})
+	result, err := epsClient.Get(ctx, s.resourceName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil, nil
@@ -260,7 +260,7 @@ func (s *KubeStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, er
 	listOpts := metav1.ListOptions{
 		LabelSelector: s.labelSelector(KeeperLabelValue).String(),
 	}
-	result, err := podsClient.List(listOpts)
+	result, err := podsClient.List(ctx, listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest version of pod: %v", err)
 	}
@@ -295,7 +295,7 @@ func (s *KubeStore) GetSentinelsInfo(ctx context.Context) (cluster.SentinelsInfo
 	listOpts := metav1.ListOptions{
 		LabelSelector: s.labelSelector(SentinelLabelValue).String(),
 	}
-	result, err := podsClient.List(listOpts)
+	result, err := podsClient.List(ctx, listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest version of pod: %v", err)
 	}
@@ -330,7 +330,7 @@ func (s *KubeStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, er
 	listOpts := metav1.ListOptions{
 		LabelSelector: s.labelSelector(ProxyLabelValue).String(),
 	}
-	result, err := podsClient.List(listOpts)
+	result, err := podsClient.List(ctx, listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest version of pod: %v", err)
 	}
@@ -368,8 +368,7 @@ type KubeElection struct {
 
 func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterName, candidateUID string) (*KubeElection, error) {
 	resourceName := fmt.Sprintf("%s-%s", util.KubeResourcePrefix, clusterName)
-
-	rl, err := resourcelock.New(resourcelock.ConfigMapsResourceLock,
+	rl, err := resourcelock.New("configmaps",
 		namespace,
 		resourceName,
 		kubecli.CoreV1(),
@@ -378,6 +377,7 @@ func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterN
 			Identity:      candidateUID,
 			EventRecorder: createRecorder(kubecli, "stolon-sentinel", namespace),
 		})
+	//https://github.com/kubernetes/client-go/blob/master/tools/leaderelection/resourcelock/interface.go
 	if err != nil {
 		return nil, fmt.Errorf("error creating lock: %v", err)
 	}
@@ -415,7 +415,8 @@ func (e *KubeElection) Stop() {
 }
 
 func (e *KubeElection) Leader() (string, error) {
-	ler, _, err := e.rl.Get()
+	ctx := context.Background()
+	ler, _, err := e.rl.Get(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get leader election record: %v", err)
 	}

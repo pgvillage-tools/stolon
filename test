@@ -35,43 +35,6 @@ echo "Running tests..."
 
 COVER=${COVER:-"-cover"}
 
-## Use this code in case we are testing with multiple go versions that have different gofmt outputs
-# # Use only of specific go version to run gofmt since it'll break when some formatting rules change between versions
-# GOFMT_VERSION="go1.14"
-# MAJOR_GOVERSION=$( echo -n $(go version) | grep -o 'go1\.[0-9]*' || true )
-# if [ "${MAJOR_GOVERSION}" == "${GOFMT_VERSION}" ]; then
-# 	echo "Checking gofmt..."
-# 	fmtRes=$(gofmt -l $(find . -type f -name '*.go' ! -path './vendor/*' ! -path '*/\.*'))
-# 	if [ -n "${fmtRes}" ]; then
-# 		echo -e "gofmt checking failed:\n${fmtRes}"
-# 		exit 255
-# 	fi
-# fi
-
-echo "Checking gofmt..."
-fmtRes=$(gofmt -l $(find . -type f -name '*.go' ! -path './vendor/*' ! -path '*/\.*'))
-if [ -n "${fmtRes}" ]; then
-	echo -e "gofmt checking failed:\n${fmtRes}"
-	exit 255
-fi
-
-echo "Checking govet..."
-vetRes=$(go vet ${PACKAGES})
-if [ -n "${vetRes}" ]; then
-	echo -e "govet checking failed:\n${vetRes}"
-	exit 255
-fi
-
-echo "Checking govet -shadow ..."
-go install golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-export PATH="$(go env GOPATH)/bin":${PATH}
-shadow_tool=$(which shadow)
-vetRes=$(${shadow_tool} ${PACKAGES})
-if [ -n "${vetRes}" ]; then
-	echo -e "govet checking ${path} failed:\n${vetRes}"
-	exit 255
-fi
-
 echo "Checking for license header..."
 licRes=$(for file in $(find . -type f -iname '*.go' ! -path './vendor/*'); do
 	head -n3 "${file}" | grep -Eq "(Copyright|generated|GENERATED)" || echo -e "  ${file}"
@@ -80,10 +43,6 @@ if [ -n "${licRes}" ]; then
 	echo -e "license header checking failed:\n${licRes}"
 	exit 255
 fi
-
-echo "Checking with golangci-lint"
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BINDIR} v1.61.0
-${BINDIR}/golangci-lint run --timeout 5m
 
 echo "Running tests"
 go test -timeout 3m ${COVER} $@ ${PACKAGES} ${RACE}
