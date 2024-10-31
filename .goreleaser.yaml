@@ -13,6 +13,7 @@ before:
     # You may remove this if you don't use go modules.
     - go mod tidy
     # you may remove this if you don't need go generate
+    - go install github.com/golang/mock/mockgen
     - go generate ./...
 
 builds:
