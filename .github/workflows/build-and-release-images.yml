@@ -83,7 +83,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=ghcr.io/$${{ github.repository_owner }}/stolon-sentinel,enable=true
+            name=ghcr.io/${{ github.repository_owner }}/stolon-sentinel,enable=true
           tags: |
             type=semver,pattern={{raw}}
             type=raw,value=latest
