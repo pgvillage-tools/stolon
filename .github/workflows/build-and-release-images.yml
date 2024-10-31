@@ -51,6 +51,7 @@ jobs:
           platforms: 'linux/amd64,linux/arm64'
           tags: ${{ steps.stolon-meta.outputs.tags }}
           labels: ${{ steps.stolon-meta.outputs.labels }}
+
   sentinel:
     name: Push sentinel image to ghcr.io
     runs-on: ubuntu-latest
@@ -97,6 +98,7 @@ jobs:
           platforms: 'linux/amd64,linux/arm64'
           tags: ${{ steps.stolon-meta.outputs.tags }}
           labels: ${{ steps.stolon-meta.outputs.labels }}
+
   keeper:
     name: Push keeper images to ghcr.io
     runs-on: ubuntu-latest
@@ -133,8 +135,8 @@ jobs:
           images: |
             name=ghcr.io/mannemsolutions/stolon-keeper,enable=true
           tags: |
-            type=raw,value=${matrix.pgversion}-latest
-            type=raw,value=${matrix.pgversion}-${github.ref_name}
+            type=raw,value=${{ matrix.pgversion }}-latest
+            type=raw,value=${{ matrix.pgversion }}-${github.ref_name}
             type=sha
 
       - name: Build and push stolon images
