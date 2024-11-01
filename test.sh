@@ -11,6 +11,7 @@
 #
 set -e
 
+# shellcheck disable=SC1091
 source "$(dirname "$0")"/scripts/readlinkdashf.sh
 BASEDIR=$(readlinkdashf "$(dirname "$0")")
 BINDIR=${BASEDIR}/bin
