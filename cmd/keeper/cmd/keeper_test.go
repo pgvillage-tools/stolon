@@ -223,10 +223,14 @@ func TestGenerateHBA(t *testing.T) {
 
 	for i, tt := range tests {
 		p := &PostgresKeeper{
-			pgSUAuthMethod:   "md5",
-			pgSUUsername:     "superuser",
-			pgReplAuthMethod: "md5",
-			pgReplUsername:   "repluser",
+			pgSUConnType:          "host",
+			pgSULocalAuthMethod:   "md5",
+			pgSUAuthMethod:        "md5",
+			pgSUUsername:          "superuser",
+			pgReplConnType:        "host",
+			pgReplLocalAuthMethod: "md5",
+			pgReplAuthMethod:      "md5",
+			pgReplUsername:        "repluser",
 		}
 
 		cd.Cluster.Spec.DefaultSUReplAccessMode = &tt.DefaultSUReplAccessMode
@@ -242,11 +246,11 @@ func TestGenerateHBA(t *testing.T) {
 			for _, o := range out {
 				b.WriteString(fmt.Sprintf("%s\n", o))
 			}
-			b.WriteString(fmt.Sprintf("\nwant:\n"))
+			b.WriteString("\nwant:\n")
 			for _, o := range tt.out {
 				b.WriteString(fmt.Sprintf("%s\n", o))
 			}
-			t.Errorf(b.String())
+			t.Error(b.String())
 		}
 	}
 }

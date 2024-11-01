@@ -17,7 +17,6 @@ package common
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -107,7 +106,7 @@ func (s Parameters) Diff(newParams Parameters) []string {
 // Copyright 2012, Google Inc. BSD-license, see licenses/LICENSE-BSD-3-Clause
 func WriteFileAtomicFunc(filename string, perm os.FileMode, writeFunc func(f io.Writer) error) error {
 	dir, name := path.Split(filename)
-	f, err := ioutil.TempFile(dir, name)
+	f, err := os.CreateTemp(dir, name)
 	if err != nil {
 		return err
 	}

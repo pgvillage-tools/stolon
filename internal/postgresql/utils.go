@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -597,43 +596,43 @@ func moveFile(sourcePath, destPath string) error {
 	return nil
 }
 
-func moveDirRecursive(src string, dest string) error {
+func moveDirRecursive(src string, dest string) (err error) {
+	var stat fs.FileInfo
 	log.Infof("Moving %s to %s", src, dest)
-	if stat, err := os.Stat(src); err != nil {
+	if stat, err = os.Stat(src); err != nil {
 		log.Errorf("could not get stat of %s: %e", src, err)
 		return err
-	} else if stat.IsDir() {
-		// Make the dir if it doesn't exist
-		if _, err := os.Stat(dest); errors.Is(err, os.ErrNotExist) {
-			if err := os.MkdirAll(dest, stat.Mode()&os.ModePerm); err != nil {
+	} else if !stat.IsDir() {
+		return moveFile(src, dest)
+	}
+	// Make the dir if it doesn't exist
+	if _, err = os.Stat(dest); errors.Is(err, os.ErrNotExist) {
+		if err = os.MkdirAll(dest, stat.Mode()&os.ModePerm); err != nil {
+			return err
+		}
+	} else if err != nil {
+		log.Errorf("could not get stat of %s: %e", dest, err)
+		return err
+	}
+	// Copy all files and folders in this folder
+	var entries []fs.DirEntry
+	if entries, err = os.ReadDir(src); err != nil {
+		log.Errorf("could not read contents of folder %s: %e", src, err)
+		return err
+	} else {
+		for _, entry := range entries {
+			srcEntry := filepath.Join(src, entry.Name())
+			dstEntry := filepath.Join(dest, entry.Name())
+			if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
 				return err
 			}
-		} else if err != nil {
-			log.Errorf("could not get stat of %s: %e", dest, err)
-			return err
 		}
-		// Copy all files and folders in this folder
-		var entries []fs.FileInfo
-		if entries, err = ioutil.ReadDir(src); err != nil {
-			log.Errorf("could not read contents of folder %s: %e", src, err)
-			return err
-		} else {
-			for _, entry := range entries {
-				srcEntry := filepath.Join(src, entry.Name())
-				dstEntry := filepath.Join(dest, entry.Name())
-				if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
-					return err
-				}
-			}
-		}
-		// Remove this folder, which is now supposedly empty
-		if err := syscall.Rmdir(src); err != nil {
-			log.Errorf("could not remove folder %s: %e", src, err)
-			// If this is a mountpoint or you don't have enough permissions, you might nog be able to. But that is fine.
-			//return err
-		}
-	} else {
-		return moveFile(src, dest)
+	}
+	// Remove this folder, which is now supposedly empty
+	if err := syscall.Rmdir(src); err != nil {
+		log.Errorf("could not remove folder %s: %e", src, err)
+		// If this is a mountpoint or you don't have enough permissions, you might nog be able to. But that is fine.
+		//return err
 	}
 	return nil
 }

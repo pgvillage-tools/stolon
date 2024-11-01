@@ -79,8 +79,7 @@ func TestConsulAgentServiceRegistration(t *testing.T) {
 
 		if actual == nil {
 			t.Errorf("expected consul agent service registration not to be nil")
-		}
-		if actual.ID != service.ID {
+		} else if actual.ID != service.ID {
 			t.Errorf("expected id to be %s but was %s", service.ID, actual.ID)
 		} else if actual.Name != service.Name {
 			t.Errorf("expected name to be %s but was %s", service.Name, actual.Name)

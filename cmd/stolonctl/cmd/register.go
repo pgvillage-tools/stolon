@@ -87,14 +87,14 @@ func runRegister(c *cobra.Command, _ []string) {
 	}
 
 	if err := checkConfig(&cfg, &rCfg); err != nil {
-		die(err.Error())
+		die("%s", err.Error())
 	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	if err := registerCluster(sigs, &cfg, &rCfg); err != nil {
-		die(err.Error())
+		die("%s", err.Error())
 	}
 }
 

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -203,7 +202,7 @@ func readPasswordFromFile(filepath string) (string, error) {
 		log.Warnw("password file permissions are too open. This file should only be readable to the user executing stolon! Continuing...", "file", filepath, "mode", fmt.Sprintf("%#o", fi.Mode()))
 	}
 
-	pwBytes, err := ioutil.ReadFile(filepath)
+	pwBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return "", fmt.Errorf("unable to read password from file %s: %v", filepath, err)
 	}
@@ -1785,7 +1784,7 @@ func (p *PostgresKeeper) keeperLocalStateFilePath() string {
 }
 
 func (p *PostgresKeeper) loadKeeperLocalState() error {
-	sj, err := ioutil.ReadFile(p.keeperLocalStateFilePath())
+	sj, err := os.ReadFile(p.keeperLocalStateFilePath())
 	if err != nil {
 		return err
 	}
@@ -1810,7 +1809,7 @@ func (p *PostgresKeeper) dbLocalStateFilePath() string {
 }
 
 func (p *PostgresKeeper) loadDBLocalState() error {
-	sj, err := ioutil.ReadFile(p.dbLocalStateFilePath())
+	sj, err := os.ReadFile(p.dbLocalStateFilePath())
 	if err != nil {
 		return err
 	}
@@ -1921,8 +1920,8 @@ func (p *PostgresKeeper) generateHBA(cd *cluster.ClusterData, db *cluster.DB, on
 		} else {
 			computedHBA = append(
 				computedHBA,
-				"host all all 0.0.0.0/0 md5",
-				"host all all ::0/0 md5",
+				fmt.Sprintf("%s all all 0.0.0.0/0 %s", p.pgSUConnType, p.pgSUAuthMethod),
+				fmt.Sprintf("%s all all ::0/0 %s", p.pgSUConnType, p.pgSUAuthMethod),
 			)
 		}
 	}
