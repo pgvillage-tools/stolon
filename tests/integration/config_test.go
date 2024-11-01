@@ -867,7 +867,6 @@ func TestKeeperBootsWithWalDir(t *testing.T) {
 	}
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 	defer tstore.Stop()
-
 	if UUID, err = uuid.NewV4(); err != nil {
 		t.Fatalf("error getting new UUD: %v", err)
 	}
