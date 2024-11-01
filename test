@@ -74,17 +74,16 @@ fi
 
 echo "Checking for license header..."
 licRes=$(for file in $(find . -type f -iname '*.go' ! -path './vendor/*'); do
-		head -n3 "${file}" | grep -Eq "(Copyright|generated|GENERATED)" || echo -e "  ${file}"
-	done;)
+	head -n3 "${file}" | grep -Eq "(Copyright|generated|GENERATED)" || echo -e "  ${file}"
+done)
 if [ -n "${licRes}" ]; then
 	echo -e "license header checking failed:\n${licRes}"
 	exit 255
 fi
 
-
 echo "Checking with golangci-lint"
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b ${BINDIR} v1.23.6
-${BINDIR}/golangci-lint run --deadline 5m
+curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BINDIR} v1.61.0
+${BINDIR}/golangci-lint run --timeout 5m
 
 echo "Running tests"
 go test -timeout 3m ${COVER} $@ ${PACKAGES} ${RACE}

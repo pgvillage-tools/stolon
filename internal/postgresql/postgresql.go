@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -206,8 +205,8 @@ func (p *Manager) UpdateCurHba() {
 }
 
 func (p *Manager) Init(initConfig *InitConfig) error {
-	// ioutil.Tempfile already creates files with 0600 permissions
-	pwfile, err := ioutil.TempFile("", "pwfile")
+	// os.CreateTemp already creates files with 0600 permissions
+	pwfile, err := os.CreateTemp("", "pwfile")
 	if err != nil {
 		return err
 	}
@@ -985,8 +984,8 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 		return fmt.Errorf("error removing postgresql.auto.conf file: %v", err)
 	}
 
-	// ioutil.Tempfile already creates files with 0600 permissions
-	pgpass, err := ioutil.TempFile("", "pgpass")
+	// os.CreateTemp already creates files with 0600 permissions
+	pgpass, err := os.CreateTemp("", "pgpass")
 	if err != nil {
 		return err
 	}
@@ -1024,8 +1023,8 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot string) error {
 	fcp := followedConnParams.Copy()
 
-	// ioutil.Tempfile already creates files with 0600 permissions
-	pgpass, err := ioutil.TempFile("", "pgpass")
+	//  already creates files with 0600 permissions
+	pgpass, err := os.CreateTemp("", "pgpass")
 	if err != nil {
 		return err
 	}

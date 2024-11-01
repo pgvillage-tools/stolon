@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -587,7 +586,7 @@ func (s *Sentinel) dbCanSync(cd *cluster.ClusterData, dbUID string) bool {
 	// check only if the xlogpos isn't increasing for some time. This can also
 	// happen when no writes are happening on the master but the standby should
 	// be, if syncing at the same xlogpos.
-	if s.isDBIncreasingXLogPos(cd, db) {
+	if s.isDBIncreasingXLogPos(db) {
 		return true
 	}
 
@@ -987,7 +986,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 		masterOK := true
 		curMasterDB := cd.DBs[curMasterDBUID]
 		if curMasterDB == nil {
-			return nil, fmt.Errorf("db for keeper %q not available. This shouldn't happen!", curMasterDBUID)
+			return nil, fmt.Errorf("db for keeper %q not available, this shouldn't happen", curMasterDBUID)
 		}
 		log.Debugf("db dump: %s", spew.Sdump(curMasterDB))
 
@@ -1563,7 +1562,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 
 	// check that we haven't changed the current cd or there's a bug somewhere
 	if !reflect.DeepEqual(origcd, cd) {
-		return nil, fmt.Errorf("cd was changed in updateCluster, this shouldn't happen!")
+		return nil, fmt.Errorf("cd was changed in updateCluster, this shouldn't happen")
 	}
 	return newcd, nil
 }
@@ -1632,7 +1631,7 @@ func (s *Sentinel) isDBHealthy(cd *cluster.ClusterData, db *cluster.DB) bool {
 	return true
 }
 
-func (s *Sentinel) isDBIncreasingXLogPos(cd *cluster.ClusterData, db *cluster.DB) bool {
+func (s *Sentinel) isDBIncreasingXLogPos(db *cluster.DB) bool {
 	t, ok := s.dbNotIncreasingXLogPos[db.UID]
 	if !ok {
 		return true
@@ -1666,7 +1665,7 @@ func (s *Sentinel) dbConvergenceState(db *cluster.DB, timeout time.Duration) Con
 	if timeout != 0 {
 		d, ok := s.dbConvergenceInfos[db.UID]
 		if !ok {
-			panic(fmt.Errorf("no db convergence info for db %q, this shouldn't happen!", db.UID))
+			panic(fmt.Errorf("no db convergence info for db %q, this shouldn't happen", db.UID))
 		}
 		if timer.Since(d.Timer) > timeout {
 			return ConvergenceFailed
@@ -1761,7 +1760,7 @@ type Sentinel struct {
 func NewSentinel(uid string, cfg *config, end chan bool) (*Sentinel, error) {
 	var initialClusterSpec *cluster.ClusterSpec
 	if cfg.initialClusterSpecFile != "" {
-		configData, err := ioutil.ReadFile(cfg.initialClusterSpecFile)
+		configData, err := os.ReadFile(cfg.initialClusterSpecFile)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read provided initial cluster config file: %v", err)
 		}
