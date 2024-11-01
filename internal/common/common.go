@@ -101,7 +101,9 @@ func (s Parameters) Diff(newParams Parameters) []string {
 // temporary file and then moving it. writeFunc is the func that will write
 // data to the file.
 // This function is taken from
-//   https://github.com/youtube/vitess/blob/master/go/ioutil2/ioutil.go
+//
+//	https://github.com/youtube/vitess/blob/master/go/ioutil2/ioutil.go
+//
 // Copyright 2012, Google Inc. BSD-license, see licenses/LICENSE-BSD-3-Clause
 func WriteFileAtomicFunc(filename string, perm os.FileMode, writeFunc func(f io.Writer) error) error {
 	dir, name := path.Split(filename)
