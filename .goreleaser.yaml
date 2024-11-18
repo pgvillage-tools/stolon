@@ -74,13 +74,13 @@ archives:
   - format: tar.gz
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
-      {{ .Binary }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
+      stolon_
+      v{{ .Version }}_
+      {{ .Os }}_
+      {{ .Arch }}
+      {{ with .Arm }}v{{ . }}{{ end }}
+      {{ with .Mips }}_{{ . }}{{ end }}
+      {{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}
 
 changelog:
   sort: asc
@@ -92,6 +92,8 @@ changelog:
 # Please see https://github.com/CycloneDX/cyclonedx-gomod?tab=readme-ov-file#goreleaser-
 sboms:
   - artifacts: binary
+    documents:
+      - '{{ .Binary }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.json'
     cmd: cyclonedx-gomod
     # changes: xml instead of json, and assert-licenses to add licen info per component
     args:
