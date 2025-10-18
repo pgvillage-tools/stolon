@@ -20,7 +20,7 @@ build: sentinel keeper proxy stolonctl
 
 .PHONY: test
 test: build
-	./test
+	./test.sh
 
 .PHONY: sentinel keeper proxy stolonctl docker
 
