@@ -158,7 +158,9 @@ func (c *ClusterChecker) stopPollonProxy() {
 		log.Infow("Stopping listening")
 		c.pp.Stop()
 		c.pp = nil
-		c.listener.Close()
+		if err := c.listener.Close(); err != nil {
+			log.Fatal("Stopping listening")
+		}
 		c.listener = nil
 	}
 }

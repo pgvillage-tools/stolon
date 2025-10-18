@@ -210,8 +210,7 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(pwfile.Name())
-	defer pwfile.Close()
+	defer handledFileRemove(pwfile)
 
 	if _, err = pwfile.WriteString(p.suPassword); err != nil {
 		return err
@@ -438,12 +437,16 @@ func (p *Manager) start(args ...string) error {
 				fpid := scanner.Text()
 				if fpid == strconv.Itoa(pid) {
 					ok = true
-					fh.Close()
+					if err := fh.Close(); err != nil {
+						log.Fatalf("failed to close %s: %v", fh.Name(), err)
+					}
 					break
 				}
 			}
 		}
-		fh.Close()
+		if err := fh.Close(); err != nil {
+			log.Fatalf("failed to close %s: %v", fh.Name(), err)
+		}
 
 		select {
 		case <-exited:
@@ -723,7 +726,7 @@ func (p *Manager) PGDataVersion() (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to read PG_VERSION: %v", err)
 	}
-	defer fh.Close()
+	defer handledFileClose(fh)
 
 	scanner := bufio.NewScanner(fh)
 	scanner.Split(bufio.ScanLines)
@@ -989,8 +992,7 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 	if err != nil {
 		return err
 	}
-	defer os.Remove(pgpass.Name())
-	defer pgpass.Close()
+	defer handledFileRemove(pgpass)
 
 	host := followedConnParams.Get("host")
 	port := followedConnParams.Get("port")
@@ -1028,8 +1030,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 	if err != nil {
 		return err
 	}
-	defer os.Remove(pgpass.Name())
-	defer pgpass.Close()
+	defer handledFileRemove(pgpass)
 
 	host := fcp.Get("host")
 	port := fcp.Get("port")
@@ -1114,7 +1115,9 @@ func (p *Manager) RemoveAllIfInitialized() error {
 // exists outside of the data directory.
 func (p *Manager) RemoveAll() error {
 	if p.walDir != "" {
-		os.RemoveAll(p.walDir)
+		if err := os.RemoveAll(p.walDir); err != nil {
+			log.Fatalf("failed to remove tree %s: %v", p.walDir, err)
+		}
 	}
 
 	return os.RemoveAll(p.dataDir)
@@ -1161,7 +1164,7 @@ func (p *Manager) OlderWalFile() (string, error) {
 		return "", err
 	}
 	names, err := f.Readdirnames(-1)
-	f.Close()
+	handledFileClose(f)
 	if err != nil {
 		return "", err
 	}

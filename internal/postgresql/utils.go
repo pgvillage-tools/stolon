@@ -38,11 +38,43 @@ import (
 const (
 	// TODO(sgotti) for now we assume wal size is the default 16MiB size
 	WalSegSize = (16 * 1024 * 1024) // 16MiB
+	globalDB   = "postgres"
 )
 
 var (
 	ValidReplSlotName = regexp.MustCompile("^[a-z0-9_]+$")
 )
+
+func handledDbClose(db *sql.DB) {
+	if err := db.Close(); err != nil {
+		log.Fatalf("Failed to close db connection: %v", err)
+	}
+}
+
+func handledRowsClose(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		log.Fatalf("Failed to close cursor: %v", err)
+	}
+}
+
+func handledFileClose(fh *os.File) {
+	if err := fh.Close(); err != nil {
+		log.Fatalf("Failed to close %s: %v", fh.Name, err)
+	}
+}
+
+func handledDBClose(fh *sql.DB) {
+	if err := fh.Close(); err != nil {
+		log.Fatalf("Failed to close database: %v", err)
+	}
+}
+
+func handledFileRemove(fh *os.File) {
+	if err := os.Remove(fh.Name()); err != nil {
+		log.Fatalf("Failed to remove %s: %v", fh.Name(), err)
+	}
+	handledFileClose(fh)
+}
 
 func dbExec(ctx context.Context, db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
 	return db.ExecContext(ctx, query, args...)
@@ -53,11 +85,11 @@ func query(ctx context.Context, db *sql.DB, query string, args ...interface{}) (
 }
 
 func ping(ctx context.Context, connParams ConnParams) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDBClose(db)
 
 	_, err = dbExec(ctx, db, "select 1")
 	if err != nil {
@@ -67,11 +99,11 @@ func ping(ctx context.Context, connParams ConnParams) error {
 }
 
 func setPassword(ctx context.Context, connParams ConnParams, username, password string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -93,11 +125,11 @@ func setPassword(ctx context.Context, connParams ConnParams, username, password 
 }
 
 func createRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -119,22 +151,22 @@ func createRole(ctx context.Context, connParams ConnParams, roles []string, user
 }
 
 func createPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	_, err = dbExec(ctx, db, fmt.Sprintf(`create role "%s" with login replication;`, username))
 	return err
 }
 
 func alterRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -156,11 +188,11 @@ func alterRole(ctx context.Context, connParams ConnParams, roles []string, usern
 }
 
 func alterPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	_, err = dbExec(ctx, db, fmt.Sprintf(`alter role "%s" with login replication;`, username))
 	return err
@@ -176,11 +208,11 @@ func getReplicationSlots(ctx context.Context, connParams ConnParams, maj int) ([
 		q = "select slot_name from pg_replication_slots where temporary is false"
 	}
 
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	replSlots := []string{}
 
@@ -188,7 +220,7 @@ func getReplicationSlots(ctx context.Context, connParams ConnParams, maj int) ([
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	for rows.Next() {
 		var slotName string
 		if err := rows.Scan(&slotName); err != nil {
@@ -201,39 +233,39 @@ func getReplicationSlots(ctx context.Context, connParams ConnParams, maj int) ([
 }
 
 func createReplicationSlot(ctx context.Context, connParams ConnParams, name string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	_, err = dbExec(ctx, db, fmt.Sprintf("select pg_create_physical_replication_slot('%s')", name))
 	return err
 }
 
 func dropReplicationSlot(ctx context.Context, connParams ConnParams, name string) error {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	_, err = dbExec(ctx, db, fmt.Sprintf("select pg_drop_replication_slot('%s')", name))
 	return err
 }
 
 func getSyncStandbys(ctx context.Context, connParams ConnParams) ([]string, error) {
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	rows, err := query(ctx, db, "select application_name, sync_state from pg_stat_replication")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 
 	syncStandbys := []string{}
 	for rows.Next() {
@@ -270,17 +302,17 @@ func PGLsnToInt(lsn string) (uint64, error) {
 func GetSystemData(ctx context.Context, replConnParams ConnParams) (*SystemData, error) {
 	// Add "replication=1" connection option
 	replConnParams["replication"] = "1"
-	db, err := sql.Open("postgres", replConnParams.ConnString())
+	db, err := sql.Open(globalDB, replConnParams.ConnString())
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	rows, err := query(ctx, db, "IDENTIFY_SYSTEM")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	if rows.Next() {
 		var sd SystemData
 		var xLogPosLsn string
@@ -327,17 +359,17 @@ func parseTimelinesHistory(contents string) ([]*TimelineHistory, error) {
 func getTimelinesHistory(ctx context.Context, timeline uint64, replConnParams ConnParams) ([]*TimelineHistory, error) {
 	// Add "replication=1" connection option
 	replConnParams["replication"] = "1"
-	db, err := sql.Open("postgres", replConnParams.ConnString())
+	db, err := sql.Open(globalDB, replConnParams.ConnString())
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	rows, err := query(ctx, db, fmt.Sprintf("TIMELINE_HISTORY %d", timeline))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	if rows.Next() {
 		var timelineFile string
 		var contents string
@@ -385,11 +417,11 @@ func expandRecoveryCommand(cmd, dataDir, walDir string) string {
 
 func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (common.Parameters, error) {
 	var pgParameters = common.Parameters{}
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	// We prefer pg_file_settings since pg_settings returns archive_command = '(disabled)' when archive_mode is off so we'll lose its value
 	// Check if pg_file_settings exists (pg >= 9.5)
@@ -397,7 +429,7 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	c := 0
 	for rows.Next() {
 		c++
@@ -416,7 +448,7 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
+		defer handledRowsClose(rows)
 		for rows.Next() {
 			var name, setting string
 			if err = rows.Scan(&name, &setting); err != nil {
@@ -432,7 +464,7 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	for rows.Next() {
 		var name, setting, source string
 		if err = rows.Scan(&name, &setting, &source); err != nil {
@@ -447,17 +479,17 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 
 func isRestartRequiredUsingPendingRestart(ctx context.Context, connParams ConnParams) (bool, error) {
 	isRestartRequired := false
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return isRestartRequired, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	rows, err := query(ctx, db, "select count(*) > 0 from pg_settings where pending_restart;")
 	if err != nil {
 		return isRestartRequired, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	if rows.Next() {
 		if err := rows.Scan(&isRestartRequired); err != nil {
 			return isRestartRequired, err
@@ -469,11 +501,11 @@ func isRestartRequiredUsingPendingRestart(ctx context.Context, connParams ConnPa
 
 func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams ConnParams, changedParams []string) (bool, error) {
 	isRestartRequired := false
-	db, err := sql.Open("postgres", connParams.ConnString())
+	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return isRestartRequired, err
 	}
-	defer db.Close()
+	defer handledDbClose(db)
 
 	stmt, err := db.Prepare("select count(*) > 0 from pg_settings where context = 'postmaster' and name = ANY($1)")
 
@@ -485,7 +517,7 @@ func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams Con
 	if err != nil {
 		return isRestartRequired, err
 	}
-	defer rows.Close()
+	defer handledRowsClose(rows)
 	if rows.Next() {
 		if err := rows.Scan(&isRestartRequired); err != nil {
 			return isRestartRequired, err
@@ -582,9 +614,9 @@ func moveFile(sourcePath, destPath string) error {
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close()
+	defer handledFileClose(outputFile)
 	_, err = io.Copy(outputFile, inputFile)
-	inputFile.Close()
+	handledFileClose(inputFile)
 	if err != nil {
 		return fmt.Errorf("Writing to output file failed: %s", err)
 	}
