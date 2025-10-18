@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cmd holds all CLI code for the keeper
 package cmd
 
 import (
@@ -50,6 +51,7 @@ import (
 
 var log = slog.S()
 
+// CmdKeeper exports the main keeper process
 var CmdKeeper = &cobra.Command{
 	Use:     "stolon-keeper",
 	Run:     keeper,
@@ -61,11 +63,13 @@ const (
 	minWalKeepSegments          = 8
 )
 
+// KeeperLocalState can be used to define the local state for a keep process
 type KeeperLocalState struct {
 	UID        string
 	ClusterUID string
 }
 
+// DBLocalState can be used to store the local state for DB settings
 type DBLocalState struct {
 	UID        string
 	Generation int64
