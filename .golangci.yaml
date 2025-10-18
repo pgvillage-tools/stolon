@@ -5,6 +5,7 @@ run:
 linters:
   default: none
   enable:
+    - errcheck
     #- ginkgolinter
     #- gocyclo
     #- govet
