@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/consul/api"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
+	mock_register "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
 	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
 )
 
