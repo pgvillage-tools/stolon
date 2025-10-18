@@ -14,12 +14,13 @@
 package cmd
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
-	"github.com/sorintlab/stolon/internal/cluster"
-	"github.com/sorintlab/stolon/internal/mock/store"
-	"github.com/sorintlab/stolon/internal/store"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	mock_register "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
+	"github.com/sorintlab/stolon/internal/cluster"
+	mock_store "github.com/sorintlab/stolon/internal/mock/store"
+	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
