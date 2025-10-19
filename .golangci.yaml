@@ -88,6 +88,13 @@ linters:
       - linters:
           - dupl
         path: internal/*
+      # Exclude some linters from running on tests files.
+      - path: _test\.go
+        linters:
+          - errcheck
+      - path: tests/
+        linters:
+          - errcheck
     paths:
       - third_party$
       - builtin$
