@@ -155,5 +155,4 @@ func TestWriteClusterdata(t *testing.T) {
 			t.Error("expected not to have an error")
 		}
 	})
-
 }
