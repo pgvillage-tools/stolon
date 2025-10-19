@@ -108,6 +108,17 @@ func marshalJSON(value interface{}) {
 	stdout("%s", output)
 }
 
+func tabPrint(tw *tabwriter.Writer, formatted string, args ...any) {
+	if _, err := fmt.Fprintf(tw, formatted, args...); err != nil {
+		log.Fatalf("failed to write to tab writer: %v", err)
+	}
+}
+
+func tabFlush(tw *tabwriter.Writer) {
+	if err := tw.Flush(); err != nil {
+		log.Fatalf("failed to flush tab writer: %v", err)
+	}
+}
 func renderText(status Status, generateErr error) {
 	if generateErr != nil {
 		die("%v", generateErr)
@@ -121,10 +132,10 @@ func renderText(status Status, generateErr error) {
 	if len(status.Sentinels) == 0 {
 		stdout("No active sentinels")
 	} else {
-		fmt.Fprintf(tabOut, "ID\tLEADER\n")
+		tabPrint(tabOut, "ID\tLEADER\n")
 		for _, s := range status.Sentinels {
-			fmt.Fprintf(tabOut, "%s\t%t\n", s.UID, s.Leader)
-			tabOut.Flush()
+			tabPrint(tabOut, "%s\t%t\n", s.UID, s.Leader)
+			tabFlush(tabOut)
 		}
 	}
 
@@ -134,10 +145,10 @@ func renderText(status Status, generateErr error) {
 	if len(status.Proxies) == 0 {
 		stdout("No active proxies")
 	} else {
-		fmt.Fprintf(tabOut, "ID\n")
+		tabPrint(tabOut, "ID\n")
 		for _, p := range status.Proxies {
-			fmt.Fprintf(tabOut, "%s\n", p.UID)
-			tabOut.Flush()
+			tabPrint(tabOut, "%s\n", p.UID)
+			tabFlush(tabOut)
 		}
 	}
 
@@ -148,10 +159,10 @@ func renderText(status Status, generateErr error) {
 		stdout("No keepers available")
 		stdout("")
 	} else {
-		fmt.Fprintf(tabOut, "UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
+		tabPrint(tabOut, "UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
 		for _, k := range status.Keepers {
-			fmt.Fprintf(tabOut, "%s\t%t\t%s\t%t\t%d\t%d\t\n", k.UID, k.Healthy, k.ListenAddress, k.PgHealthy, k.PgWantedGeneration, k.PgCurrentGeneration)
-			tabOut.Flush()
+			tabPrint(tabOut, "%s\t%t\t%s\t%t\t%d\t%d\t\n", k.UID, k.Healthy, k.ListenAddress, k.PgHealthy, k.PgWantedGeneration, k.PgCurrentGeneration)
+			tabFlush(tabOut)
 		}
 	}
 

@@ -2191,6 +2191,8 @@ func keeper(c *cobra.Command, args []string) {
 	<-end
 
 	if !cfg.disableDataDirLocking {
-		lockFile.Close()
+		if err := lockFile.Close(); err != nil {
+			log.Fatalf("closing oock file failed: %v", err)
+		}
 	}
 }
