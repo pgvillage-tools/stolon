@@ -38,9 +38,11 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+// ComponentLabelValue is an enum that can be used to set the type of pod
 type ComponentLabelValue string
 
 const (
+	// DefaultComponentLabel is the defaultlabel to set when no label is defined
 	DefaultComponentLabel = "component"
 
 	KeeperLabelValue   ComponentLabelValue = "stolon-keeper"
@@ -48,6 +50,7 @@ const (
 	ProxyLabelValue    ComponentLabelValue = "stolon-proxy"
 )
 
+// KubeStore is a struct stores information about the pod, for example the client, name and clustername
 type KubeStore struct {
 	client       *kubernetes.Clientset
 	podName      string
