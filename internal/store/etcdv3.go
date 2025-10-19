@@ -16,6 +16,7 @@ package store
 
 import (
 	"context"
+	"log"
 	"time"
 
 	etcdclientv3 "github.com/coreos/etcd/clientv3"
@@ -176,7 +177,11 @@ func (e *etcdv3Election) Leader() (string, error) {
 	if err != nil {
 		return "", fromEtcV3Error(err)
 	}
-	defer s.Close()
+	defer func() {
+		if err := s.Close(); err != nil {
+			log.Fatalf("Failed to close session: %v", err)
+		}
+	}()
 
 	etcdElection := concurrency.NewElection(s, e.path)
 

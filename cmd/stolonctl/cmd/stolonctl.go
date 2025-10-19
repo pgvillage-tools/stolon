@@ -89,7 +89,9 @@ func stderr(format string, a ...interface{}) {
 
 func stdout(format string, a ...interface{}) {
 	out := fmt.Sprintf(format, a...)
-	fmt.Fprintln(os.Stdout, strings.TrimSuffix(out, "\n"))
+	if _, err := fmt.Fprintln(os.Stdout, strings.TrimSuffix(out, "\n")); err != nil {
+		log.Fatalf("failed to write to stdout: %v", err)
+	}
 }
 
 func die(format string, a ...interface{}) {
@@ -117,7 +119,9 @@ func getClusterData(e store.Store) (*cluster.ClusterData, *store.KVPair, error) 
 func askConfirmation(message string) (bool, error) {
 	in := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Fprint(os.Stdout, message)
+		if _, err := fmt.Fprint(os.Stdout, message); err != nil {
+			log.Fatalf("failed to print to stdout: %v", err)
+		}
 		input, err := in.ReadString('\n')
 		if err != nil {
 			return false, fmt.Errorf("error reading input: %v", err)

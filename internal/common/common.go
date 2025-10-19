@@ -17,6 +17,7 @@ package common
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -125,7 +126,9 @@ func WriteFileAtomicFunc(filename string, perm os.FileMode, writeFunc func(f io.
 	}
 	// Any err should result in full cleanup.
 	if err != nil {
-		os.Remove(f.Name())
+		if err := os.Remove(f.Name()); err != nil {
+			log.Fatalf("failed to remove temp file %s: %v", f.Name(), err)
+		}
 	}
 	return err
 }
