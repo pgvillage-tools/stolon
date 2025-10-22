@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cmd holds all CLI code for the keeper
 package cmd
 
 import (

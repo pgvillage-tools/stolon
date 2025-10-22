@@ -283,7 +283,7 @@ func TestGetTimeLinesHistory(t *testing.T) {
 		pgm := pgmocks.NewMockPGManager(ctrl)
 		pgm.EXPECT().GetTimelinesHistory(timelineID).Return(
 			[]*pg.TimelineHistory{},
-			fmt.Errorf("failed to get timeline history"))
+			errors.New("failed to get timeline history"))
 		ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
 
 		if err == nil {

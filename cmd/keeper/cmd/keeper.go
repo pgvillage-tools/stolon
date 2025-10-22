@@ -59,6 +59,7 @@ const ownerRWPermisions = 0600
 const ownerRWExecPermisions = 0700
 const ownerRWOtherRPermisions = 0644
 const trust string = "trust"
+const decimal = 10
 
 // CmdKeeper exports the main keeper process
 var CmdKeeper = &cobra.Command{
@@ -409,11 +410,11 @@ func (p *PostgresKeeper) createPGParameters(db *cluster.DB) common.Parameters {
 	// fail.
 	// TODO(sgotti) changing max_replication_slots requires an
 	// instance restart.
-	parameters["max_replication_slots"] = strconv.FormatUint(uint64(db.Spec.MaxStandbys), 10)
+	parameters["max_replication_slots"] = strconv.FormatUint(uint64(db.Spec.MaxStandbys), decimal)
 	// Add some more wal senders, since also the keeper will use them
 	// TODO(sgotti) changing max_wal_senders requires an instance restart.
 	parameters["max_wal_senders"] = strconv.FormatUint(uint64((db.Spec.MaxStandbys*2)+2+db.Spec.AdditionalWalSenders),
-		10)
+		decimal)
 
 	// required by pg_rewind (if data checksum is enabled it's ignored)
 	if db.Spec.UsePgrewind {
@@ -2084,6 +2085,7 @@ func sigHandler(sigs chan os.Signal, cancel context.CancelFunc) {
 	cancel()
 }
 
+// Execute is the main executor of keeper file
 func Execute() {
 	if err := flagutil.SetFlagsFromEnv(CmdKeeper.PersistentFlags(), "STKEEPER"); err != nil {
 		log.Fatal(err)

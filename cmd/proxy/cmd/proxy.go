@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cmd holds all CLI code for the keeper
 package cmd
 
 import (
@@ -63,19 +64,48 @@ var cfg config
 func init() {
 	cmd.AddCommonFlags(CmdProxy, &cfg.CommonConfig)
 
-	CmdProxy.PersistentFlags().StringVar(&cfg.listenAddress, "listen-address", "127.0.0.1", "proxy listening address")
-	CmdProxy.PersistentFlags().StringVar(&cfg.port, "port", "5432", "proxy listening port")
-	CmdProxy.PersistentFlags().BoolVar(&cfg.stopListening, "stop-listening", true, "stop listening on store error")
-	CmdProxy.PersistentFlags().BoolVar(&cfg.debug, "debug", false, "enable debug logging")
-	CmdProxy.PersistentFlags().IntVar(&cfg.keepAliveIdle, "tcp-keepalive-idle", 0, "set tcp keepalive idle (seconds)")
-	CmdProxy.PersistentFlags().IntVar(&cfg.keepAliveCount, "tcp-keepalive-count", 0, "set tcp keepalive probe count number")
-	CmdProxy.PersistentFlags().IntVar(&cfg.keepAliveInterval, "tcp-keepalive-interval", 0, "set tcp keepalive interval (seconds)")
+	CmdProxy.PersistentFlags().StringVar(
+		&cfg.listenAddress,
+		"listen-address",
+		"127.0.0.1",
+		"proxy listening address")
+	CmdProxy.PersistentFlags().StringVar(
+		&cfg.port,
+		"port",
+		"5432",
+		"proxy listening port")
+	CmdProxy.PersistentFlags().BoolVar(
+		&cfg.stopListening,
+		"stop-listening",
+		true,
+		"stop listening on store error")
+	CmdProxy.PersistentFlags().BoolVar(
+		&cfg.debug,
+		"debug",
+		false,
+		"enable debug logging")
+	CmdProxy.PersistentFlags().IntVar(
+		&cfg.keepAliveIdle,
+		"tcp-keepalive-idle",
+		0,
+		"set tcp keepalive idle (seconds)")
+	CmdProxy.PersistentFlags().IntVar(
+		&cfg.keepAliveCount,
+		"tcp-keepalive-count",
+		0,
+		"set tcp keepalive probe count number")
+	CmdProxy.PersistentFlags().IntVar(
+		&cfg.keepAliveInterval,
+		"tcp-keepalive-interval",
+		0,
+		"set tcp keepalive interval (seconds)")
 
 	if err := CmdProxy.PersistentFlags().MarkDeprecated("debug", "use --log-level=debug instead"); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// ClusterChecker is struct containing information for checking the cluster
 type ClusterChecker struct {
 	uid           string
 	listenAddress string
@@ -95,6 +125,7 @@ type ClusterChecker struct {
 	configMutex        sync.Mutex
 }
 
+// NewClusterChecker is a function which creates a new clusterchecker
 func NewClusterChecker(uid string, cfg config) (*ClusterChecker, error) {
 	e, err := cmd.NewStore(&cfg.CommonConfig)
 	if err != nil {
@@ -173,7 +204,8 @@ func (c *ClusterChecker) sendPollonConfData(confData pollon.ConfData) {
 	}
 }
 
-func (c *ClusterChecker) SetProxyInfo(e store.Store, generation int64, proxyTimeout time.Duration) error {
+// SetProxyInfo is funcion which sets the proxy-info
+func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTimeout time.Duration) error {
 	proxyInfo := &cluster.ProxyInfo{
 		InfoUID:      common.UID(),
 		UID:          c.uid,
@@ -219,7 +251,8 @@ func (c *ClusterChecker) Check() error {
 	cdProxyTimeout := cd.Cluster.DefSpec().ProxyTimeout.Duration
 
 	// use the greater between the current proxy timeout and the one defined in the cluster spec if they're different.
-	// in this way we're updating our proxyInfo using a timeout that is greater or equal the current active timeout timer.
+	// in this way we're updating our proxyInfo using a timeout that is greater
+	// or equal the current active timeout timer.
 	c.configMutex.Lock()
 	proxyTimeout := c.proxyTimeout
 	if cdProxyTimeout > proxyTimeout {
@@ -274,13 +307,12 @@ func (c *ClusterChecker) Check() error {
 		// and are sending connections to a master so, when electing a new
 		// master, it'll not wait for us to close connections to the old one.
 		return fmt.Errorf("failed to update proxyInfo: %v", err)
-	} else {
-		// update proxyCheckinterval and proxyTimeout only if we successfully updated our proxy info
-		c.configMutex.Lock()
-		c.proxyCheckInterval = cdProxyCheckInterval
-		c.proxyTimeout = cdProxyTimeout
-		c.configMutex.Unlock()
 	}
+	// update proxyCheckinterval and proxyTimeout only if we successfully updated our proxy info
+	c.configMutex.Lock()
+	c.proxyCheckInterval = cdProxyCheckInterval
+	c.proxyTimeout = cdProxyTimeout
+	c.configMutex.Unlock()
 
 	// start proxing only if we are inside enabledProxies, this ensures that the
 	// sentinel has read our proxyinfo and knows we are alive
@@ -295,6 +327,7 @@ func (c *ClusterChecker) Check() error {
 	return nil
 }
 
+// TimeoutChecker is a function that checks the timeouts
 func (c *ClusterChecker) TimeoutChecker(checkOkCh chan struct{}) {
 	c.configMutex.Lock()
 	timeoutTimer := time.NewTimer(c.proxyTimeout)
@@ -325,6 +358,7 @@ func (c *ClusterChecker) TimeoutChecker(checkOkCh chan struct{}) {
 	}
 }
 
+// Start is function that starts the procy
 func (c *ClusterChecker) Start() error {
 	checkOkCh := make(chan struct{})
 	checkCh := make(chan error)
@@ -362,6 +396,7 @@ func (c *ClusterChecker) Start() error {
 	}
 }
 
+// Execute is the main executor of the proxy
 func Execute() {
 	if err := flagutil.SetFlagsFromEnv(CmdProxy.PersistentFlags(), "STPROXY"); err != nil {
 		log.Fatal(err)
@@ -372,7 +407,7 @@ func Execute() {
 	}
 }
 
-func proxy(c *cobra.Command, args []string) {
+func proxy(c *cobra.Command, _ []string) {
 	switch cfg.LogLevel {
 	case "error":
 		slog.SetLevel(zap.ErrorLevel)
