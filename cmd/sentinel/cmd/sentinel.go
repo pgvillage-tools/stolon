@@ -158,10 +158,12 @@ func (s *Sentinel) SetDBError(uid string) {
 	}
 }
 
+// CleanDBError is function which cleans the database errors
 func (s *Sentinel) CleanDBError(uid string) {
 	delete(s.dbErrorTimers, uid)
 }
 
+// SetDBNotIncreasingXLogPos is a function that sets the map dbNotIncreasingXLogPos
 func (s *Sentinel) SetDBNotIncreasingXLogPos(uid string) {
 	if _, ok := s.dbNotIncreasingXLogPos[uid]; !ok {
 		s.dbNotIncreasingXLogPos[uid] = 1
@@ -170,6 +172,7 @@ func (s *Sentinel) SetDBNotIncreasingXLogPos(uid string) {
 	}
 }
 
+// CleanDBNotIncreasingXLogPos is function that cleanes the map dbNotIncreasingXLogPos
 func (s *Sentinel) CleanDBNotIncreasingXLogPos(uid string) {
 	delete(s.dbNotIncreasingXLogPos, uid)
 }
