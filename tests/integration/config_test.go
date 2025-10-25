@@ -24,6 +24,7 @@ import (
 
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
+	pg "github.com/sorintlab/stolon/internal/postgresql"
 	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/gofrs/uuid"
@@ -301,12 +302,12 @@ func TestWalKeepSegments(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	maj, _, err := tk.PGDataVersion()
+	version, err := tk.PGDataVersion()
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if maj >= 13 {
-		t.Skipf("skipping since postgres version %d >= 13", maj)
+	if version.GreaterThanEqual(pg.V13) {
+		t.Skipf("skipping since postgres version %s >= 13", version)
 	}
 
 	// "archive" isn't an accepted wal_level
