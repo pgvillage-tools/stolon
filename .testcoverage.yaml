@@ -48,7 +48,7 @@ override:
   - path: ^internal/common/common.go
     threshold: 25
   - path: ^internal/postgresql/utils.go
-    threshold: 15
+    threshold: 12
   - path: ^internal/cluster/member.go
     threshold: 10
   - path: ^internal/cluster/v0/clusterview.go

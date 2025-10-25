@@ -32,6 +32,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 	pg "github.com/sorintlab/stolon/internal/postgresql"
@@ -427,10 +428,10 @@ func NewTestKeeper(t *testing.T, dir, clusterName, pgSUUsername, pgSUPassword, p
 	return NewTestKeeperWithID(t, dir, uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, storeBackend, storeEndpoints, a...)
 }
 
-func (tk *TestKeeper) PGDataVersion() (int, int, error) {
+func (tk *TestKeeper) PGDataVersion() (*semver.Version, error) {
 	fh, err := os.Open(filepath.Join(tk.dataDir, "postgres", "PG_VERSION"))
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to read PG_VERSION: %v", err)
+		return nil, fmt.Errorf("failed to read PG_VERSION: %v", err)
 	}
 	defer fh.Close()
 
@@ -440,17 +441,17 @@ func (tk *TestKeeper) PGDataVersion() (int, int, error) {
 	scanner.Scan()
 
 	version := scanner.Text()
-	return pg.ParseVersion(version)
+	return semver.NewVersion(version)
 }
 
 func (tk *TestKeeper) GetPrimaryConninfo() (pg.ConnParams, error) {
-	maj, _, err := tk.PGDataVersion()
+	version, err := tk.PGDataVersion()
 	if err != nil {
 		return nil, err
 	}
 
 	confFile := "recovery.conf"
-	if maj >= 12 {
+	if version.GreaterThanEqual(pg.V12) {
 		confFile = "postgresql.conf"
 	}
 	regex := regexp.MustCompile(`\s*primary_conninfo\s*=\s*'(.*)'$`)
@@ -501,12 +502,12 @@ func (tk *TestKeeper) ReplQuery(query string, args ...interface{}) (*sql.Rows, e
 }
 
 func (tk *TestKeeper) SwitchWals(times int) error {
-	maj, _, err := tk.PGDataVersion()
+	version, err := tk.PGDataVersion()
 	if err != nil {
 		return err
 	}
 	var switchLogFunc string
-	if maj < 10 {
+	if version.LessThan(pg.V10) {
 		switchLogFunc = "select pg_switch_xlog()"
 	} else {
 		switchLogFunc = "select pg_switch_wal()"

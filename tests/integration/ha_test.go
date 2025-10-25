@@ -1586,13 +1586,13 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 
 	master, standbys := waitMasterStandbysReady(t, sm, tks)
 
-	maj, min, err := master.PGDataVersion()
+	version, err := master.PGDataVersion()
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// on postgresql <= 9.5 we can have only 1 synchronous standby
 	if syncRepl {
-		if maj == 9 && min <= 5 {
+		if version.LessThan(pg.V96) {
 			ok := false
 			if err := WaitClusterDataSynchronousStandbys([]string{standbys[0].uid}, sm, 30*time.Second); err == nil {
 				ok = true

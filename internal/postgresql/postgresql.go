@@ -31,6 +31,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
 	slog "github.com/sorintlab/stolon/internal/log"
 
@@ -585,13 +586,13 @@ func (p *Manager) WaitReady(timeout time.Duration) error {
 }
 
 func (p *Manager) WaitRecoveryDone(timeout time.Duration) error {
-	maj, _, err := p.BinaryVersion()
+	version, err := p.BinaryVersion()
 	if err != nil {
 		return fmt.Errorf("error fetching pg version: %v", err)
 	}
 
 	start := time.Now()
-	if maj >= 12 {
+	if version.GreaterThanEqual(V12) {
 		for timeout == 0 || time.Since(start) < timeout {
 			_, err := os.Stat(filepath.Join(p.dataDir, postgresRecoverySignal))
 			if err != nil && !os.IsNotExist(err) {
@@ -616,6 +617,14 @@ func (p *Manager) WaitRecoveryDone(timeout time.Duration) error {
 	}
 
 	return fmt.Errorf("timeout waiting for db recovery")
+}
+
+func (p *Manager) PGDataVersion() (*semver.Version, error) {
+	return pgDataVersion(p.dataDir)
+}
+
+func (p *Manager) BinaryVersion() (*semver.Version, error) {
+	return binaryVersion(p.pgBinPath)
 }
 
 func (p *Manager) Promote() error {
@@ -687,14 +696,14 @@ func (p *Manager) GetSyncStandbys() ([]string, error) {
 }
 
 func (p *Manager) GetReplicationSlots() ([]string, error) {
-	maj, _, err := p.PGDataVersion()
+	version, err := p.PGDataVersion()
 	if err != nil {
 		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
-	return getReplicationSlots(ctx, p.localConnParams, maj)
+	return getReplicationSlots(ctx, p.localConnParams, version)
 }
 
 func (p *Manager) CreateReplicationSlot(name string) error {
@@ -707,34 +716,6 @@ func (p *Manager) DropReplicationSlot(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return dropReplicationSlot(ctx, p.localConnParams, name)
-}
-
-func (p *Manager) BinaryVersion() (int, int, error) {
-	name := filepath.Join(p.pgBinPath, "postgres")
-	cmd := exec.Command(name, "-V")
-	log.Debugw("execing cmd", "cmd", cmd)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return 0, 0, fmt.Errorf("error: %v, output: %s", err, string(out))
-	}
-
-	return ParseBinaryVersion(string(out))
-}
-
-func (p *Manager) PGDataVersion() (int, int, error) {
-	fh, err := os.Open(filepath.Join(p.dataDir, "PG_VERSION"))
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to read PG_VERSION: %v", err)
-	}
-	defer handledFileClose(fh)
-
-	scanner := bufio.NewScanner(fh)
-	scanner.Split(bufio.ScanLines)
-
-	scanner.Scan()
-
-	version := scanner.Text()
-	return ParseVersion(version)
 }
 
 func (p *Manager) IsInitialized() (bool, error) {
@@ -750,7 +731,7 @@ func (p *Manager) IsInitialized() (bool, error) {
 	if !exists {
 		return false, nil
 	}
-	maj, _, err := p.PGDataVersion()
+	version, err := p.PGDataVersion()
 	if err != nil {
 		return false, err
 	}
@@ -774,7 +755,7 @@ func (p *Manager) IsInitialized() (bool, error) {
 	}
 	// in postgres 10 pc_clog has been renamed to pg_xact and pc_xlog has been
 	// renamed to pg_wal
-	if maj < 10 {
+	if version.LessThan(V10) {
 		requiredFiles = append(requiredFiles, []string{
 			"pg_clog",
 			"pg_xlog",
@@ -800,12 +781,12 @@ func (p *Manager) IsInitialized() (bool, error) {
 
 // GetRole return the current instance role
 func (p *Manager) GetRole() (common.Role, error) {
-	maj, _, err := p.BinaryVersion()
+	version, err := p.BinaryVersion()
 	if err != nil {
 		return "", fmt.Errorf("error fetching pg version: %v", err)
 	}
 
-	if maj >= 12 {
+	if version.GreaterThanEqual(V12) {
 		// if standby.signal file exists then consider it as a standby
 		_, err := os.Stat(filepath.Join(p.dataDir, postgresStandbySignal))
 		if err != nil && !os.IsNotExist(err) {
@@ -829,13 +810,13 @@ func (p *Manager) GetRole() (common.Role, error) {
 }
 
 func (p *Manager) writeConfs(useTmpPostgresConf bool) error {
-	maj, _, err := p.BinaryVersion()
+	version, err := p.BinaryVersion()
 	if err != nil {
 		return fmt.Errorf("error fetching pg version: %v", err)
 	}
 
 	writeRecoveryParamsInPostgresConf := false
-	if maj >= 12 {
+	if version.GreaterThanEqual(V12) {
 		writeRecoveryParamsInPostgresConf = true
 	}
 
@@ -1148,12 +1129,12 @@ func (p *Manager) Ping() error {
 }
 
 func (p *Manager) OlderWalFile() (string, error) {
-	maj, _, err := p.PGDataVersion()
+	version, err := p.PGDataVersion()
 	if err != nil {
 		return "", err
 	}
 	var walDir string
-	if maj < 10 {
+	if version.LessThan(V10) {
 		walDir = "pg_xlog"
 	} else {
 		walDir = "pg_wal"
@@ -1190,7 +1171,7 @@ func (p *Manager) OlderWalFile() (string, error) {
 
 // IsRestartRequired returns if a postgres restart is necessary
 func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
-	maj, min, err := p.BinaryVersion()
+	version, err := p.BinaryVersion()
 	if err != nil {
 		return false, fmt.Errorf("error fetching pg version: %v", err)
 	}
@@ -1198,7 +1179,7 @@ func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 
-	if maj == 9 && min < 5 {
+	if version.LessThan(V95) {
 		return isRestartRequiredUsingPgSettingsContext(ctx, p.localConnParams, changedParams)
 	} else {
 		return isRestartRequiredUsingPendingRestart(ctx, p.localConnParams)
