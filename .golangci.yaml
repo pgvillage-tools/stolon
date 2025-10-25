@@ -11,7 +11,7 @@ linters:
     #- govet
     #- ineffassign
     #- misspell
-    #- revive
+    - revive
     #- staticcheck
     #- unused
   settings:

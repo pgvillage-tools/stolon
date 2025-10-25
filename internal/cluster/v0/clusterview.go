@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	// CurrentCDFormatVersion can be used to get the current version of a clusterdata
 	CurrentCDFormatVersion uint64 = 0
 )
 
