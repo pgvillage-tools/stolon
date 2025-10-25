@@ -1,95 +1,160 @@
 package postgresql
 
 import (
-	"testing"
+	"fmt"
+	"os"
+	"path/filepath"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestParseBinaryVersion(t *testing.T) {
-	tests := []struct {
-		in  string
-		maj int
-		min int
-		err error
-	}{
-		{
-			in:  "postgres (PostgreSQL) 9.5.7",
-			maj: 9,
-			min: 5,
-		},
-		{
-			in:  "postgres (PostgreSQL) 9.6.7\n",
-			maj: 9,
-			min: 6,
-		},
-		{
-			in:  "postgres (PostgreSQL) 10beta1",
-			maj: 10,
-			min: 0,
-		},
-		{
-			in:  "postgres (PostgreSQL) 10.1.2",
-			maj: 10,
-			min: 1,
-		},
-	}
-
-	for i, tt := range tests {
-		version, err := parseBinaryVersion(tt.in)
-		t.Logf("test #%d", i)
-		if tt.err != nil {
-			if err == nil {
-				t.Fatalf("got no error, wanted error: %v", tt.err)
-			} else if tt.err.Error() != err.Error() {
-				t.Fatalf("got error: %v, wanted error: %v", err, tt.err)
+var _ = Describe("Pgversion", func() {
+	When("Parsing version from a binary", func() {
+		It("should successfully parse", func() {
+			for _, test := range []struct {
+				in       string
+				expected string
+			}{
+				{in: "v10", expected: "10.0.0"},
+				{in: "10", expected: "10.0.0"},
+				{in: "9.5.7", expected: "9.5.7"},
+				{in: "9.5.7-rc1", expected: "9.5.7-rc1"},
+				{in: "11-beta1", expected: "11.0.0-beta1"},
+			} {
+				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
+				version, err := ParseVersion(test.in)
+				Ω(err).NotTo(HaveOccurred())
+				Ω(version.String()).To(Equal(test.expected))
 			}
-		} else {
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+		})
+		It("should fail on", func() {
+			for _, test := range []struct {
+				in string
+			}{
+				{in: "v"},
+				{in: "1.2.3.4"},
+			} {
+				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
+				version, err := ParseVersion(test.in)
+				Ω(err).To(HaveOccurred())
+				Ω(version).To(BeNil())
 			}
-			if int(version.Major()) != tt.maj || int(version.Minor()) != tt.min {
-				t.Fatalf("#%d: wrong maj.min version: got: %s, want: %d.%d", i, version, tt.maj, tt.min)
+		})
+	})
+	When("Comparing", func() {
+		It("should properly check greater than or equal", func() {
+			for _, test := range []struct {
+				in string
+				ge string
+			}{
+				{in: "10", ge: "10"},
+				{in: "10", ge: "9.6"},
+				{in: "9.6", ge: "9.5.7"},
+				{in: "9.5.7", ge: "9.5.7-rc1"},
+				{in: "9.5.7-rc1", ge: "9.5.7-beta1"},
+				{in: "9.6-beta1", ge: "9.5.7-rc1"},
+			} {
+				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
+				inVersion, err := ParseVersion(test.in)
+				Ω(err).NotTo(HaveOccurred())
+				geVersion, err := ParseVersion(test.ge)
+				Ω(err).NotTo(HaveOccurred())
+				Ω(inVersion.GreaterThanEqual(geVersion)).To(BeTrue())
 			}
-		}
-	}
-}
-
-func TestParseVersion(t *testing.T) {
-	tests := []struct {
-		in  string
-		maj uint64
-		min uint64
-		err error
-	}{
-		{
-			in:  "9.5.7",
-			maj: 9,
-			min: 5,
-		},
-	}
-
-	for i, tt := range tests {
-		version, err := ParseVersion(tt.in)
-		t.Logf("test #%d", i)
-		if tt.err != nil {
-			if err == nil {
-				t.Fatalf("got no error, wanted error: %v", tt.err)
-			} else if tt.err.Error() != err.Error() {
-				t.Fatalf("got error: %v, wanted error: %v", err, tt.err)
-			}
-		} else {
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if version.Major() != tt.maj || version.Minor() != tt.min {
-				t.Fatalf("#%d: wrong maj.min version : got: %s, want: %d.%d", i, version, tt.maj, tt.min)
-			}
-		}
-	}
-}
-
-func TestVersionCompare(t *testing.T) {
-	assert.True(t, V96.GreaterThanEqual(V96))
-	assert.False(t, V96.LessThan(V96))
-}
+		})
+	})
+	When("Getting version from PGDATA", func() {
+		It("should successfully work for a proper DATADIR", func() {
+			tempDir, err := os.MkdirTemp("", "pgdvs")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			dataDir := filepath.Join(tempDir, "proper_dir")
+			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			pgVersionFile := filepath.Join(dataDir, "PG_VERSION")
+			err = os.WriteFile(pgVersionFile, []byte("18"), 0o600)
+			version, err := pgDataVersion(dataDir)
+			Ω(err).NotTo(HaveOccurred())
+			Ω(version.Equal(V18)).To(BeTrue())
+		})
+		It("should fail when DATADIR does not exist", func() {
+			tempDir, err := os.MkdirTemp("", "pgdvd")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			dataDir := filepath.Join(tempDir, "proper_dir")
+			version, err := pgDataVersion(dataDir)
+			Ω(err).To(HaveOccurred())
+			Ω(version).To(BeNil())
+		})
+		It("should fail when PGVERSION does not exist", func() {
+			tempDir, err := os.MkdirTemp("", "pgdvv")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			dataDir := filepath.Join(tempDir, "proper_dir")
+			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			version, err := pgDataVersion(dataDir)
+			Ω(err).To(HaveOccurred())
+			Ω(version).To(BeNil())
+		})
+		It("should fail when PGVERSION contains nonsense", func() {
+			tempDir, err := os.MkdirTemp("", "pgdvs")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			dataDir := filepath.Join(tempDir, "proper_dir")
+			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			pgVersionFile := filepath.Join(dataDir, "PG_VERSION")
+			err = os.WriteFile(pgVersionFile, []byte("aabbccd"), 0o600)
+			version, err := pgDataVersion(dataDir)
+			Ω(err).To(HaveOccurred())
+			Ω(version).To(BeNil())
+		})
+	})
+	When("Getting version from a binary", func() {
+		It("should successfully work for a proper postgres binary", func() {
+			tempDir, err := os.MkdirTemp("", "pgbvs")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			binDir := filepath.Join(tempDir, "bindir")
+			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			pgBinary := filepath.Join(binDir, "postgres")
+			err = os.WriteFile(pgBinary, []byte(
+				`#!/bin/bash
+echo "postgres (PostgreSQL) 18.0 (Debian 18.0-1.pgdg13+3)"`,
+			), 0o700)
+			version, err := binaryVersion(binDir)
+			Ω(err).NotTo(HaveOccurred())
+			Ω(version.Equal(V18)).To(BeTrue())
+		})
+		It("should fail when binary does not exist", func() {
+			tempDir, err := os.MkdirTemp("", "pgbvb")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			binDir := filepath.Join(tempDir, "bindir")
+			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			version, err := binaryVersion(binDir)
+			Ω(err).To(HaveOccurred())
+			Ω(version).To(BeNil())
+		})
+		It("should fail when binary returns nonsense", func() {
+			tempDir, err := os.MkdirTemp("", "pgbvb")
+			Ω(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir) // Clean up after test
+			binDir := filepath.Join(tempDir, "bindir")
+			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			Ω(err).NotTo(HaveOccurred())
+			pgBinary := filepath.Join(binDir, "postgres")
+			err = os.WriteFile(pgBinary, []byte(
+				`#!/bin/bash
+echo "this is no good"`,
+			), 0o700)
+			version, err := binaryVersion(binDir)
+			Ω(err).To(HaveOccurred())
+			Ω(version).To(BeNil())
+		})
+	})
+})

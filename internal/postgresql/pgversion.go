@@ -12,16 +12,23 @@ import (
 )
 
 var (
+	// V95 represents PostgreSQL 9.5
 	V95 = semver.MustParse("9.5")
+	// V96 represents PostgreSQL 9.6
 	V96 = semver.MustParse("9.6")
+	// V10 represents PostgreSQL 10
 	V10 = semver.MustParse("10")
-	V11 = semver.MustParse("11")
+	//V11 = semver.MustParse("11")
+	// V12 represents PostgreSQL 12
 	V12 = semver.MustParse("12")
+	// V13 represents PostgreSQL 13
 	V13 = semver.MustParse("13")
-	V14 = semver.MustParse("14")
-	V15 = semver.MustParse("15")
-	V16 = semver.MustParse("16")
-	V17 = semver.MustParse("17")
+	//V14 = semver.MustParse("14")
+	//V15 = semver.MustParse("15")
+	//V16 = semver.MustParse("16")
+	//V17 = semver.MustParse("17")
+	// V18 represents PostgreSQL 18
+	V18 = semver.MustParse("18")
 )
 
 func parseBinaryVersion(v string) (*semver.Version, error) {
@@ -42,8 +49,8 @@ func ParseVersion(v string) (*semver.Version, error) {
 	return semver.NewVersion(v)
 }
 
-func (p *Manager) PGDataVersion() (*semver.Version, error) {
-	fh, err := os.Open(filepath.Join(p.dataDir, "PG_VERSION"))
+func pgDataVersion(dataDir string) (*semver.Version, error) {
+	fh, err := os.Open(filepath.Join(dataDir, "PG_VERSION"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read PG_VERSION: %v", err)
 	}
@@ -58,14 +65,13 @@ func (p *Manager) PGDataVersion() (*semver.Version, error) {
 	return ParseVersion(version)
 }
 
-func (p *Manager) BinaryVersion() (*semver.Version, error) {
-	name := filepath.Join(p.pgBinPath, "postgres")
+func binaryVersion(binPath string) (*semver.Version, error) {
+	name := filepath.Join(binPath, "postgres")
 	cmd := exec.Command(name, "-V")
 	log.Debugw("execing cmd", "cmd", cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, output: %s", err, string(out))
 	}
-
 	return parseBinaryVersion(string(out))
 }

@@ -31,6 +31,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
 	slog "github.com/sorintlab/stolon/internal/log"
 
@@ -616,6 +617,14 @@ func (p *Manager) WaitRecoveryDone(timeout time.Duration) error {
 	}
 
 	return fmt.Errorf("timeout waiting for db recovery")
+}
+
+func (p *Manager) PGDataVersion() (*semver.Version, error) {
+	return pgDataVersion(p.dataDir)
+}
+
+func (p *Manager) BinaryVersion() (*semver.Version, error) {
+	return binaryVersion(p.pgBinPath)
 }
 
 func (p *Manager) Promote() error {
