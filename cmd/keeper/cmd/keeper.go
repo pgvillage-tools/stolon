@@ -218,7 +218,7 @@ func (p *PostgresKeeper) walLevel(db *cluster.DB) string {
 		"logical", // pg >= 10
 	}
 
-	maj, min, err := p.pgm.BinaryVersion()
+	version, err := p.pgm.BinaryVersion()
 	if err != nil {
 		// in case we fail to parse the binary version then log it and just use "hot_standby" that works for all versions
 		log.Warnf("failed to get postgres binary version: %v", err)
@@ -227,11 +227,7 @@ func (p *PostgresKeeper) walLevel(db *cluster.DB) string {
 
 	// set default wal_level
 	walLevel := "hot_standby"
-	if maj == 9 {
-		if min >= 6 {
-			walLevel = "replica"
-		}
-	} else if maj >= 10 {
+	if version.GreaterThanEqual(pg.V96) {
 		walLevel = "replica"
 	}
 
@@ -284,14 +280,14 @@ func (p *PostgresKeeper) mandatoryPGParameters(db *cluster.DB) common.Parameters
 		"hot_standby":             "on",
 	}
 
-	maj, _, err := p.pgm.BinaryVersion()
+	version, err := p.pgm.BinaryVersion()
 	if err != nil {
 		// in case we fail to parse the binary version don't return any wal_keep_segments or wal_keep_size
 		log.Warnf("failed to get postgres binary version: %v", err)
 		return params
 	}
 
-	if maj >= 13 {
+	if version.GreaterThanEqual(pg.V13) {
 		params["wal_keep_size"] = p.walKeepSize(db)
 	} else {
 		params["wal_keep_segments"] = fmt.Sprintf("%d", p.walKeepSegments(db))
@@ -620,7 +616,7 @@ func (p *PostgresKeeper) updateKeeperInfo() error {
 		return nil
 	}
 
-	maj, min, err := p.pgm.BinaryVersion()
+	version, err := p.pgm.BinaryVersion()
 	if err != nil {
 		// in case we fail to parse the binary version then log it and just report maj and min as 0
 		log.Warnf("failed to get postgres binary version: %v", err)
@@ -632,8 +628,8 @@ func (p *PostgresKeeper) updateKeeperInfo() error {
 		ClusterUID: clusterUID,
 		BootUUID:   p.bootUUID,
 		PostgresBinaryVersion: cluster.PostgresBinaryVersion{
-			Maj: maj,
-			Min: min,
+			Maj: int(version.Major()),
+			Min: int(version.Minor()),
 		},
 		PostgresState: p.getLastPGState(),
 
@@ -937,13 +933,13 @@ func (p *PostgresKeeper) resync(db, masterDB, followedDB *cluster.DB, tryPgrewin
 		}
 	}
 
-	maj, min, err := p.pgm.BinaryVersion()
+	version, err := p.pgm.BinaryVersion()
 	if err != nil {
 		// in case we fail to parse the binary version then log it and just don't use replSlot
 		log.Warnf("failed to get postgres binary version: %v", err)
 	}
 	replSlot := ""
-	if (maj == 9 && min >= 6) || maj > 10 {
+	if version.GreaterThanEqual(pg.V96) {
 		replSlot = common.StolonName(db.UID)
 	}
 

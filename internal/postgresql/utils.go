@@ -28,6 +28,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
 
 	"os"
@@ -200,9 +201,9 @@ func alterPasswordlessRole(ctx context.Context, connParams ConnParams, roles []s
 
 // getReplicatinSlots return existing replication slots. On PostgreSQL > 10 we
 // skip temporary slots.
-func getReplicationSlots(ctx context.Context, connParams ConnParams, maj int) ([]string, error) {
+func getReplicationSlots(ctx context.Context, connParams ConnParams, version *semver.Version) ([]string, error) {
 	var q string
-	if maj < 10 {
+	if version.LessThan(V10) {
 		q = "select slot_name from pg_replication_slots"
 	} else {
 		q = "select slot_name from pg_replication_slots where temporary is false"
@@ -525,39 +526,6 @@ func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams Con
 	}
 
 	return isRestartRequired, nil
-}
-
-func ParseBinaryVersion(v string) (int, int, error) {
-	// extract version (removing beta*, rc* etc...)
-	regex, err := regexp.Compile(`.* \(PostgreSQL\) ([0-9\.]+).*`)
-	if err != nil {
-		return 0, 0, err
-	}
-	m := regex.FindStringSubmatch(v)
-	if len(m) != 2 {
-		return 0, 0, fmt.Errorf("failed to parse postgres binary version: %q", v)
-	}
-	return ParseVersion(m[1])
-}
-
-func ParseVersion(v string) (int, int, error) {
-	parts := strings.Split(v, ".")
-	if len(parts) < 1 {
-		return 0, 0, fmt.Errorf("bad version: %q", v)
-	}
-	maj, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to parse major %q: %v", parts[0], err)
-	}
-	min := 0
-	if len(parts) > 1 {
-		min, err = strconv.Atoi(parts[1])
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to parse minor %q: %v", parts[1], err)
-		}
-	}
-
-	return maj, min, nil
 }
 
 func IsWalFileName(name string) bool {
