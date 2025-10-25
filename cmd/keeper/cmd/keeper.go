@@ -984,14 +984,14 @@ func (p *PostgresKeeper) resync(db, masterDB, followedDB *cluster.DB, tryPgrewin
 		// rewind that it targets the current primary, rather than whatever database we
 		// follow.
 		connParams := p.getSUConnParams(db, masterDB)
+		err := pgm.SyncFromFollowedPGRewind(connParams, p.pgSUPassword)
 		log.Infow("syncing using pg_rewind", "masterDB", masterDB.UID, "keeper", followedDB.Spec.KeeperUID)
-		if err := pgm.SyncFromFollowedPGRewind(connParams, p.pgSUPassword); err != nil {
-			// log pg_rewind error and fallback to pg_basebackup
-			log.Errorw("error syncing with pg_rewind", zap.Error(err))
-		} else {
+		if err == nil {
 			pgm.SetRecoveryOptions(p.createRecoveryOptions(pg.RecoveryModeStandby, standbySettings, nil, nil))
 			return nil
 		}
+		// log pg_rewind error and fallback to pg_basebackup
+		log.Errorw("error syncing with pg_rewind", zap.Error(err))
 	}
 
 	version, err := p.pgm.BinaryVersion()
