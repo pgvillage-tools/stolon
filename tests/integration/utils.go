@@ -441,7 +441,7 @@ func (tk *TestKeeper) PGDataVersion() (*semver.Version, error) {
 	scanner.Scan()
 
 	version := scanner.Text()
-	return pg.ParseVersion(version)
+	return semver.NewVersion(version)
 }
 
 func (tk *TestKeeper) GetPrimaryConninfo() (pg.ConnParams, error) {

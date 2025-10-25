@@ -23,7 +23,7 @@ var _ = Describe("Pgversion", func() {
 				{in: "11-beta1", expected: "11.0.0-beta1"},
 			} {
 				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
-				version, err := ParseVersion(test.in)
+				version, err := parseVersion(test.in)
 				Ω(err).NotTo(HaveOccurred())
 				Ω(version.String()).To(Equal(test.expected))
 			}
@@ -36,7 +36,7 @@ var _ = Describe("Pgversion", func() {
 				{in: "1.2.3.4"},
 			} {
 				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
-				version, err := ParseVersion(test.in)
+				version, err := parseVersion(test.in)
 				Ω(err).To(HaveOccurred())
 				Ω(version).To(BeNil())
 			}
@@ -56,9 +56,9 @@ var _ = Describe("Pgversion", func() {
 				{in: "9.6-beta1", ge: "9.5.7-rc1"},
 			} {
 				fmt.Fprintf(GinkgoWriter, "DEBUG - Test: %v\n", test)
-				inVersion, err := ParseVersion(test.in)
+				inVersion, err := parseVersion(test.in)
 				Ω(err).NotTo(HaveOccurred())
-				geVersion, err := ParseVersion(test.ge)
+				geVersion, err := parseVersion(test.ge)
 				Ω(err).NotTo(HaveOccurred())
 				Ω(inVersion.GreaterThanEqual(geVersion)).To(BeTrue())
 			}

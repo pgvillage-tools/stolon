@@ -18,15 +18,10 @@ var (
 	V96 = semver.MustParse("9.6")
 	// V10 represents PostgreSQL 10
 	V10 = semver.MustParse("10")
-	//V11 = semver.MustParse("11")
 	// V12 represents PostgreSQL 12
 	V12 = semver.MustParse("12")
 	// V13 represents PostgreSQL 13
 	V13 = semver.MustParse("13")
-	//V14 = semver.MustParse("14")
-	//V15 = semver.MustParse("15")
-	//V16 = semver.MustParse("16")
-	//V17 = semver.MustParse("17")
 	// V18 represents PostgreSQL 18
 	V18 = semver.MustParse("18")
 )
@@ -34,10 +29,7 @@ var (
 func parseBinaryVersion(v string) (*semver.Version, error) {
 	// extract version (removing beta*, rc* etc...)
 
-	regex, err := regexp.Compile(`.* \(PostgreSQL\) ([0-9\.]+).*`)
-	if err != nil {
-		return nil, err
-	}
+	regex := regexp.MustCompile(`.* \(PostgreSQL\) ([0-9\.]+).*`)
 	m := regex.FindStringSubmatch(v)
 	if len(m) != 2 {
 		return nil, fmt.Errorf("failed to parse postgres binary version: %q", v)
@@ -45,7 +37,7 @@ func parseBinaryVersion(v string) (*semver.Version, error) {
 	return semver.NewVersion(m[1])
 }
 
-func ParseVersion(v string) (*semver.Version, error) {
+func parseVersion(v string) (*semver.Version, error) {
 	return semver.NewVersion(v)
 }
 
@@ -62,7 +54,7 @@ func pgDataVersion(dataDir string) (*semver.Version, error) {
 	scanner.Scan()
 
 	version := scanner.Text()
-	return ParseVersion(version)
+	return parseVersion(version)
 }
 
 func binaryVersion(binPath string) (*semver.Version, error) {
