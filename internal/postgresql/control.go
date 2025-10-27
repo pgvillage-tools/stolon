@@ -21,6 +21,7 @@ import (
 	"strconv"
 )
 
+// GetSystemID is function that fetches the systemID and returns it as a string
 func (p *Manager) GetSystemdID() (string, error) {
 	pgControl, err := os.Open(filepath.Join(p.dataDir, "global", "pg_control"))
 	if err != nil {
@@ -31,5 +32,6 @@ func (p *Manager) GetSystemdID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strconv.FormatUint(systemID, 10), nil
+	const baseTen = 10
+	return strconv.FormatUint(systemID, baseTen), nil
 }

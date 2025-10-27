@@ -281,7 +281,9 @@ func TestGetTimeLinesHistory(t *testing.T) {
 		defer ctrl.Finish()
 
 		pgm := pgmocks.NewMockPGManager(ctrl)
-		pgm.EXPECT().GetTimelinesHistory(timelineID).Return([]*pg.TimelineHistory{}, fmt.Errorf("failed to get timeline history"))
+		pgm.EXPECT().GetTimelinesHistory(timelineID).Return(
+			[]*pg.TimelineHistory{},
+			errors.New("failed to get timeline history"))
 		ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
 
 		if err == nil {
@@ -295,117 +297,122 @@ func TestGetTimeLinesHistory(t *testing.T) {
 		}
 	})
 
-	t.Run("should return timeline history as is if the given length is less than maxPostgresTimelinesHistory", func(t *testing.T) {
-		var timelineID uint64 = 2
-		pgState := &cluster.PostgresState{
-			TimelineID: timelineID,
-		}
+	t.Run(
+		"should return timeline history as is if the given length is less than maxPostgresTimelinesHistory",
+		func(t *testing.T) {
+			var timelineID uint64 = 2
+			pgState := &cluster.PostgresState{
+				TimelineID: timelineID,
+			}
 
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		pgm := pgmocks.NewMockPGManager(ctrl)
-		timelineHistories := []*pg.TimelineHistory{
-			{
-				TimelineID:  1,
-				SwitchPoint: 1,
-				Reason:      "reason1",
-			},
-			{
-				TimelineID:  2,
-				SwitchPoint: 2,
-				Reason:      "reason2",
-			},
-		}
-		pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
-		ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
+			pgm := pgmocks.NewMockPGManager(ctrl)
+			timelineHistories := []*pg.TimelineHistory{
+				{
+					TimelineID:  1,
+					SwitchPoint: 1,
+					Reason:      "reason1",
+				},
+				{
+					TimelineID:  2,
+					SwitchPoint: 2,
+					Reason:      "reason2",
+				},
+			}
+			pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
+			ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
 
-		if err != nil {
-			t.Errorf("err should be not be nil")
-		}
-		if len(ctlsh) != 2 {
-			t.Errorf("expecting length of ctlsh to be 2, but got %d", len(ctlsh))
-		}
-		expectedTimelineHistories := cluster.PostgresTimelinesHistory{
-			&cluster.PostgresTimelineHistory{
-				TimelineID:  1,
-				SwitchPoint: 1,
-				Reason:      "reason1",
-			},
-			&cluster.PostgresTimelineHistory{
-				TimelineID:  2,
-				SwitchPoint: 2,
-				Reason:      "reason2",
-			},
-		}
-		fmt.Println(ctlsh, expectedTimelineHistories)
-		if *ctlsh[0] != *expectedTimelineHistories[0] {
-			t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[0], *ctlsh[0])
-		}
-		if *ctlsh[1] != *expectedTimelineHistories[1] {
-			t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[1], *ctlsh[1])
-		}
-	})
+			if err != nil {
+				t.Errorf("err should be not be nil")
+			}
+			if len(ctlsh) != 2 {
+				t.Errorf("expecting length of ctlsh to be 2, but got %d", len(ctlsh))
+			}
+			expectedTimelineHistories := cluster.PostgresTimelinesHistory{
+				&cluster.PostgresTimelineHistory{
+					TimelineID:  1,
+					SwitchPoint: 1,
+					Reason:      "reason1",
+				},
+				&cluster.PostgresTimelineHistory{
+					TimelineID:  2,
+					SwitchPoint: 2,
+					Reason:      "reason2",
+				},
+			}
+			fmt.Println(ctlsh, expectedTimelineHistories)
+			if *ctlsh[0] != *expectedTimelineHistories[0] {
+				t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[0], *ctlsh[0])
+			}
+			if *ctlsh[1] != *expectedTimelineHistories[1] {
+				t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[1], *ctlsh[1])
+			}
+		})
 
-	t.Run("should return timeline history with last maxPostgresTimelinesHistory elements if timeline history length is greater than maxPostgresTimelinesHistory", func(t *testing.T) {
-		var timelineID uint64 = 4
-		pgState := &cluster.PostgresState{
-			TimelineID: timelineID,
-		}
+	t.Run(
+		// revive:disable-next-line
+		"should return timeline history with last maxPostgresTimelinesHistory elements if timeline history length is greater than maxPostgresTimelinesHistory",
+		func(t *testing.T) {
+			var timelineID uint64 = 4
+			pgState := &cluster.PostgresState{
+				TimelineID: timelineID,
+			}
 
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		pgm := pgmocks.NewMockPGManager(ctrl)
-		timelineHistories := []*pg.TimelineHistory{
-			{
-				TimelineID:  1,
-				SwitchPoint: 1,
-				Reason:      "reason1",
-			},
-			{
-				TimelineID:  2,
-				SwitchPoint: 2,
-				Reason:      "reason2",
-			},
-			{
-				TimelineID:  3,
-				SwitchPoint: 3,
-				Reason:      "reason3",
-			},
-			{
-				TimelineID:  4,
-				SwitchPoint: 4,
-				Reason:      "reason4",
-			},
-		}
-		pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
-		ctlsh, err := getTimeLinesHistory(pgState, pgm, 2)
+			pgm := pgmocks.NewMockPGManager(ctrl)
+			timelineHistories := []*pg.TimelineHistory{
+				{
+					TimelineID:  1,
+					SwitchPoint: 1,
+					Reason:      "reason1",
+				},
+				{
+					TimelineID:  2,
+					SwitchPoint: 2,
+					Reason:      "reason2",
+				},
+				{
+					TimelineID:  3,
+					SwitchPoint: 3,
+					Reason:      "reason3",
+				},
+				{
+					TimelineID:  4,
+					SwitchPoint: 4,
+					Reason:      "reason4",
+				},
+			}
+			pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
+			ctlsh, err := getTimeLinesHistory(pgState, pgm, 2)
 
-		if err != nil {
-			t.Errorf("err should be not be nil")
-		}
-		if len(ctlsh) != 2 {
-			t.Errorf("expecting length of ctlsh to be 2, but got %d", len(ctlsh))
-		}
-		expectedTimelineHistories := cluster.PostgresTimelinesHistory{
-			&cluster.PostgresTimelineHistory{
-				TimelineID:  3,
-				SwitchPoint: 3,
-				Reason:      "reason3",
-			},
-			&cluster.PostgresTimelineHistory{
-				TimelineID:  4,
-				SwitchPoint: 4,
-				Reason:      "reason4",
-			},
-		}
-		fmt.Println(ctlsh, expectedTimelineHistories)
-		if *ctlsh[0] != *expectedTimelineHistories[0] {
-			t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[0], *ctlsh[0])
-		}
-		if *ctlsh[1] != *expectedTimelineHistories[1] {
-			t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[1], *ctlsh[1])
-		}
-	})
+			if err != nil {
+				t.Errorf("err should be not be nil")
+			}
+			if len(ctlsh) != 2 {
+				t.Errorf("expecting length of ctlsh to be 2, but got %d", len(ctlsh))
+			}
+			expectedTimelineHistories := cluster.PostgresTimelinesHistory{
+				&cluster.PostgresTimelineHistory{
+					TimelineID:  3,
+					SwitchPoint: 3,
+					Reason:      "reason3",
+				},
+				&cluster.PostgresTimelineHistory{
+					TimelineID:  4,
+					SwitchPoint: 4,
+					Reason:      "reason4",
+				},
+			}
+			fmt.Println(ctlsh, expectedTimelineHistories)
+			if *ctlsh[0] != *expectedTimelineHistories[0] {
+				t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[0], *ctlsh[0])
+			}
+			if *ctlsh[1] != *expectedTimelineHistories[1] {
+				t.Errorf("expected %v, but got %v ", *expectedTimelineHistories[1], *ctlsh[1])
+			}
+		})
 }
