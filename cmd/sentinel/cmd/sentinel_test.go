@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -97,7 +98,7 @@ func TestUpdateCluster(t *testing.T) {
 				DBs:     cluster.DBs{},
 				Proxy:   &cluster.Proxy{},
 			},
-			err: fmt.Errorf("cannot choose initial master: no keepers registered"),
+			err: errors.New("cannot choose initial master: no keepers registered"),
 		},
 		// #1 cluster initialization, one keeper
 		{
@@ -177,12 +178,13 @@ func TestUpdateCluster(t *testing.T) {
 						Generation: 1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
-							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
-							MaxStandbys:                 cluster.DefaultMaxStandbys * 2,
-							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders * 2,
-							SynchronousReplication:      false,
-							UsePgrewind:                 true,
+							KeeperUID:              "keeper1",
+							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
+							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
+							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders * 2,
+							SynchronousReplication: false,
+							UsePgrewind:            true,
+							// revive:disable-next-line
 							PGParameters:                cluster.PGParameters{"param01": "value01", "param02": "value02"},
 							InitMode:                    cluster.DBInitModeNew,
 							Role:                        common.RoleMaster,
@@ -288,13 +290,16 @@ func TestUpdateCluster(t *testing.T) {
 						Generation: 1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
-							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
-							MaxStandbys:                 cluster.DefaultMaxStandbys * 2,
-							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
-							SynchronousReplication:      false,
-							UsePgrewind:                 true,
-							PGParameters:                cluster.PGParameters{"param01": "value01", "param02": "value02"},
+							KeeperUID:              "keeper1",
+							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
+							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
+							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
+							SynchronousReplication: false,
+							UsePgrewind:            true,
+							PGParameters: cluster.PGParameters{
+								"param01": "value01",
+								"param02": "value02",
+							},
 							InitMode:                    cluster.DBInitModeNew,
 							Role:                        common.RoleMaster,
 							Followers:                   []string{},
@@ -1295,7 +1300,9 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #9 One master and one standby, 3 keepers (one available). Standby ok. No new standby db on free keeper created.
+		// #9 One master and one standby, 3 keepers (one available).
+		// Standby ok.
+		// No new standby db on free keeper created.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -1494,7 +1501,9 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #10 One master and one standby, 3 keepers (one available). Standby failed to converge (keeper healthy). New standby db on free keeper created.
+		// #10 One master and one standby, 3 keepers (one available).
+		// Standby failed to converge (keeper healthy).
+		// New standby db on free keeper created.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -1714,7 +1723,8 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #11 From previous test. new standby db "db3" converged, old standby db removed since exceeds MaxStandbysPerSender.
+		// #11 From previous test.
+		// new standby db "db3" converged, old standby db removed since exceeds MaxStandbysPerSender.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -1935,7 +1945,8 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #12 One master and one standby, 2 keepers. Standby failed to converge (keeper healthy). No standby db created since there's no free keeper.
+		// #12 One master and one standby, 2 keepers. Standby failed to converge (keeper healthy).
+		// No standby db created since there's no free keeper.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -2118,7 +2129,8 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #13 One master and one keeper without db assigned. keeper2 dead for more then DeadKeeperRemovalInterval: keeper2 removed.
+		// #13 One master and one keeper without db assigned.
+		// keeper2 dead for more then DeadKeeperRemovalInterval: keeper2 removed.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -2243,7 +2255,8 @@ func TestUpdateCluster(t *testing.T) {
 				},
 			},
 		},
-		// #14 Changed clusterSpec parameters. RequestTimeout, MaxStandbys, UsePgrewind, PGParameters should bet updated in the DBSpecs.
+		// #14 Changed clusterSpec parameters.
+		// RequestTimeout, MaxStandbys, UsePgrewind, PGParameters should bet updated in the DBSpecs.
 		{
 			cd: &cluster.ClusterData{
 				Cluster: &cluster.Cluster{
@@ -2391,14 +2404,17 @@ func TestUpdateCluster(t *testing.T) {
 						Generation: 2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
-							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
-							MaxStandbys:                 cluster.DefaultMaxStandbys * 2,
-							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders * 2,
-							InitMode:                    cluster.DBInitModeNone,
-							SynchronousReplication:      true,
-							UsePgrewind:                 true,
-							PGParameters:                cluster.PGParameters{"param01": "value01", "param02": "value02"},
+							KeeperUID:              "keeper1",
+							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
+							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
+							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders * 2,
+							InitMode:               cluster.DBInitModeNone,
+							SynchronousReplication: true,
+							UsePgrewind:            true,
+							PGParameters: cluster.PGParameters{
+								"param01": "value01",
+								"param02": "value02",
+							},
 							Role:                        common.RoleMaster,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},

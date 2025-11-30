@@ -16,6 +16,7 @@ package postgresql
 
 import (
 	"fmt"
+	"maps"
 	"net/url"
 	"reflect"
 	"sort"
@@ -25,21 +26,21 @@ import (
 
 // This is based on github.com/lib/pq
 
-type ConnParams map[string]string
+type ConnParams map[ConnParamKey]string
 
-func (cp ConnParams) Set(k, v string) {
+func (cp ConnParams) Set(k ConnParamKey, v string) {
 	cp[k] = v
 }
 
-func (cp ConnParams) Get(k string) (v string) {
+func (cp ConnParams) Get(k ConnParamKey) (v string) {
 	return cp[k]
 }
 
-func (cp ConnParams) Del(k string) {
+func (cp ConnParams) Del(k ConnParamKey) {
 	delete(cp, k)
 }
 
-func (cp ConnParams) Isset(k string) bool {
+func (cp ConnParams) Isset(k ConnParamKey) bool {
 	_, ok := cp[k]
 	return ok
 }
@@ -127,7 +128,7 @@ func ParseConnString(name string) (ConnParams, error) {
 		// Skip any whitespace after the =
 		if r, ok = s.SkipSpaces(); !ok {
 			// If we reach the end here, the last value is just an empty string as per libpq.
-			p.Set(string(keyRunes), "")
+			p.Set(ConnParamKey(ConnParamKey(keyRunes)), "")
 			break
 		}
 
@@ -162,7 +163,7 @@ func ParseConnString(name string) (ConnParams, error) {
 			}
 		}
 
-		p.Set(string(keyRunes), string(valRunes))
+		p.Set(ConnParamKey(keyRunes), string(valRunes))
 	}
 
 	return p, nil
@@ -201,7 +202,7 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 
 	q := u.Query()
 	for k := range q {
-		p.Set(k, q.Get(k))
+		p.Set(ConnParamKey(k), q.Get(k))
 	}
 
 	return p, nil
@@ -214,9 +215,15 @@ func (p ConnParams) ConnString() string {
 	escaper := strings.NewReplacer(` `, `\ `, `'`, `\'`, `\`, `\\`)
 	for k, v := range p {
 		if v != "" {
-			kvs = append(kvs, k+"="+escaper.Replace(v))
+			kvs = append(kvs, fmt.Sprintf("%s=%s", k, "="+escaper.Replace(v)))
 		}
 	}
 	sort.Strings(kvs)
 	return strings.Join(kvs, " ")
+}
+
+func (p ConnParams) WithUser(userName string) ConnParams {
+	q := maps.Clone(p)
+	q["user"] = userName
+	return q
 }
