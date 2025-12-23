@@ -730,7 +730,7 @@ func (s *Sentinel) dbStatus(cd *cluster.ClusterData, dbUID string) dbStatus {
 	convergenceTimeout := cd.Cluster.DefSpec().ConvergenceTimeout.Duration
 	// check if db should be in init mode and adjust convergence timeout
 	if db.Generation == cluster.InitialGeneration {
-		if db.Spec.InitMode == cluster.DBInitModeResync {
+		if db.Spec.InitMode == cluster.ResyncDB {
 			convergenceTimeout = cd.Cluster.DefSpec().SyncTimeout.Duration
 		}
 	}
@@ -960,7 +960,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					Generation: cluster.InitialGeneration,
 					Spec: &cluster.DBSpec{
 						KeeperUID:     k.UID,
-						InitMode:      cluster.DBInitModeNew,
+						InitMode:      cluster.NewDB,
 						NewConfig:     clusterSpec.NewConfig,
 						Role:          common.RoleMaster,
 						Followers:     []string{},
@@ -981,7 +981,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					if db.Status.Healthy {
 						log.Infow("db initialized", "db", db.UID, "keeper", db.Spec.KeeperUID)
 						// Set db initMode to none, not needed but just a security measure
-						db.Spec.InitMode = cluster.DBInitModeNone
+						db.Spec.InitMode = cluster.NoDB
 						// Don't include previous config anymore
 						db.Spec.IncludeConfig = false
 
@@ -1002,7 +1002,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					newcd.Cluster.Status.Master = ""
 				}
 			}
-		case cluster.Existing:
+		case cluster.ExistingCluster:
 			if cd.Cluster.Status.Master == "" {
 				wantedKeeper := clusterSpec.ExistingConfig.KeeperUID
 				log.Infow("trying to use keeper as initial master", "keeper", wantedKeeper)
@@ -1019,7 +1019,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					Generation: cluster.InitialGeneration,
 					Spec: &cluster.DBSpec{
 						KeeperUID:     k.UID,
-						InitMode:      cluster.DBInitModeExisting,
+						InitMode:      cluster.ExistingDB,
 						Role:          common.RoleMaster,
 						Followers:     []string{},
 						IncludeConfig: *clusterSpec.MergePgParameters,
@@ -1037,7 +1037,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 				if db.Status.Healthy && s.dbConvergenceState(db, clusterSpec.ConvergenceTimeout.Duration) == Converged {
 					log.Infow("db initialized", "db", db.UID, "keeper", db.Spec.KeeperUID)
 					// Set db initMode to none, not needed but just a security measure
-					db.Spec.InitMode = cluster.DBInitModeNone
+					db.Spec.InitMode = cluster.NoDB
 					// Don't include previous config anymore
 					db.Spec.IncludeConfig = false
 					// Replace reported pg parameters in cluster spec
@@ -1072,7 +1072,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					Generation: cluster.InitialGeneration,
 					Spec: &cluster.DBSpec{
 						KeeperUID:     k.UID,
-						InitMode:      cluster.DBInitModePITR,
+						InitMode:      cluster.PITRDB,
 						PITRConfig:    clusterSpec.PITRConfig,
 						Role:          role,
 						FollowConfig:  followConfig,
@@ -1095,7 +1095,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					if db.Status.Healthy {
 						log.Infow("db initialized", "db", db.UID, "keeper", db.Spec.KeeperUID)
 						// Set db initMode to none, not needed but just a security measure
-						db.Spec.InitMode = cluster.DBInitModeNone
+						db.Spec.InitMode = cluster.NoDB
 						// Don't include previous config anymore
 						db.Spec.IncludeConfig = false
 
@@ -1381,7 +1381,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 
 				// Clean InitMode for goodStandbys
 				for _, db := range goodStandbys {
-					db.Spec.InitMode = cluster.DBInitModeNone
+					db.Spec.InitMode = cluster.NoDB
 				}
 
 				// Setup synchronous standbys
@@ -1798,7 +1798,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 							Generation: cluster.InitialGeneration,
 							Spec: &cluster.DBSpec{
 								KeeperUID: freeKeeper.UID,
-								InitMode:  cluster.DBInitModeResync,
+								InitMode:  cluster.ResyncDB,
 								Role:      common.RoleStandby,
 								Followers: []string{},
 								FollowConfig: &cluster.FollowConfig{

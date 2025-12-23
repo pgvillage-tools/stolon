@@ -30,6 +30,7 @@ import (
 	"github.com/sorintlab/stolon/internal/common"
 	pg "github.com/sorintlab/stolon/internal/postgresql"
 	"github.com/sorintlab/stolon/internal/store"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 const (
@@ -131,7 +132,7 @@ type optionSetter func(*cluster.ClusterSpec)
 func withMinSync0(minSync0 bool) optionSetter {
 	return func(s *cluster.ClusterSpec) {
 		if minSync0 {
-			s.MinSynchronousStandbys = cluster.Uint16P(0)
+			s.MinSynchronousStandbys = util.ToPtr(uint16(0))
 		}
 	}
 }
@@ -152,9 +153,9 @@ func setupServers(
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 			FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 			ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
-			MaxStandbyLag:          cluster.Uint32P(50 * 1024), // limit lag to 50kiB
-			SynchronousReplication: cluster.BoolP(syncRepl),
-			UsePgrewind:            cluster.BoolP(usePgrewind),
+			MaxStandbyLag:          util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
+			SynchronousReplication: util.ToPtr(syncRepl),
+			UsePgrewind:            util.ToPtr(usePgrewind),
 			PGParameters:           defaultPGParameters,
 		}
 	} else {
@@ -176,8 +177,8 @@ func setupServers(
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 			FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 			ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
-			MaxStandbyLag:          cluster.Uint32P(50 * 1024), // limit lag to 50kiB
-			SynchronousReplication: cluster.BoolP(syncRepl),
+			MaxStandbyLag:          util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
+			SynchronousReplication: util.ToPtr(syncRepl),
 			PGParameters:           defaultPGParameters,
 			PITRConfig: &cluster.PITRConfig{
 				DataRestoreCommand: fmt.Sprintf(
@@ -254,17 +255,17 @@ func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSe
 	return tks, tss, tp, tstore
 }
 
-func populate(t *testing.T, tk *TestKeeper) error {
+func populate(_ *testing.T, tk *TestKeeper) error {
 	_, err := tk.Exec("CREATE TABLE table01(ID INT PRIMARY KEY NOT NULL, VALUE INT NOT NULL)")
 	return err
 }
 
-func write(t *testing.T, tk *TestKeeper, id, value int) error {
+func write(_ *testing.T, tk *TestKeeper, id, value int) error {
 	_, err := tk.Exec("INSERT INTO table01 VALUES ($1, $2)", id, value)
 	return err
 }
 
-func getLines(t *testing.T, q Querier) (int, error) {
+func getLines(_ *testing.T, q Querier) (int, error) {
 	rows, err := q.Query("SELECT FROM table01")
 	if err != nil {
 		return 0, err
@@ -1326,7 +1327,7 @@ func TestFailedStandby(t *testing.T) {
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:   &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbysPerSender: cluster.Uint16P(1),
+		MaxStandbysPerSender: util.ToPtr(uint16(1)),
 		PGParameters:         defaultPGParameters,
 	}
 
@@ -1417,7 +1418,7 @@ func TestLoweredMaxStandbysPerSender(t *testing.T) {
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:   &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbysPerSender: cluster.Uint16P(2),
+		MaxStandbysPerSender: util.ToPtr(uint16(2)),
 		PGParameters:         defaultPGParameters,
 	}
 
@@ -1484,7 +1485,7 @@ func TestKeeperRemoval(t *testing.T) {
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
 		// very low DeadKeeperRemovalInterval to test this behavior
 		DeadKeeperRemovalInterval: &cluster.Duration{Duration: 10 * time.Second},
-		MaxStandbysPerSender:      cluster.Uint16P(1),
+		MaxStandbysPerSender:      util.ToPtr(uint16(1)),
 		PGParameters:              defaultPGParameters,
 	}
 
@@ -1590,8 +1591,8 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
-		SynchronousReplication: cluster.BoolP(syncRepl),
-		MaxSynchronousStandbys: cluster.Uint16P(3),
+		SynchronousReplication: util.ToPtr(syncRepl),
+		MaxSynchronousStandbys: util.ToPtr(uint16(3)),
 		PGParameters:           defaultPGParameters,
 	}
 
@@ -2186,7 +2187,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbyLag:          cluster.Uint32P(50 * 1024), // limit lag to 50kiB
+		MaxStandbyLag:          util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
 		SynchronousReplication: &syncRep,
 		UsePgrewind:            &usePgRewind,
 		PGParameters:           defaultPGParameters,

@@ -26,6 +26,7 @@ import (
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/store"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 func TestInit(t *testing.T) {
@@ -431,7 +432,7 @@ func TestInitialClusterSpec(t *testing.T) {
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
-		SynchronousReplication: cluster.BoolP(true),
+		SynchronousReplication: util.ToPtr(true),
 		PGParameters:           defaultPGParameters,
 	}
 	initialClusterSpecFile, err := writeClusterSpec(dir, initialClusterSpec)
