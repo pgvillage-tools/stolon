@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cluster defines all resources used at the cluster level
 package cluster
 
 import (
@@ -24,19 +25,9 @@ import (
 
 	"github.com/mitchellh/copystructure"
 	"github.com/sorintlab/stolon/internal/common"
-	util "github.com/sorintlab/stolon/internal/postgresql"
+	"github.com/sorintlab/stolon/internal/postgresql"
+	"github.com/sorintlab/stolon/internal/util"
 )
-
-func Uint16P(u uint16) *uint16 {
-	return &u
-}
-func Uint32P(u uint32) *uint32 {
-	return &u
-}
-
-func BoolP(b bool) *bool {
-	return &b
-}
 
 const (
 	CurrentCDFormatVersion uint64 = 1
@@ -121,7 +112,7 @@ const (
 	Replica Role = "standby"
 )
 
-// InitMode is an enum for the init mode that a Keeper is in
+// InitMode is an enum for the init mode that a Cluster is in
 type InitMode string
 
 const (
@@ -129,30 +120,34 @@ const (
 	New InitMode = "new"
 	// PITR initializes a cluster doing a point in time recovery on a keeper.
 	PITR InitMode = "pitr"
-	// Existing reuses an already Initialized cluster
-	Existing InitMode = "existing"
+	// ExistingCluster reuses an already Initialized cluster
+	ExistingCluster InitMode = "existing"
 )
 
+// DBInitMode is an enum for the init mode that a database is in
 type DBInitMode string
 
 const (
-	DBInitModeNone DBInitMode = "none"
-	// Use existing db cluster data
-	DBInitModeExisting DBInitMode = "existing"
-	// Initialize a db starting from a freshly initialized database cluster
-	DBInitModeNew DBInitMode = "new"
-	// Initialize a db doing a point in time recovery
-	DBInitModePITR DBInitMode = "pitr"
-	// Initialize a db doing a resync to a target database cluster
-	DBInitModeResync DBInitMode = "resync"
+	// NoDB does not initialize a database
+	NoDB DBInitMode = "none"
+	// ExistingDB reuses the existing db
+	ExistingDB DBInitMode = "existing"
+	// NewDB initializes a new database
+	NewDB DBInitMode = "new"
+	// PITRDB initialized a database using Point in time Recovery
+	PITRDB DBInitMode = "pitr"
+	// ResyncDB syncs a database from another source
+	ResyncDB DBInitMode = "resync"
 )
 
+// NewConfig  defines the config for a new Cluster
 type NewConfig struct {
 	Locale        string `json:"locale,omitempty"`
 	Encoding      string `json:"encoding,omitempty"`
 	DataChecksums bool   `json:"dataChecksums,omitempty"`
 }
 
+// PITRConfig defines the config for restoring using Point in time Recovery
 type PITRConfig struct {
 	// DataRestoreCommand defines the command to execute for restoring the db
 	// cluster data). %d is replaced with the full path to the db cluster
@@ -162,11 +157,12 @@ type PITRConfig struct {
 	RecoveryTargetSettings  *RecoveryTargetSettings  `json:"recoveryTargetSettings,omitempty"`
 }
 
+// ExistingConfig defines the config for resuing an existing DB
 type ExistingConfig struct {
 	KeeperUID string `json:"keeperUID,omitempty"`
 }
 
-// Standby config when role is standby
+// StandbyConfig defines the config to be used for Replicas
 type StandbyConfig struct {
 	StandbySettings         *StandbySettings         `json:"standbySettings,omitempty"`
 	ArchiveRecoverySettings *ArchiveRecoverySettings `json:"archiveRecoverySettings,omitempty"`
@@ -203,10 +199,6 @@ const (
 	// Allow access from standby server IPs only
 	SUReplAccessStrict SUReplAccessMode = "strict"
 )
-
-func SUReplAccessModeP(s SUReplAccessMode) *SUReplAccessMode {
-	return &s
-}
 
 type ClusterSpec struct {
 	// Interval to wait before next check
@@ -373,31 +365,31 @@ func (os *ClusterSpec) WithDefaults() *ClusterSpec {
 		s.ProxyTimeout = &Duration{Duration: DefaultProxyTimeout}
 	}
 	if s.MaxStandbys == nil {
-		s.MaxStandbys = Uint16P(DefaultMaxStandbys)
+		s.MaxStandbys = util.ToPtr(DefaultMaxStandbys)
 	}
 	if s.MaxStandbysPerSender == nil {
-		s.MaxStandbysPerSender = Uint16P(DefaultMaxStandbysPerSender)
+		s.MaxStandbysPerSender = util.ToPtr(DefaultMaxStandbysPerSender)
 	}
 	if s.MaxStandbyLag == nil {
-		s.MaxStandbyLag = Uint32P(DefaultMaxStandbyLag)
+		s.MaxStandbyLag = util.ToPtr(uint32(DefaultMaxStandbyLag))
 	}
 	if s.SynchronousReplication == nil {
-		s.SynchronousReplication = BoolP(DefaultSynchronousReplication)
+		s.SynchronousReplication = util.ToPtr(DefaultSynchronousReplication)
 	}
 	if s.UsePgrewind == nil {
-		s.UsePgrewind = BoolP(DefaultUsePgrewind)
+		s.UsePgrewind = util.ToPtr(DefaultUsePgrewind)
 	}
 	if s.MinSynchronousStandbys == nil {
-		s.MinSynchronousStandbys = Uint16P(DefaultMinSynchronousStandbys)
+		s.MinSynchronousStandbys = util.ToPtr(DefaultMinSynchronousStandbys)
 	}
 	if s.MaxSynchronousStandbys == nil {
-		s.MaxSynchronousStandbys = Uint16P(DefaultMaxSynchronousStandbys)
+		s.MaxSynchronousStandbys = util.ToPtr(DefaultMaxSynchronousStandbys)
 	}
 	if s.AdditionalWalSenders == nil {
-		s.AdditionalWalSenders = Uint16P(DefaultAdditionalWalSenders)
+		s.AdditionalWalSenders = util.ToPtr(uint16(DefaultAdditionalWalSenders))
 	}
 	if s.MergePgParameters == nil {
-		s.MergePgParameters = BoolP(DefaultMergePGParameter)
+		s.MergePgParameters = util.ToPtr(DefaultMergePGParameter)
 	}
 	if s.DefaultSUReplAccessMode == nil {
 		v := DefaultSUReplAccess
@@ -408,7 +400,7 @@ func (os *ClusterSpec) WithDefaults() *ClusterSpec {
 		s.Role = &v
 	}
 	if s.AutomaticPgRestart == nil {
-		s.AutomaticPgRestart = BoolP(DefaultAutomaticPgRestart)
+		s.AutomaticPgRestart = util.ToPtr(DefaultAutomaticPgRestart)
 	}
 	return s
 }
@@ -482,7 +474,7 @@ func (os *ClusterSpec) Validate() error {
 		if *s.Role == Replica {
 			return fmt.Errorf("invalid cluster role standby when initMode is \"new\"")
 		}
-	case Existing:
+	case ExistingCluster:
 		if s.ExistingConfig == nil {
 			return fmt.Errorf("existingConfig undefined. Required when initMode is \"existing\"")
 		}
@@ -524,7 +516,7 @@ func (os *ClusterSpec) Validate() error {
 }
 
 func validateReplicationSlot(replicationSlot string) error {
-	if !util.IsValidReplSlotName(replicationSlot) {
+	if !postgresql.IsValidReplSlotName(replicationSlot) {
 		return fmt.Errorf("wrong replication slot name: %q", replicationSlot)
 	}
 	if common.IsStolonName(replicationSlot) {

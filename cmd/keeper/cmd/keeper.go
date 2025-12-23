@@ -1280,7 +1280,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 		p.waitSyncStandbysSynced = false
 
 		switch db.Spec.InitMode {
-		case cluster.DBInitModeNew:
+		case cluster.NewDB:
 			log.Infow("initializing the database cluster")
 			ndbls := &DBLocalState{
 				UID: db.UID,
@@ -1350,7 +1350,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 				log.Errorw(errorMsgPgInst, zap.Error(err))
 				return
 			}
-		case cluster.DBInitModePITR:
+		case cluster.PITRDB:
 			log.Infow("restoring the database cluster")
 			ndbls := &DBLocalState{
 				UID: db.UID,
@@ -1432,7 +1432,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 				return
 			}
 
-		case cluster.DBInitModeResync:
+		case cluster.ResyncDB:
 			log.Infow("resyncing the database cluster")
 			ndbls := &DBLocalState{
 				// replace our current db uid with the required one.
@@ -1543,7 +1543,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 				}
 			}
 
-		case cluster.DBInitModeExisting:
+		case cluster.ExistingDB:
 			ndbls := &DBLocalState{
 				// replace our current db uid with the required one.
 				UID: db.UID,
@@ -1589,7 +1589,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 				log.Errorw(errorMsgPgInst, zap.Error(err))
 				return
 			}
-		case cluster.DBInitModeNone:
+		case cluster.NoDB:
 			// revive:disable-next-line
 			log.Errorw("different local dbUID but init mode is none, this shouldn't happen. Something bad happened to the keeper data. Check that keeper data is on a persistent volume and that the keeper state files weren't removed")
 			return
