@@ -45,7 +45,7 @@ func (m *MockStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cluste
 }
 
 // AtomicPutClusterData indicates an expected call of AtomicPutClusterData
-func (mr *MockStoreMockRecorder) AtomicPutClusterData(ctx, cd, previous interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) AtomicPutClusterData(ctx, cd, previous any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AtomicPutClusterData", reflect.TypeOf((*MockStore)(nil).AtomicPutClusterData), ctx, cd, previous)
 }
 
@@ -57,7 +57,7 @@ func (m *MockStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData)
 }
 
 // PutClusterData indicates an expected call of PutClusterData
-func (mr *MockStoreMockRecorder) PutClusterData(ctx, cd interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) PutClusterData(ctx, cd any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutClusterData", reflect.TypeOf((*MockStore)(nil).PutClusterData), ctx, cd)
 }
 
@@ -71,7 +71,7 @@ func (m *MockStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *
 }
 
 // GetClusterData indicates an expected call of GetClusterData
-func (mr *MockStoreMockRecorder) GetClusterData(ctx interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetClusterData(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterData", reflect.TypeOf((*MockStore)(nil).GetClusterData), ctx)
 }
 
@@ -83,7 +83,7 @@ func (m *MockStore) SetKeeperInfo(ctx context.Context, id string, ms *cluster.Ke
 }
 
 // SetKeeperInfo indicates an expected call of SetKeeperInfo
-func (mr *MockStoreMockRecorder) SetKeeperInfo(ctx, id, ms, ttl interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) SetKeeperInfo(ctx, id, ms, ttl any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKeeperInfo", reflect.TypeOf((*MockStore)(nil).SetKeeperInfo), ctx, id, ms, ttl)
 }
 
@@ -96,7 +96,7 @@ func (m *MockStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, er
 }
 
 // GetKeepersInfo indicates an expected call of GetKeepersInfo
-func (mr *MockStoreMockRecorder) GetKeepersInfo(ctx interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetKeepersInfo(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeepersInfo", reflect.TypeOf((*MockStore)(nil).GetKeepersInfo), ctx)
 }
 
@@ -108,7 +108,7 @@ func (m *MockStore) SetSentinelInfo(ctx context.Context, si *cluster.SentinelInf
 }
 
 // SetSentinelInfo indicates an expected call of SetSentinelInfo
-func (mr *MockStoreMockRecorder) SetSentinelInfo(ctx, si, ttl interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) SetSentinelInfo(ctx, si, ttl any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSentinelInfo", reflect.TypeOf((*MockStore)(nil).SetSentinelInfo), ctx, si, ttl)
 }
 
@@ -121,7 +121,7 @@ func (m *MockStore) GetSentinelsInfo(ctx context.Context) (cluster.SentinelsInfo
 }
 
 // GetSentinelsInfo indicates an expected call of GetSentinelsInfo
-func (mr *MockStoreMockRecorder) GetSentinelsInfo(ctx interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetSentinelsInfo(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentinelsInfo", reflect.TypeOf((*MockStore)(nil).GetSentinelsInfo), ctx)
 }
 
@@ -133,7 +133,7 @@ func (m *MockStore) SetProxyInfo(ctx context.Context, pi *cluster.ProxyInfo, ttl
 }
 
 // SetProxyInfo indicates an expected call of SetProxyInfo
-func (mr *MockStoreMockRecorder) SetProxyInfo(ctx, pi, ttl interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) SetProxyInfo(ctx, pi, ttl any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProxyInfo", reflect.TypeOf((*MockStore)(nil).SetProxyInfo), ctx, pi, ttl)
 }
 
@@ -146,7 +146,7 @@ func (m *MockStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, er
 }
 
 // GetProxiesInfo indicates an expected call of GetProxiesInfo
-func (mr *MockStoreMockRecorder) GetProxiesInfo(ctx interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetProxiesInfo(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProxiesInfo", reflect.TypeOf((*MockStore)(nil).GetProxiesInfo), ctx)
 }
 

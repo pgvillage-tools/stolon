@@ -6120,7 +6120,7 @@ func TestUpdateCluster(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: make(map[string]*DBConvergenceInfo)}
+		s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: map[string]*DBConvergenceInfo{}}
 
 		// reset curUID func value to latest db uid
 		curUID = 0
@@ -6184,22 +6184,31 @@ func TestActiveProxiesInfos(t *testing.T) {
 			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
 		},
 		{
-			name:                       "should update to histories if infoUID is different",
-			proxyInfoHistories:         ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()}},
+			name: "should update to histories if infoUID is different",
+			proxyInfoHistories: ProxyInfoHistories{
+				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
+				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
+			},
 			proxiesInfos:               cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfoWithDifferentInfoUID},
 			expectedActiveProxies:      cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfoWithDifferentInfoUID},
 			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfoWithDifferentInfoUID}},
 		},
 		{
-			name:                       "should remove from active proxies if is not updated for twice the DefaultProxyTimeout",
-			proxyInfoHistories:         ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now() - (3 * 15 * secToNanoSecondMultiplier)}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now() - (1 * 15 * secToNanoSecondMultiplier)}},
+			name: "should remove from active proxies if is not updated for twice the DefaultProxyTimeout",
+			proxyInfoHistories: ProxyInfoHistories{
+				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now() - (3 * 15 * secToNanoSecondMultiplier)},
+				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now() - (1 * 15 * secToNanoSecondMultiplier)},
+			},
 			proxiesInfos:               cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfo2},
 			expectedActiveProxies:      cluster.ProxiesInfo{"proxy2": &proxyInfo2},
 			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
 		},
 		{
-			name:                       "should remove proxy from sentinel's local history if the proxy is removed in store",
-			proxyInfoHistories:         ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()}},
+			name: "should remove proxy from sentinel's local history if the proxy is removed in store",
+			proxyInfoHistories: ProxyInfoHistories{
+				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
+				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
+			},
 			proxiesInfos:               cluster.ProxiesInfo{"proxy2": &proxyInfo2},
 			expectedActiveProxies:      cluster.ProxiesInfo{"proxy2": &proxyInfo2},
 			expectedProxyInfoHistories: ProxyInfoHistories{"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
@@ -6207,7 +6216,7 @@ func TestActiveProxiesInfos(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: make(map[string]*DBConvergenceInfo), proxyInfoHistories: test.proxyInfoHistories}
+			s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: map[string]*DBConvergenceInfo{}, proxyInfoHistories: test.proxyInfoHistories}
 			actualActiveProxies := s.activeProxiesInfos(test.proxiesInfos)
 
 			if !reflect.DeepEqual(actualActiveProxies, test.expectedActiveProxies) {
@@ -6242,7 +6251,7 @@ func testUIDFn() string {
 	return fmt.Sprintf("%s%d", "db", curUID)
 }
 
-func testRandFn(i int) int {
+func testRandFn(_ int) int {
 	return 0
 }
 
@@ -6259,5 +6268,4 @@ func testEqualCD(cd1, cd2 *cluster.ClusterData) bool {
 		cd.Proxy.ChangeTime = time.Time{}
 	}
 	return reflect.DeepEqual(cd1, cd2)
-
 }

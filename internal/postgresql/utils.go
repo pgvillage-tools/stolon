@@ -77,11 +77,11 @@ func handledFileRemove(fh *os.File) {
 	handledFileClose(fh)
 }
 
-func dbExec(ctx context.Context, db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
+func dbExec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Result, error) {
 	return db.ExecContext(ctx, query, args...)
 }
 
-func query(ctx context.Context, db *sql.DB, query string, args ...interface{}) (*sql.Rows, error) {
+func query(ctx context.Context, db *sql.DB, query string, args ...any) (*sql.Rows, error) {
 	return db.QueryContext(ctx, query, args...)
 }
 

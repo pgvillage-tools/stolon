@@ -21,7 +21,6 @@ import (
 	"os"
 
 	keepercmd "github.com/sorintlab/stolon/cmd/keeper/cmd"
-	proxycmd "github.com/sorintlab/stolon/cmd/proxy/cmd"
 	sentinelcmd "github.com/sorintlab/stolon/cmd/sentinel/cmd"
 	stolonctlcmd "github.com/sorintlab/stolon/cmd/stolonctl/cmd"
 
@@ -44,7 +43,7 @@ func main() {
 	if err := doc.GenMarkdownTree(sentinelcmd.CmdSentinel, outDir); err != nil {
 		log.Fatal(err)
 	}
-	if err := doc.GenMarkdownTree(proxycmd.CmdProxy, outDir); err != nil {
+	if err := doc.GenMarkdownTree(proxycmd.cmdProxy, outDir); err != nil {
 		log.Fatal(err)
 	}
 	if err := doc.GenMarkdownTree(stolonctlcmd.CmdStolonCtl, outDir); err != nil {

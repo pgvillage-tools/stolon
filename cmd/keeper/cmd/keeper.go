@@ -338,7 +338,7 @@ func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnPara
 	return cp
 }
 
-func (p *PostgresKeeper) getReplConnParams(db, followedDB *cluster.DB) pg.ConnParams {
+func (p *PostgresKeeper) getReplConnParams() pg.ConnParams {
 	cp := pg.ConnParams{}.
 		WithUser(p.pgReplUsername)
 	/*
@@ -971,7 +971,7 @@ func (p *PostgresKeeper) Start(ctx context.Context) {
 
 func (p *PostgresKeeper) resync(db, masterDB, followedDB *cluster.DB, tryPgrewind bool) error {
 	pgm := p.pgm
-	replConnParams := p.getReplConnParams(db, followedDB)
+	replConnParams := p.getReplConnParams()
 	standbySettings := &cluster.StandbySettings{
 		PrimaryConninfo: replConnParams.ConnString(),
 		PrimarySlotName: common.StolonName(db.UID)}
@@ -1699,12 +1699,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 		case cluster.FollowTypeInternal:
 			followedUID := db.Spec.FollowConfig.DBUID
 			log.Infow("our db requested role is standby", followedStr, followedUID)
-			followedDB, ok := cd.DBs[followedUID]
-			if !ok {
-				log.Errorw("no db data available for followed db", followedStr, followedUID)
-				return
-			}
-			replConnParams := p.getReplConnParams(db, followedDB)
+			replConnParams := p.getReplConnParams()
 			standbySettings = &cluster.StandbySettings{
 				PrimaryConninfo: replConnParams.ConnString(),
 				PrimarySlotName: common.StolonName(db.UID)}
@@ -1736,13 +1731,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			// Update our primary_conninfo if replConnString changed
 			switch db.Spec.FollowConfig.Type {
 			case cluster.FollowTypeInternal:
-				followedUID := db.Spec.FollowConfig.DBUID
-				followedDB, ok := cd.DBs[followedUID]
-				if !ok {
-					log.Errorw("no db data available for followed db", followedStr, followedUID)
-					return
-				}
-				newReplConnParams := p.getReplConnParams(db, followedDB)
+				newReplConnParams := p.getReplConnParams()
 				log.Debugw("newReplConnParams", "newReplConnParams", newReplConnParams)
 
 				standbySettings := &cluster.StandbySettings{

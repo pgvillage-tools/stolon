@@ -82,19 +82,19 @@ func Execute() {
 	}
 }
 
-func stderr(format string, a ...interface{}) {
+func stderr(format string, a ...any) {
 	out := fmt.Sprintf(format, a...)
 	fmt.Fprintln(os.Stderr, strings.TrimSuffix(out, "\n"))
 }
 
-func stdout(format string, a ...interface{}) {
+func stdout(format string, a ...any) {
 	out := fmt.Sprintf(format, a...)
 	if _, err := fmt.Fprintln(os.Stdout, strings.TrimSuffix(out, "\n")); err != nil {
 		log.Fatalf("failed to write to stdout: %v", err)
 	}
 }
 
-func die(format string, a ...interface{}) {
+func die(format string, a ...any) {
 	stderr(format, a...)
 	os.Exit(1)
 }

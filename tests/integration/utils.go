@@ -72,12 +72,12 @@ func pgParametersWithDefaults(p cluster.PGParameters) cluster.PGParameters {
 }
 
 type Querier interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Exec(query string, args ...any) (sql.Result, error)
+	Query(query string, args ...any) (*sql.Rows, error)
 }
 
 type ReplQuerier interface {
-	ReplQuery(query string, args ...interface{}) (*sql.Rows, error)
+	ReplQuery(query string, args ...any) (*sql.Rows, error)
 }
 
 func GetPGParameters(q Querier) (common.Parameters, error) {
@@ -474,7 +474,7 @@ func (tk *TestKeeper) GetPrimaryConninfo() (pg.ConnParams, error) {
 	return nil, nil
 }
 
-func (tk *TestKeeper) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (tk *TestKeeper) Exec(query string, args ...any) (sql.Result, error) {
 	res, err := tk.db.Exec(query, args...)
 	if err != nil {
 		return nil, err
@@ -483,7 +483,7 @@ func (tk *TestKeeper) Exec(query string, args ...interface{}) (sql.Result, error
 	return res, nil
 }
 
-func (tk *TestKeeper) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (tk *TestKeeper) Query(query string, args ...any) (*sql.Rows, error) {
 	res, err := tk.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -492,7 +492,7 @@ func (tk *TestKeeper) Query(query string, args ...interface{}) (*sql.Rows, error
 	return res, nil
 }
 
-func (tk *TestKeeper) ReplQuery(query string, args ...interface{}) (*sql.Rows, error) {
+func (tk *TestKeeper) ReplQuery(query string, args ...any) (*sql.Rows, error) {
 	res, err := tk.rdb.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -848,7 +848,7 @@ func (tp *TestProxy) WaitNotListening(timeout time.Duration) error {
 	return fmt.Errorf("timeout")
 }
 
-func (tp *TestProxy) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (tp *TestProxy) Exec(query string, args ...any) (sql.Result, error) {
 	res, err := tp.db.Exec(query, args...)
 	if err != nil {
 		return nil, err
@@ -857,7 +857,7 @@ func (tp *TestProxy) Exec(query string, args ...interface{}) (sql.Result, error)
 	return res, nil
 }
 
-func (tp *TestProxy) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (tp *TestProxy) Query(query string, args ...any) (*sql.Rows, error) {
 	res, err := tp.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -866,7 +866,7 @@ func (tp *TestProxy) Query(query string, args ...interface{}) (*sql.Rows, error)
 	return res, nil
 }
 
-func (tp *TestProxy) ReplQuery(query string, args ...interface{}) (*sql.Rows, error) {
+func (tp *TestProxy) ReplQuery(query string, args ...any) (*sql.Rows, error) {
 	res, err := tp.rdb.Query(query, args...)
 	if err != nil {
 		return nil, err

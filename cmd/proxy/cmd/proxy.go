@@ -40,6 +40,7 @@ import (
 
 var log = slog.S()
 
+// CmdProxy is the cobra command which defines running stolon-proxy
 var CmdProxy = &cobra.Command{
 	Use:     "stolon-proxy",
 	Run:     proxy,

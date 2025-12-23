@@ -356,7 +356,6 @@ func (s *Sentinel) updateKeepersStatus(
 		} else {
 			s.SetDBError(db.UID)
 		}
-
 	}
 	// Update dbs' healthy state
 	for _, db := range cd.DBs {
@@ -385,7 +384,6 @@ func (s *Sentinel) activeProxiesInfos(proxiesInfo cluster.ProxiesInfo) cluster.P
 		if _, ok := proxiesInfo[proxyUID]; !ok {
 			delete(pihs, proxyUID)
 		}
-
 	}
 
 	activeProxiesInfo := proxiesInfo.DeepCopy()
@@ -735,7 +733,6 @@ func (s *Sentinel) dbStatus(cd *cluster.ClusterData, dbUID string) dbStatus {
 		if db.Spec.InitMode == cluster.DBInitModeResync {
 			convergenceTimeout = cd.Cluster.DefSpec().SyncTimeout.Duration
 		}
-
 	}
 	convergenceState := s.dbConvergenceState(db, convergenceTimeout)
 	switch convergenceState {
@@ -1786,7 +1783,6 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					for _, db := range toRemove {
 						delete(newcd.DBs, db.UID)
 					}
-
 				} else {
 					// Add new dbs to substitute failed dbs, if there're available keepers.
 
@@ -1920,11 +1916,15 @@ func (s *Sentinel) updateChangeTimes(cd, newcd *cluster.ClusterData) {
 	}
 }
 
+// ConvergenceState is an ENUM for convergece states
 type ConvergenceState uint
 
 const (
+	// Converging means that it is converging
 	Converging ConvergenceState = iota
+	// Converged means that convergence has finished
 	Converged
+	// ConvergenceFailed means that converging has run into an issue
 	ConvergenceFailed
 )
 
@@ -1993,14 +1993,17 @@ func (s *Sentinel) dbConvergenceState(db *cluster.DB, timeout time.Duration) Con
 	return Converging
 }
 
+// KeeperInfoHistory tracks the states of a keeper
 type KeeperInfoHistory struct {
 	KeeperInfo *cluster.KeeperInfo
 	Seen       bool
 	Timer      int64
 }
 
+// KeeperInfoHistories tracks info of all keepers of this cluster
 type KeeperInfoHistories map[string]*KeeperInfoHistory
 
+// DeepCopy returns a copy of all KeeperInfoHistories, where every KeeperInfoHistory is also copied
 func (k KeeperInfoHistories) DeepCopy() KeeperInfoHistories {
 	if k == nil {
 		return nil
@@ -2015,6 +2018,7 @@ func (k KeeperInfoHistories) DeepCopy() KeeperInfoHistories {
 	return nk.(KeeperInfoHistories)
 }
 
+// DBConvergenceInfo stores convergence info of a cluster for a sentinel
 type DBConvergenceInfo struct {
 	Generation int64
 	Timer      int64
