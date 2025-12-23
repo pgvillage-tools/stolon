@@ -50,7 +50,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},

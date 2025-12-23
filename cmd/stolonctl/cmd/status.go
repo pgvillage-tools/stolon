@@ -35,17 +35,16 @@ var cmdStatus = &cobra.Command{
 	Short: "Display the current cluster status",
 }
 
-type StatusOptions struct {
+var statusOpts struct {
 	Format string
 }
-
-var statusOpts StatusOptions
 
 func init() {
 	cmdStatus.PersistentFlags().StringVarP(&statusOpts.Format, "format", "f", "", "output format")
 	CmdStolonCtl.AddCommand(cmdStatus)
 }
 
+// Status stores that state of all se3ntinels, proxies, keepers and the cluster
 type Status struct {
 	Sentinels []SentinelStatus `json:"sentinels"`
 	Proxies   []ProxyStatus    `json:"proxies"`
@@ -53,16 +52,19 @@ type Status struct {
 	Cluster   ClusterStatus    `json:"cluster"`
 }
 
+// SentinelStatus stores the status of the Sentinel
 type SentinelStatus struct {
 	UID    string `json:"uid"`
 	Leader bool   `json:"leader"`
 }
 
+// ProxyStatus stores the status of the Proxy
 type ProxyStatus struct {
 	UID        string `json:"uid"`
 	Generation int64  `json:"generation"`
 }
 
+// KeeperStatus stores the status of the Keeper
 type KeeperStatus struct {
 	UID                 string `json:"uid"`
 	ListenAddress       string `json:"listen_address"`
@@ -72,13 +74,14 @@ type KeeperStatus struct {
 	PgCurrentGeneration int64  `json:"pg_current_generation"`
 }
 
+// ClusterStatus stores the status of the CLuster
 type ClusterStatus struct {
 	Available       bool   `json:"available"`
 	MasterKeeperUID string `json:"master_keeper_uid"`
 	MasterDBUID     string `json:"master_db_uid"`
 }
 
-func status(cmd *cobra.Command, args []string) {
+func status(_ *cobra.Command, _ []string) {
 	status, generateErr := generateStatus()
 	switch statusOpts.Format {
 	case "json":
@@ -267,7 +270,7 @@ func generateStatus() (Status, error) {
 		return status, err
 	}
 
-	sentinels := make([]SentinelStatus, 0)
+	sentinels := []SentinelStatus{}
 	sort.Sort(sentinelsInfo)
 	for _, si := range sentinelsInfo {
 		leader := lsid != "" && si.UID == lsid
@@ -281,7 +284,7 @@ func generateStatus() (Status, error) {
 	}
 	proxiesInfoSlice := proxiesInfo.ToSlice()
 
-	proxies := make([]ProxyStatus, 0)
+	proxies := []ProxyStatus{}
 	sort.Sort(proxiesInfoSlice)
 	for _, pi := range proxiesInfoSlice {
 		proxies = append(proxies, ProxyStatus{UID: pi.UID, Generation: pi.Generation})
@@ -293,7 +296,7 @@ func generateStatus() (Status, error) {
 		return status, err
 	}
 
-	keepers := make([]KeeperStatus, 0)
+	keepers := []KeeperStatus{}
 	kssKeys := cd.Keepers.SortedKeys()
 	for _, kuid := range kssKeys {
 		k := cd.Keepers[kuid]

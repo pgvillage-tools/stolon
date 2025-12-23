@@ -298,7 +298,6 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be added but not", id)
 			}
 		}
-
 	})
 
 	t.Run("should only remove when discovered services no longer exists", func(t *testing.T) {
@@ -320,7 +319,6 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be removed but not", id)
 			}
 		}
-
 	})
 
 	t.Run("should not add or remove when discovered and existing services are same", func(t *testing.T) {
@@ -394,7 +392,6 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be added but not", id)
 			}
 		}
-
 	})
 }
 

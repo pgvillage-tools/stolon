@@ -134,7 +134,7 @@ func (s *Sentinel) electionLoop(ctx context.Context) {
 func (s *Sentinel) syncRepl(spec *cluster.ClusterSpec) bool {
 	// a cluster standby role means our "master" will act as a cascading standby to
 	// the other keepers, in this case we can't use synchronous replication
-	return *spec.SynchronousReplication && *spec.Role == cluster.ClusterRoleMaster
+	return *spec.SynchronousReplication && *spec.Role == cluster.Primary
 }
 
 func (s *Sentinel) setSentinelInfo(ctx context.Context, ttl time.Duration) error {
@@ -944,9 +944,9 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 	clusterSpec := cd.Cluster.DefSpec()
 
 	switch cd.Cluster.Status.Phase {
-	case cluster.ClusterPhaseInitializing:
+	case cluster.Initializing:
 		switch *clusterSpec.InitMode {
-		case cluster.ClusterInitModeNew:
+		case cluster.New:
 			// Is there already a keeper choosed to be the new master?
 			if cd.Cluster.Status.Master == "" {
 				log.Infow("trying to find initial master")
@@ -990,7 +990,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 							newcd.Cluster.Spec.PGParameters = db.Status.PGParameters
 						}
 						// Cluster initialized, switch to Normal state
-						newcd.Cluster.Status.Phase = cluster.ClusterPhaseNormal
+						newcd.Cluster.Status.Phase = cluster.Normal
 					}
 				case Converging:
 					log.Infow("waiting for db", "db", db.UID, "keeper", db.Spec.KeeperUID)
@@ -1002,7 +1002,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 					newcd.Cluster.Status.Master = ""
 				}
 			}
-		case cluster.ClusterInitModeExisting:
+		case cluster.Existing:
 			if cd.Cluster.Status.Master == "" {
 				wantedKeeper := clusterSpec.ExistingConfig.KeeperUID
 				log.Infow("trying to use keeper as initial master", "keeper", wantedKeeper)
@@ -1045,10 +1045,10 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 						newcd.Cluster.Spec.PGParameters = db.Status.PGParameters
 					}
 					// Cluster initialized, switch to Normal state
-					newcd.Cluster.Status.Phase = cluster.ClusterPhaseNormal
+					newcd.Cluster.Status.Phase = cluster.Normal
 				}
 			}
-		case cluster.ClusterInitModePITR:
+		case cluster.PITR:
 			// Is there already a keeper choosed to be the new master?
 			if cd.Cluster.Status.Master == "" {
 				log.Infow("trying to find initial master")
@@ -1059,7 +1059,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 				log.Infow("initializing cluster using selected keeper as master db owner", "keeper", k.UID)
 				role := common.RoleMaster
 				var followConfig *cluster.FollowConfig
-				if *clusterSpec.Role == cluster.ClusterRoleStandby {
+				if *clusterSpec.Role == cluster.Replica {
 					role = common.RoleStandby
 					followConfig = &cluster.FollowConfig{
 						Type:                    cluster.FollowTypeExternal,
@@ -1104,7 +1104,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 							newcd.Cluster.Spec.PGParameters = db.Status.PGParameters
 						}
 						// Cluster initialized, switch to Normal state
-						newcd.Cluster.Status.Phase = cluster.ClusterPhaseNormal
+						newcd.Cluster.Status.Phase = cluster.Normal
 					}
 				case Converging:
 					log.Infow("waiting for db to converge", "db", db.UID, "keeper", db.Spec.KeeperUID)
@@ -1120,7 +1120,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 			return nil, fmt.Errorf("unknown init mode %s", *cd.Cluster.DefSpec().InitMode)
 		}
 
-	case cluster.ClusterPhaseNormal:
+	case cluster.Normal:
 		// Remove old keepers
 		keepersToRemove := []*cluster.Keeper{}
 		for _, k := range newcd.Keepers {
@@ -1214,7 +1214,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 
 			masterDBRole := common.RoleMaster
 			var followConfig *cluster.FollowConfig
-			if *clusterSpec.Role == cluster.ClusterRoleStandby {
+			if *clusterSpec.Role == cluster.Replica {
 				masterDBRole = common.RoleStandby
 				followConfig = &cluster.FollowConfig{
 					Type:                    cluster.FollowTypeExternal,
@@ -1307,7 +1307,7 @@ func (s *Sentinel) updateCluster(cd *cluster.ClusterData, pis cluster.ProxiesInf
 			}
 
 			// change master db role to "master" if the cluster role has been changed in the spec
-			if *clusterSpec.Role == cluster.ClusterRoleMaster {
+			if *clusterSpec.Role == cluster.Primary {
 				masterDB.Spec.Role = common.RoleMaster
 				masterDB.Spec.FollowConfig = nil
 			}
@@ -2024,13 +2024,17 @@ type DBConvergenceInfo struct {
 	Timer      int64
 }
 
+// ProxyInfoHistory is one record in ProxyInfoHistories, whichh holds a record of ProxyInfo's
 type ProxyInfoHistory struct {
 	ProxyInfo *cluster.ProxyInfo
 	Timer     int64
 }
 
+// ProxyInfoHistories is a map of ProxyInfoHistory items
 type ProxyInfoHistories map[string]*ProxyInfoHistory
 
+// DeepCopy returns a deep copy of ProxyInfoHistories which is a new ProxyInfoHistories with a copy of all
+// ProxyInfoHistory items
 func (p ProxyInfoHistories) DeepCopy() ProxyInfoHistories {
 	if p == nil {
 		return nil
@@ -2045,6 +2049,7 @@ func (p ProxyInfoHistories) DeepCopy() ProxyInfoHistories {
 	return np.(ProxyInfoHistories)
 }
 
+// Sentinel is a sttruct to keep all Sentinel info
 type Sentinel struct {
 	uid string
 	cfg *config
@@ -2080,6 +2085,7 @@ type Sentinel struct {
 	proxyInfoHistories  ProxyInfoHistories
 }
 
+// NewSentinel retruns a new Sentinel object
 func NewSentinel(uid string, cfg *config, end chan bool) (*Sentinel, error) {
 	var initialClusterSpec *cluster.ClusterSpec
 	if cfg.initialClusterSpecFile != "" {
@@ -2125,6 +2131,7 @@ func NewSentinel(uid string, cfg *config, end chan bool) (*Sentinel, error) {
 	}, nil
 }
 
+// Start starts a Sentinel
 func (s *Sentinel) Start(ctx context.Context) {
 	endCh := make(chan struct{})
 

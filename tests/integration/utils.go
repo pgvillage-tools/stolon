@@ -47,8 +47,8 @@ import (
 const (
 	sleepInterval = 500 * time.Millisecond
 
-	MinPort = 2048
-	MaxPort = 16384
+	minPort = 2048
+	maxPort = 16384
 )
 
 var (
@@ -57,7 +57,7 @@ var (
 	defaultStoreTimeout = 1 * time.Second
 )
 
-var curPort = MinPort
+var curPort = minPort
 var portMutex = sync.Mutex{}
 
 func pgParametersWithDefaults(p cluster.PGParameters) cluster.PGParameters {
@@ -1139,7 +1139,7 @@ func WaitClusterDataWithMaster(e *store.KVBackedStore, timeout time.Duration) (s
 		if err != nil || cd == nil {
 			goto end
 		}
-		if cd.Cluster.Status.Phase == cluster.ClusterPhaseNormal && cd.Cluster.Status.Master != "" {
+		if cd.Cluster.Status.Phase == cluster.Normal && cd.Cluster.Status.Master != "" {
 			return cd.DBs[cd.Cluster.Status.Master].Spec.KeeperUID, nil
 		}
 	end:
@@ -1155,7 +1155,7 @@ func WaitClusterDataMaster(master string, e *store.KVBackedStore, timeout time.D
 		if err != nil || cd == nil {
 			goto end
 		}
-		if cd.Cluster.Status.Phase == cluster.ClusterPhaseNormal && cd.Cluster.Status.Master != "" {
+		if cd.Cluster.Status.Phase == cluster.Normal && cd.Cluster.Status.Master != "" {
 			if cd.DBs[cd.Cluster.Status.Master].Spec.KeeperUID == master {
 				return nil
 			}
@@ -1198,7 +1198,7 @@ func WaitClusterDataSynchronousStandbys(synchronousStandbys []string, e *store.K
 		if err != nil || cd == nil {
 			goto end
 		}
-		if cd.Cluster.Status.Phase == cluster.ClusterPhaseNormal && cd.Cluster.Status.Master != "" {
+		if cd.Cluster.Status.Phase == cluster.Normal && cd.Cluster.Status.Master != "" {
 			masterDB := cd.DBs[cd.Cluster.Status.Master]
 			// get keepers for db spec synchronousStandbys
 			keepersUIDs := []string{}
@@ -1233,7 +1233,7 @@ func WaitClusterDataSynchronousStandbys(synchronousStandbys []string, e *store.K
 	return fmt.Errorf("timeout")
 }
 
-func WaitClusterPhase(e *store.KVBackedStore, phase cluster.ClusterPhase, timeout time.Duration) error {
+func WaitClusterPhase(e *store.KVBackedStore, phase cluster.Phase, timeout time.Duration) error {
 	start := time.Now()
 	for time.Now().Add(-timeout).Before(start) {
 		cd, _, err := e.GetClusterData(context.TODO())
@@ -1408,7 +1408,7 @@ func getFreePort(tcp bool, udp bool) (string, string, error) {
 	}
 	for {
 		curPort++
-		if curPort > MaxPort {
+		if curPort > maxPort {
 			return "", "", fmt.Errorf("all available ports to test have been exausted")
 		}
 		if tcp {

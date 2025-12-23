@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package integration holds all integration tests
 package integration
 
 import (
@@ -59,7 +60,7 @@ func TestServerParameters(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -83,7 +84,7 @@ func TestServerParameters(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -156,7 +157,7 @@ func TestWalLevel(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -180,7 +181,7 @@ func TestWalLevel(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -271,7 +272,7 @@ func TestWalKeepSegments(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -295,7 +296,7 @@ func TestWalKeepSegments(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -444,7 +445,7 @@ func TestAlterSystem(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -468,7 +469,7 @@ func TestAlterSystem(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -667,7 +668,7 @@ func TestAutomaticPgRestart(t *testing.T) {
 	pgParameters := map[string]string{"max_connections": "100"}
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		AutomaticPgRestart: &automaticPgRestart,
 		PGParameters:       pgParameters,
 	}
@@ -694,7 +695,7 @@ func TestAutomaticPgRestart(t *testing.T) {
 	}
 	defer tk.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -789,7 +790,7 @@ func TestAdvertise(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -818,7 +819,7 @@ func TestAdvertise(t *testing.T) {
 	}
 	defer tk.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -847,7 +848,7 @@ func TestAdvertise(t *testing.T) {
 }
 
 func TestKeeperBootsWithWalDir(t *testing.T) {
-	var UUID uuid.UUID
+	var uid uuid.UUID
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
@@ -868,10 +869,10 @@ func TestKeeperBootsWithWalDir(t *testing.T) {
 	}
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 	defer tstore.Stop()
-	if UUID, err = uuid.NewV4(); err != nil {
+	if uid, err = uuid.NewV4(); err != nil {
 		t.Fatalf("error getting new UUD: %v", err)
 	}
-	clusterName := UUID.String()
+	clusterName := uid.String()
 
 	storePath := filepath.Join(common.StorePrefix, clusterName)
 
@@ -880,7 +881,7 @@ func TestKeeperBootsWithWalDir(t *testing.T) {
 	pgParameters := map[string]string{"max_connections": "100"}
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		AutomaticPgRestart: &automaticPgRestart,
 		PGParameters:       pgParameters,
 	}
@@ -912,7 +913,7 @@ func TestKeeperBootsWithWalDir(t *testing.T) {
 	}
 	defer tk.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {

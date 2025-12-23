@@ -47,7 +47,7 @@ func TestInitStandbyCluster(t *testing.T) {
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -105,8 +105,8 @@ func TestInitStandbyCluster(t *testing.T) {
 	pgpass.Close()
 
 	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -180,7 +180,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -238,8 +238,8 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	pgpass.Close()
 
 	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -329,7 +329,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -391,8 +391,8 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	pgpass.Close()
 
 	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},

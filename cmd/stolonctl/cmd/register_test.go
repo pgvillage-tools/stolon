@@ -27,7 +27,6 @@ import (
 )
 
 func TestCheckConfig(t *testing.T) {
-
 	t.Run("should check for cluster name", func(t *testing.T) {
 		c := config{}
 		rc := register.Config{}

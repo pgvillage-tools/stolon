@@ -45,7 +45,7 @@ func TestInit(t *testing.T) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -108,7 +108,7 @@ func testInitNew(t *testing.T, merge bool) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		FailInterval:       &cluster.Duration{Duration: 10 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
 		MergePgParameters:  &merge,
@@ -135,7 +135,7 @@ func testInitNew(t *testing.T, merge bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -187,7 +187,7 @@ func testInitExisting(t *testing.T, merge bool) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -216,7 +216,7 @@ func testInitExisting(t *testing.T, merge bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -233,7 +233,7 @@ func testInitExisting(t *testing.T, merge bool) {
 
 	// Now initialize a new cluster with the existing keeper
 	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeExisting),
+		InitMode:           &existingCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -255,10 +255,10 @@ func testInitExisting(t *testing.T, merge bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseInitializing, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Initializing, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
@@ -336,7 +336,7 @@ func TestInitUsers(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -356,7 +356,7 @@ func TestInitUsers(t *testing.T) {
 	}
 	defer ts.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseInitializing, 30*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Initializing, 30*time.Second); err != nil {
 		t.Fatal("expected cluster in initializing phase")
 	}
 
@@ -387,7 +387,7 @@ func TestInitUsers(t *testing.T) {
 	}
 	defer ts2.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseInitializing, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Initializing, 60*time.Second); err != nil {
 		t.Fatal("expected cluster in initializing phase")
 	}
 
@@ -427,7 +427,7 @@ func TestInitialClusterSpec(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:               &newCluster,
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
@@ -448,7 +448,7 @@ func TestInitialClusterSpec(t *testing.T) {
 	}
 	defer ts.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseInitializing, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Initializing, 60*time.Second); err != nil {
 		t.Fatal("expected cluster in initializing phase")
 	}
 

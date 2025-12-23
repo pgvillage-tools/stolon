@@ -85,12 +85,12 @@ func TestProxyListening(t *testing.T) {
 			UID:        "01",
 			Generation: 1,
 			Spec: &cluster.ClusterSpec{
-				InitMode:     cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+				InitMode:     &newCluster,
 				FailInterval: &cluster.Duration{Duration: 10 * time.Second},
 			},
 			Status: cluster.ClusterStatus{
 				CurrentGeneration: 1,
-				Phase:             cluster.ClusterPhaseNormal,
+				Phase:             cluster.Normal,
 				Master:            "01",
 			},
 		},
