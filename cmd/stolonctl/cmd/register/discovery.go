@@ -59,6 +59,7 @@ type ConsulAgent interface {
 	ServiceDeregister(serviceID string) error
 }
 
+// ConsulCatalog defines a catalog as registered in consul
 type ConsulCatalog interface {
 	Service(service, tag string, q *api.QueryOptions) ([]*api.CatalogService, *api.QueryMeta, error)
 }

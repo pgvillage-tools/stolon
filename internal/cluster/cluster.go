@@ -66,7 +66,7 @@ const (
 	DefaultAdditionalWalSenders                       = 5
 	DefaultUsePgrewind                                = false
 	DefaultMergePGParameter                           = true
-	DefaultRole                      ClusterRole      = ClusterRoleMaster
+	DefaultRole                      Role             = Primary
 	DefaultSUReplAccess              SUReplAccessMode = SUReplAccessAll
 	DefaultAutomaticPgRestart                         = false
 )
@@ -101,38 +101,37 @@ type PostgresBinaryVersion struct {
 	Min int
 }
 
-type ClusterPhase string
+// Phase is an enum for the phase that a cluster is in
+type Phase string
 
 const (
-	ClusterPhaseInitializing ClusterPhase = "initializing"
-	ClusterPhaseNormal       ClusterPhase = "normal"
+	// Initializing phase means the cluster is initializing
+	Initializing Phase = "initializing"
+	// Normal phase means the cluster is initialized and ready to be used
+	Normal Phase = "normal"
 )
 
-type ClusterRole string
+// Role defines the role that a Keeper has
+type Role string
 
 const (
-	ClusterRoleMaster  ClusterRole = "master"
-	ClusterRoleStandby ClusterRole = "standby"
+	// Primary means that bthe instance is promoted and available for read/write
+	Primary Role = "master"
+	// Replica means that the instance is replicating changes for another upstream replica or Primary
+	Replica Role = "standby"
 )
 
-type ClusterInitMode string
+// InitMode is an enum for the init mode that a Keeper is in
+type InitMode string
 
 const (
-	// Initialize a cluster starting from a freshly initialized database cluster. Valid only when cluster role is master.
-	ClusterInitModeNew ClusterInitMode = "new"
-	// Initialize a cluster doing a point in time recovery on a keeper.
-	ClusterInitModePITR ClusterInitMode = "pitr"
-	// Initialize a cluster with an user specified already populated db cluster.
-	ClusterInitModeExisting ClusterInitMode = "existing"
+	// New initializes a cluster starting from a freshly initialized database cluster. Valid only when cluster role is master.
+	New InitMode = "new"
+	// PITR initializes a cluster doing a point in time recovery on a keeper.
+	PITR InitMode = "pitr"
+	// Existing reuses an already Initialized cluster
+	Existing InitMode = "existing"
 )
-
-func ClusterInitModeP(s ClusterInitMode) *ClusterInitMode {
-	return &s
-}
-
-func ClusterRoleP(s ClusterRole) *ClusterRole {
-	return &s
-}
 
 type DBInitMode string
 
@@ -265,13 +264,13 @@ type ClusterSpec struct {
 	// Whether to use pg_rewind
 	UsePgrewind *bool `json:"usePgrewind,omitempty"`
 	// InitMode defines the cluster initialization mode. Current modes are: new, existing, pitr
-	InitMode *ClusterInitMode `json:"initMode,omitempty"`
+	InitMode *InitMode `json:"initMode,omitempty"`
 	// Whether to merge pgParameters of the initialized db cluster, useful
 	// the retain initdb generated parameters when InitMode is new, retain
 	// current parameters when initMode is existing or pitr.
 	MergePgParameters *bool `json:"mergePgParameters,omitempty"`
 	// Role defines the cluster operating role (master or standby of an external database)
-	Role *ClusterRole `json:"role,omitempty"`
+	Role *Role `json:"role,omitempty"`
 	// Init configuration used when InitMode is "new"
 	NewConfig *NewConfig `json:"newConfig,omitempty"`
 	// Point in time recovery init configuration used when InitMode is "pitr"
@@ -294,8 +293,8 @@ type ClusterSpec struct {
 }
 
 type ClusterStatus struct {
-	CurrentGeneration int64        `json:"currentGeneration,omitempty"`
-	Phase             ClusterPhase `json:"phase,omitempty"`
+	CurrentGeneration int64 `json:"currentGeneration,omitempty"`
+	Phase             Phase `json:"phase,omitempty"`
 	// Master DB UID
 	Master string `json:"master,omitempty"`
 }
@@ -479,25 +478,25 @@ func (os *ClusterSpec) Validate() error {
 	}
 
 	switch *s.InitMode {
-	case ClusterInitModeNew:
-		if *s.Role == ClusterRoleStandby {
+	case New:
+		if *s.Role == Replica {
 			return fmt.Errorf("invalid cluster role standby when initMode is \"new\"")
 		}
-	case ClusterInitModeExisting:
+	case Existing:
 		if s.ExistingConfig == nil {
 			return fmt.Errorf("existingConfig undefined. Required when initMode is \"existing\"")
 		}
 		if s.ExistingConfig.KeeperUID == "" {
 			return fmt.Errorf("existingConfig.keeperUID undefined")
 		}
-	case ClusterInitModePITR:
+	case PITR:
 		if s.PITRConfig == nil {
 			return fmt.Errorf("pitrConfig undefined. Required when initMode is \"pitr\"")
 		}
 		if s.PITRConfig.DataRestoreCommand == "" {
 			return fmt.Errorf("pitrConfig.DataRestoreCommand undefined")
 		}
-		if s.PITRConfig.RecoveryTargetSettings != nil && *s.Role == ClusterRoleStandby {
+		if s.PITRConfig.RecoveryTargetSettings != nil && *s.Role == Replica {
 			return fmt.Errorf("cannot define pitrConfig.RecoveryTargetSettings when required cluster role is standby")
 		}
 	default:
@@ -513,8 +512,8 @@ func (os *ClusterSpec) Validate() error {
 	}
 
 	switch *s.Role {
-	case ClusterRoleMaster:
-	case ClusterRoleStandby:
+	case Primary:
+	case Replica:
 		if s.StandbyConfig == nil {
 			return fmt.Errorf("standbyConfig undefined. Required when cluster role is \"standby\"")
 		}
@@ -544,7 +543,7 @@ func (c *Cluster) UpdateSpec(ns *ClusterSpec) error {
 	if *ds.InitMode != *dns.InitMode {
 		return fmt.Errorf("cannot change cluster init mode")
 	}
-	if *ds.Role == ClusterRoleMaster && *dns.Role == ClusterRoleStandby {
+	if *ds.Role == Primary && *dns.Role == Replica {
 		return fmt.Errorf("cannot update a cluster from master role to standby role")
 	}
 	c.Spec = ns
@@ -558,7 +557,7 @@ func NewCluster(uid string, cs *ClusterSpec) *Cluster {
 		ChangeTime: time.Now(),
 		Spec:       cs,
 		Status: ClusterStatus{
-			Phase: ClusterPhaseInitializing,
+			Phase: Initializing,
 		},
 	}
 	return c

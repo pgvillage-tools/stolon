@@ -70,7 +70,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -156,7 +156,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 
 	// Now initialize a new cluster with the existing keeper
 	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
+		InitMode:           &pitrCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -193,7 +193,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	}
 	defer ts.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	_, err = WaitClusterDataWithMaster(sm, 30*time.Second)

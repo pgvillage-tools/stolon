@@ -33,6 +33,8 @@ import (
 
 var curUID int
 
+var newCluster = cluster.New
+
 var now = time.Now()
 
 func TestUpdateCluster(t *testing.T) {
@@ -59,12 +61,12 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: cluster.BoolP(true),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{},
@@ -86,12 +88,12 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: cluster.BoolP(true),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{},
@@ -117,12 +119,12 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: cluster.BoolP(true),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
@@ -153,12 +155,12 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: cluster.BoolP(true),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 						Master:            "db1",
 					},
 				},
@@ -214,12 +216,12 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: cluster.BoolP(true),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
@@ -257,12 +259,12 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   cluster.Uint16P(cluster.DefaultMaxStandbysPerSender),
 						UsePgrewind:            cluster.BoolP(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-						InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:               &newCluster,
 						MergePgParameters:      cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 						Master:            "db1",
 					},
 				},
@@ -323,12 +325,12 @@ func TestUpdateCluster(t *testing.T) {
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: cluster.Uint16P(cluster.DefaultMaxStandbysPerSender),
-						InitMode:             cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:             &newCluster,
 						MergePgParameters:    cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 						Master:            "db1",
 					},
 				},
@@ -380,12 +382,12 @@ func TestUpdateCluster(t *testing.T) {
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: cluster.Uint16P(cluster.DefaultMaxStandbysPerSender),
-						InitMode:             cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+						InitMode:             &newCluster,
 						MergePgParameters:    cluster.BoolP(true),
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseInitializing,
+						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
@@ -426,7 +428,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -516,7 +518,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -609,7 +611,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -697,7 +699,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -784,7 +786,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -868,7 +870,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -960,7 +962,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1048,7 +1050,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1139,7 +1141,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1227,7 +1229,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -1316,7 +1318,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1414,7 +1416,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1517,7 +1519,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1613,7 +1615,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1738,7 +1740,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1859,7 +1861,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -1960,7 +1962,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2050,7 +2052,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2144,7 +2146,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2209,7 +2211,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2276,7 +2278,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2376,7 +2378,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2479,7 +2481,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2568,7 +2570,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -2660,7 +2662,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2749,7 +2751,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -2840,7 +2842,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -2930,7 +2932,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -3022,7 +3024,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3112,7 +3114,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3209,7 +3211,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3334,7 +3336,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3465,7 +3467,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3590,7 +3592,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3719,7 +3721,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3845,7 +3847,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -3977,7 +3979,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4103,7 +4105,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4233,7 +4235,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4359,7 +4361,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4491,7 +4493,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4616,7 +4618,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db3",
 					},
 				},
@@ -4743,7 +4745,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -4868,7 +4870,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db3",
 					},
 				},
@@ -4995,7 +4997,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5089,7 +5091,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5189,7 +5191,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5283,7 +5285,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5385,7 +5387,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5475,7 +5477,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -5567,7 +5569,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5658,7 +5660,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db2",
 					},
 				},
@@ -5751,7 +5753,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5842,7 +5844,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -5940,7 +5942,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},
@@ -6035,7 +6037,7 @@ func TestUpdateCluster(t *testing.T) {
 					},
 					Status: cluster.ClusterStatus{
 						CurrentGeneration: 1,
-						Phase:             cluster.ClusterPhaseNormal,
+						Phase:             cluster.Normal,
 						Master:            "db1",
 					},
 				},

@@ -76,7 +76,7 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		FailInterval:       &cluster.Duration{Duration: 10 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
 	}
@@ -136,11 +136,19 @@ func withMinSync0(minSync0 bool) optionSetter {
 	}
 }
 
-func setupServers(t *testing.T, clusterName, dir string, numKeepers, numSentinels uint8, syncRepl bool, usePgrewind bool, primaryKeeper *TestKeeper, otherOptions ...optionSetter) (testKeepers, testSentinels, *TestProxy, *TestStore) {
+func setupServers(
+	t *testing.T,
+	clusterName, dir string,
+	numKeepers, numSentinels uint8,
+	syncRepl bool,
+	usePgrewind bool,
+	primaryKeeper *TestKeeper,
+	otherOptions ...optionSetter,
+) (testKeepers, testSentinels, *TestProxy, *TestStore) {
 	var initialClusterSpec *cluster.ClusterSpec
 	if primaryKeeper == nil {
 		initialClusterSpec = &cluster.ClusterSpec{
-			InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+			InitMode:               &newCluster,
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 			FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 			ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
@@ -163,8 +171,8 @@ func setupServers(t *testing.T, clusterName, dir string, numKeepers, numSentinel
 		pgpass.Close()
 
 		initialClusterSpec = &cluster.ClusterSpec{
-			InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-			Role:                   cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+			InitMode:               &pitrCluster,
+			Role:                   &replica,
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 			FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 			ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
@@ -172,11 +180,22 @@ func setupServers(t *testing.T, clusterName, dir string, numKeepers, numSentinel
 			SynchronousReplication: cluster.BoolP(syncRepl),
 			PGParameters:           defaultPGParameters,
 			PITRConfig: &cluster.PITRConfig{
-				DataRestoreCommand: fmt.Sprintf("PGPASSFILE=%s pg_basebackup -D %%d -h %s -p %s -U %s", pgpass.Name(), primaryKeeper.pgListenAddress, primaryKeeper.pgPort, primaryKeeper.pgReplUsername),
+				DataRestoreCommand: fmt.Sprintf(
+					"PGPASSFILE=%s pg_basebackup -D %%d -h %s -p %s -U %s",
+					pgpass.Name(),
+					primaryKeeper.pgListenAddress,
+					primaryKeeper.pgPort,
+					primaryKeeper.pgReplUsername,
+				),
 			},
 			StandbyConfig: &cluster.StandbyConfig{
 				StandbySettings: &cluster.StandbySettings{
-					PrimaryConninfo: fmt.Sprintf("sslmode=disable host=%s port=%s user=%s password=%s", primaryKeeper.pgListenAddress, primaryKeeper.pgPort, primaryKeeper.pgReplUsername, primaryKeeper.pgReplPassword),
+					PrimaryConninfo: fmt.Sprintf("sslmode=disable host=%s port=%s user=%s password=%s",
+						primaryKeeper.pgListenAddress,
+						primaryKeeper.pgPort,
+						primaryKeeper.pgReplUsername,
+						primaryKeeper.pgReplPassword,
+					),
 				},
 			},
 		}
@@ -322,7 +341,7 @@ func waitMasterStandbysReady(t *testing.T, sm *store.KVBackedStore, tks testKeep
 	for _, standby := range standbys {
 		waitKeeperReady(t, sm, standby)
 	}
-	return
+	return master, standbys
 }
 
 func testMasterStandby(t *testing.T, syncRepl bool) {
@@ -1303,7 +1322,7 @@ func TestFailedStandby(t *testing.T) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:             cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:             &newCluster,
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:   &cluster.Duration{Duration: 30 * time.Second},
@@ -1394,7 +1413,7 @@ func TestLoweredMaxStandbysPerSender(t *testing.T) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:             cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:             &newCluster,
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:   &cluster.Duration{Duration: 30 * time.Second},
@@ -1459,7 +1478,7 @@ func TestKeeperRemoval(t *testing.T) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -1567,7 +1586,7 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:               &newCluster,
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
@@ -1693,7 +1712,7 @@ func TestStandbyCantSync(t *testing.T) {
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -2144,7 +2163,7 @@ func TestSyncStandbyNotInSync0(t *testing.T) {
 }
 
 func TestFailoverWithCustomWalDir(t *testing.T) {
-	var UUID uuid.UUID
+	var uid uuid.UUID
 	dir, err := os.MkdirTemp("", "stolon")
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
@@ -2155,15 +2174,15 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	tstore := setupStore(t, dir)
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 
-	if UUID, err = uuid.NewV4(); err != nil {
+	if uid, err = uuid.NewV4(); err != nil {
 		t.Fatalf("error getting new UUD: %v", err)
 	}
-	clusterName := UUID.String()
+	clusterName := uid.String()
 
 	syncRep := true
 	usePgRewind := true
 	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:               cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+		InitMode:               &newCluster,
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout:     &cluster.Duration{Duration: 30 * time.Second},
@@ -2242,7 +2261,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	store := store.NewKVBackedStore(tstore.store, storePath)
 
 	// Wait for keepers to become ready
-	if err := WaitClusterPhase(store, cluster.ClusterPhaseNormal, 60*time.Second); err != nil {
+	if err := WaitClusterPhase(store, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk1.WaitDBUp(60 * time.Second); err != nil {
