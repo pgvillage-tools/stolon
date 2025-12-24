@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -82,9 +83,9 @@ func TestParseConfig(t *testing.T) {
 				RequestTimeout:          &Duration{10 * time.Second},
 				SleepInterval:           &Duration{10 * time.Second},
 				KeeperFailInterval:      &Duration{100 * time.Second},
-				MaxStandbysPerSender:    UintP(5),
-				SynchronousReplication:  BoolP(true),
-				InitWithMultipleKeepers: BoolP(true),
+				MaxStandbysPerSender:    util.ToPtr(uint(5)),
+				SynchronousReplication:  util.ToPtr(true),
+				InitWithMultipleKeepers: util.ToPtr(true),
 				PGParameters: &map[string]string{
 					"param01": "value01",
 				},
@@ -112,7 +113,6 @@ func TestParseConfig(t *testing.T) {
 				t.Error(spew.Sprintf("#%d: wrong config: got: %#v, want: %#v", i, cfg, tt.cfg))
 			}
 		}
-
 	}
 }
 
@@ -129,9 +129,9 @@ func TestNilConfigCopy(t *testing.T) {
 		RequestTimeout:          &Duration{10 * time.Second},
 		SleepInterval:           &Duration{10 * time.Second},
 		KeeperFailInterval:      &Duration{10 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
@@ -140,9 +140,9 @@ func TestNilConfigCopy(t *testing.T) {
 		RequestTimeout:          &Duration{10 * time.Second},
 		SleepInterval:           &Duration{10 * time.Second},
 		KeeperFailInterval:      &Duration{10 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
@@ -153,15 +153,14 @@ func TestNilConfigCopy(t *testing.T) {
 	newCfg.RequestTimeout = &Duration{20 * time.Second}
 	newCfg.SleepInterval = &Duration{20 * time.Second}
 	newCfg.KeeperFailInterval = &Duration{20 * time.Second}
-	newCfg.MaxStandbysPerSender = UintP(10)
-	newCfg.SynchronousReplication = BoolP(false)
-	newCfg.InitWithMultipleKeepers = BoolP(false)
+	newCfg.MaxStandbysPerSender = util.ToPtr(uint(10))
+	newCfg.SynchronousReplication = util.ToPtr(false)
+	newCfg.InitWithMultipleKeepers = util.ToPtr(false)
 	(*newCfg.PGParameters)["param01"] = "anothervalue01"
 
 	if !reflect.DeepEqual(origCfg, cfg) {
 		t.Errorf("Original config shouldn't be changed")
 	}
-
 }
 
 func TestConfigCopy(t *testing.T) {
@@ -172,9 +171,9 @@ func TestConfigCopy(t *testing.T) {
 		RequestTimeout:          &Duration{10 * time.Second},
 		SleepInterval:           &Duration{10 * time.Second},
 		KeeperFailInterval:      &Duration{100 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
@@ -183,9 +182,9 @@ func TestConfigCopy(t *testing.T) {
 		RequestTimeout:          &Duration{10 * time.Second},
 		SleepInterval:           &Duration{10 * time.Second},
 		KeeperFailInterval:      &Duration{100 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
@@ -204,5 +203,4 @@ func TestConfigCopy(t *testing.T) {
 	if !reflect.DeepEqual(origCfg, cfg) {
 		t.Errorf("Original config shouldn't be changed")
 	}
-
 }

@@ -19,20 +19,37 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 const (
+	// DefaultProxyCheckInterval is the default for the interval for the proxy to check the endpoint
 	DefaultProxyCheckInterval = 5 * time.Second
 
-	DefaultRequestTimeout          = 10 * time.Second
-	DefaultSleepInterval           = 5 * time.Second
-	DefaultKeeperFailInterval      = 20 * time.Second
-	DefaultMaxStandbysPerSender    = 3
-	DefaultSynchronousReplication  = false
+	// DefaultRequestTimeout is the default for a request to time out
+	DefaultRequestTimeout = 10 * time.Second
+
+	// DefaultSleepInterval is the default for sleeps during checks
+	DefaultSleepInterval = 5 * time.Second
+
+	// DefaultKeeperFailInterval sets the default for the keeper to be assumed unhealthy
+	DefaultKeeperFailInterval = 20 * time.Second
+
+	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup of old standby's is triggered.
+	DefaultMaxStandbysPerSender uint = 3
+
+	// DefaultSynchronousReplication sets the default for sync replication when not set by config
+	DefaultSynchronousReplication = false
+
+	// DefaultInitWithMultipleKeepers can be set to choose a random initial master when multiple keeper are registered
 	DefaultInitWithMultipleKeepers = false
-	DefaultUsePGRewind             = false
+
+	// DefaultUsePGRewind sets the default for using PgRewind (over starting over)
+	DefaultUsePGRewind = false
 )
 
+// NilConfig defines an empty config
 type NilConfig struct {
 	RequestTimeout          *Duration          `json:"request_timeout,omitempty"`
 	SleepInterval           *Duration          `json:"sleep_interval,omitempty"`
@@ -44,6 +61,7 @@ type NilConfig struct {
 	PGParameters            *map[string]string `json:"pg_parameters,omitempty"`
 }
 
+// Config defines the end result config
 type Config struct {
 	// Time after which any request (keepers checks from sentinel etc...) will fail.
 	RequestTimeout time.Duration
@@ -64,34 +82,11 @@ type Config struct {
 	PGParameters map[string]string
 }
 
-func StringP(s string) *string {
-	return &s
-}
+// TODO: use json annotations instead of UnmarshalJSON
 
-func UintP(u uint) *uint {
-	return &u
-}
-
-func BoolP(b bool) *bool {
-	return &b
-}
-
-func DurationP(d Duration) *Duration {
-	return &d
-}
-
-func MapStringP(m map[string]string) *map[string]string {
-	nm := map[string]string{}
-	for k, v := range m {
-		nm[k] = v
-	}
-	return &nm
-}
-
-type nilConfig NilConfig
-
+// UnmarshalJSON deserializes a NilConfig from JSON
 func (c *NilConfig) UnmarshalJSON(in []byte) error {
-	var nc nilConfig
+	var nc NilConfig
 	if err := json.Unmarshal(in, &nc); err != nil {
 		return err
 	}
@@ -102,38 +97,40 @@ func (c *NilConfig) UnmarshalJSON(in []byte) error {
 	return nil
 }
 
+// Copy returns a shallow copy of a NilConfig
 func (c *NilConfig) Copy() *NilConfig {
 	if c == nil {
 		return c
 	}
 	var nc NilConfig
 	if c.RequestTimeout != nil {
-		nc.RequestTimeout = DurationP(*c.RequestTimeout)
+		nc.RequestTimeout = util.ToPtr(*c.RequestTimeout)
 	}
 	if c.SleepInterval != nil {
-		nc.SleepInterval = DurationP(*c.SleepInterval)
+		nc.SleepInterval = util.ToPtr(*c.SleepInterval)
 	}
 	if c.KeeperFailInterval != nil {
-		nc.KeeperFailInterval = DurationP(*c.KeeperFailInterval)
+		nc.KeeperFailInterval = util.ToPtr(*c.KeeperFailInterval)
 	}
 	if c.MaxStandbysPerSender != nil {
-		nc.MaxStandbysPerSender = UintP(*c.MaxStandbysPerSender)
+		nc.MaxStandbysPerSender = util.ToPtr(*c.MaxStandbysPerSender)
 	}
 	if c.SynchronousReplication != nil {
-		nc.SynchronousReplication = BoolP(*c.SynchronousReplication)
+		nc.SynchronousReplication = util.ToPtr(*c.SynchronousReplication)
 	}
 	if c.InitWithMultipleKeepers != nil {
-		nc.InitWithMultipleKeepers = BoolP(*c.InitWithMultipleKeepers)
+		nc.InitWithMultipleKeepers = util.ToPtr(*c.InitWithMultipleKeepers)
 	}
 	if c.UsePGRewind != nil {
-		nc.UsePGRewind = BoolP(*c.UsePGRewind)
+		nc.UsePGRewind = util.ToPtr(*c.UsePGRewind)
 	}
 	if c.PGParameters != nil {
-		nc.PGParameters = MapStringP(*c.PGParameters)
+		nc.PGParameters = util.ToPtr(*c.PGParameters)
 	}
 	return &nc
 }
 
+// Copy returns a shallow copy of a Config
 func (c *Config) Copy() *Config {
 	if c == nil {
 		return c
@@ -155,10 +152,14 @@ type Duration struct {
 	time.Duration
 }
 
+// TODO convert MarshalJSON and UnmarshalJSON to using json annotations
+
+// MarshalJSON will serialize a Duration object
 func (d Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
+// UnmarshalJSON will deserialize a Duration object
 func (d *Duration) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), `"`)
 	du, err := time.ParseDuration(s)
@@ -169,6 +170,7 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Validate can be used to validate a NilConfig
 func (c *NilConfig) Validate() error {
 	if c.RequestTimeout != nil && (*c.RequestTimeout).Duration < 0 {
 		return fmt.Errorf("request_timeout must be positive")
@@ -185,6 +187,7 @@ func (c *NilConfig) Validate() error {
 	return nil
 }
 
+// MergeDefaults can be used to merge in Default values
 func (c *NilConfig) MergeDefaults() {
 	if c.RequestTimeout == nil {
 		c.RequestTimeout = &Duration{DefaultRequestTimeout}
@@ -196,22 +199,23 @@ func (c *NilConfig) MergeDefaults() {
 		c.KeeperFailInterval = &Duration{DefaultKeeperFailInterval}
 	}
 	if c.MaxStandbysPerSender == nil {
-		c.MaxStandbysPerSender = UintP(DefaultMaxStandbysPerSender)
+		c.MaxStandbysPerSender = util.ToPtr(DefaultMaxStandbysPerSender)
 	}
 	if c.SynchronousReplication == nil {
-		c.SynchronousReplication = BoolP(DefaultSynchronousReplication)
+		c.SynchronousReplication = util.ToPtr(DefaultSynchronousReplication)
 	}
 	if c.InitWithMultipleKeepers == nil {
-		c.InitWithMultipleKeepers = BoolP(DefaultInitWithMultipleKeepers)
+		c.InitWithMultipleKeepers = util.ToPtr(DefaultInitWithMultipleKeepers)
 	}
 	if c.UsePGRewind == nil {
-		c.UsePGRewind = BoolP(DefaultUsePGRewind)
+		c.UsePGRewind = util.ToPtr(DefaultUsePGRewind)
 	}
 	if c.PGParameters == nil {
 		c.PGParameters = &map[string]string{}
 	}
 }
 
+// ToConfig converts a NilCOnfig into a Config
 func (c *NilConfig) ToConfig() *Config {
 	nc := c.Copy()
 	nc.MergeDefaults()
@@ -227,6 +231,7 @@ func (c *NilConfig) ToConfig() *Config {
 	}
 }
 
+// NewDefaultConfig returns a freshly initialized config
 func NewDefaultConfig() *Config {
 	nc := &NilConfig{}
 	nc.MergeDefaults()

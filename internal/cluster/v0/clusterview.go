@@ -135,7 +135,7 @@ type KeepersRole map[string]*KeeperRole
 
 // NewKeepersRole returns a new KeepersRole
 func NewKeepersRole() KeepersRole {
-	return make(KeepersRole)
+	return KeepersRole{}
 }
 
 // Copy returns a copy of a KeepersRole
