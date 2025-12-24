@@ -114,7 +114,7 @@ func (s *KubeStore) patchKubeStatusAnnotation(annotationData []byte) error {
 	return nil
 }
 
-func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.ClusterData, previous *KVPair) (*KVPair, error) {
+func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *KVPair) (*KVPair, error) {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cluste
 	return &KVPair{Value: cdj}, nil
 }
 
-func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData) error {
+func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.Data) error {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData)
 	return nil
 }
 
-func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *KVPair, error) {
+func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.Data, *KVPair, error) {
 	epsClient := s.client.CoreV1().ConfigMaps(s.namespace)
 	result, err := epsClient.Get(ctx, s.resourceName, metav1.GetOptions{})
 	if err != nil {
@@ -239,7 +239,7 @@ func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *
 		return nil, nil, nil
 	}
 
-	var cd *cluster.ClusterData
+	var cd *cluster.Data
 	if err := json.Unmarshal([]byte(cdj), &cd); err != nil {
 		return nil, nil, err
 	}

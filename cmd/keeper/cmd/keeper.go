@@ -883,7 +883,7 @@ func (p *PostgresKeeper) Start(ctx context.Context) {
 	endUpdateKeeperInfo := make(chan struct{})
 
 	var err error
-	var cd *cluster.ClusterData
+	var cd *cluster.Data
 	cd, _, err = p.e.GetClusterData(context.TODO())
 	if err != nil {
 		log.Errorw("error retrieving cluster data", zap.Error(err))
@@ -1142,7 +1142,7 @@ func (p *PostgresKeeper) updateReplSlots(
 	return nil
 }
 
-func (p *PostgresKeeper) refreshReplicationSlots(_ *cluster.ClusterData, db *cluster.DB) error {
+func (p *PostgresKeeper) refreshReplicationSlots(_ *cluster.Data, db *cluster.DB) error {
 	var currentReplicationSlots []string
 	currentReplicationSlots, err := p.pgm.GetReplicationSlots()
 	if err != nil {
@@ -1642,7 +1642,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 	setRole(targetRoleGauge, &targetRole)
 
 	switch targetRole {
-	case common.RoleMaster:
+	case common.RolePrimary:
 		// We are the elected master
 		log.Infow("our db requested role is master")
 		if localRole == common.RoleUndefined {
@@ -1677,7 +1677,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			}
 		}
 
-		if localRole == common.RoleStandby {
+		if localRole == common.RoleReplica {
 			log.Infow("promoting to master")
 			if err = pgm.Promote(); err != nil {
 				log.Errorw("failed to promote instance", zap.Error(err))
@@ -1692,7 +1692,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			return
 		}
 
-	case common.RoleStandby:
+	case common.RoleReplica:
 		// We are a standby
 		var standbySettings *cluster.StandbySettings
 		switch db.Spec.FollowConfig.Type {
@@ -1710,10 +1710,10 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			return
 		}
 		switch localRole {
-		case common.RoleMaster:
+		case common.RolePrimary:
 			log.Errorw("cannot move from master role to standby role")
 			return
-		case common.RoleStandby:
+		case common.RoleReplica:
 			log.Infow("already standby")
 			started, err := pgm.IsStarted()
 			if err != nil {
@@ -1976,9 +1976,9 @@ func (p *PostgresKeeper) saveDBLocalState(dbls *DBLocalState) error {
 // * Has a standby db role with followtype external
 func IsMaster(db *cluster.DB) bool {
 	switch db.Spec.Role {
-	case common.RoleMaster:
+	case common.RolePrimary:
 		return true
-	case common.RoleStandby:
+	case common.RoleReplica:
 		if db.Spec.FollowConfig.Type == cluster.FollowTypeExternal {
 			return true
 		}
@@ -2003,7 +2003,7 @@ func localAuthMethod(authMethod string) string {
 // When onlyInternal is true only rules needed for replication will be setup
 // and the traffic should be permitted only for pgSUUsername standard
 // connections and pgReplUsername replication connections.
-func (p *PostgresKeeper) generateHBA(cd *cluster.ClusterData, db *cluster.DB, onlyInternal bool) []string {
+func (p *PostgresKeeper) generateHBA(cd *cluster.Data, db *cluster.DB, onlyInternal bool) []string {
 	// Minimal entries for local normal and replication connections needed by the stolon keeper
 	// Matched local connections are for postgres database and suUsername user with md5 auth
 	// Matched local replication connections are for replUsername user with md5 auth

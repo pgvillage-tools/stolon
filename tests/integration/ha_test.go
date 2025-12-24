@@ -76,7 +76,7 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		FailInterval:       &cluster.Duration{Duration: 10 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -126,11 +126,11 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 // optionSetter implements the "functional options" pattern for ClusterSpec.
 // Useful to avoid modifying all the tests that depend on 'setupServers' signature,
 // whenever a new options is needed.
-type optionSetter func(*cluster.ClusterSpec)
+type optionSetter func(*cluster.Spec)
 
 // WithMinSync0 == true sets the MinimumSynchronousStandbys to 0 in ClusterSpec
 func withMinSync0(minSync0 bool) optionSetter {
-	return func(s *cluster.ClusterSpec) {
+	return func(s *cluster.Spec) {
 		if minSync0 {
 			s.MinSynchronousStandbys = util.ToPtr(uint16(0))
 		}
@@ -146,9 +146,9 @@ func setupServers(
 	primaryKeeper *TestKeeper,
 	otherOptions ...optionSetter,
 ) (testKeepers, testSentinels, *TestProxy, *TestStore) {
-	var initialClusterSpec *cluster.ClusterSpec
+	var initialClusterSpec *cluster.Spec
 	if primaryKeeper == nil {
-		initialClusterSpec = &cluster.ClusterSpec{
+		initialClusterSpec = &cluster.Spec{
 			InitMode:               &newCluster,
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 			FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
@@ -171,7 +171,7 @@ func setupServers(
 		}
 		pgpass.Close()
 
-		initialClusterSpec = &cluster.ClusterSpec{
+		initialClusterSpec = &cluster.Spec{
 			InitMode:               &pitrCluster,
 			Role:                   &replica,
 			SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
@@ -208,7 +208,7 @@ func setupServers(
 	return setupServersCustom(t, clusterName, dir, numKeepers, numSentinels, initialClusterSpec)
 }
 
-func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSentinels uint8, initialClusterSpec *cluster.ClusterSpec) (testKeepers, testSentinels, *TestProxy, *TestStore) {
+func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSentinels uint8, initialClusterSpec *cluster.Spec) (testKeepers, testSentinels, *TestProxy, *TestStore) {
 	tstore := setupStore(t, dir)
 
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
@@ -468,7 +468,7 @@ func testFailover(t *testing.T, syncRepl bool, standbyCluster bool) {
 	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
-	if err := standby.WaitDBRole(common.RoleMaster, ptk, 30*time.Second); err != nil {
+	if err := standby.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -684,7 +684,7 @@ func testFailoverTooMuchLag(t *testing.T, standbyCluster bool) {
 	}
 
 	// standby shouldn't be elected as master since its lag is greater than MaxStandbyLag
-	if err := standby.WaitDBRole(common.RoleMaster, ptk, 30*time.Second); err == nil {
+	if err := standby.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err == nil {
 		t.Fatalf("standby shouldn't be elected as master")
 	}
 }
@@ -763,7 +763,7 @@ func testOldMasterRestart(t *testing.T, syncRepl, minSync0 bool, usePgrewind boo
 	t.Logf("Stopping current master keeper: %s", master.uid)
 	master.Stop()
 
-	if err := standbys[0].WaitDBRole(common.RoleMaster, ptk, 30*time.Second); err != nil {
+	if err := standbys[0].WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -813,7 +813,7 @@ func testOldMasterRestart(t *testing.T, syncRepl, minSync0 bool, usePgrewind boo
 	if err := waitLines(t, master, 2, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := master.WaitDBRole(common.RoleStandby, ptk, 30*time.Second); err != nil {
+	if err := master.WaitDBRole(common.RoleReplica, ptk, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -922,7 +922,7 @@ func testPartition1(t *testing.T, syncRepl, minSync0, usePgrewind bool, standbyC
 	if err := master.SignalPG(syscall.SIGSTOP); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := standbys[0].WaitDBRole(common.RoleMaster, ptk, 60*time.Second); err != nil {
+	if err := standbys[0].WaitDBRole(common.RolePrimary, ptk, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -982,7 +982,7 @@ func testPartition1(t *testing.T, syncRepl, minSync0, usePgrewind bool, standbyC
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// Old master should become a standby of the new one
-	if err := master.WaitDBRole(common.RoleStandby, ptk, 60*time.Second); err != nil {
+	if err := master.WaitDBRole(common.RoleReplica, ptk, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -1136,7 +1136,7 @@ func testTimelineFork(t *testing.T, syncRepl, usePgrewind bool) {
 	// Wait for cluster data
 	waitKeeperReady(t, sm, standbys[0])
 
-	err = standbys[0].WaitDBRole(common.RoleMaster, nil, 60*time.Second)
+	err = standbys[0].WaitDBRole(common.RolePrimary, nil, 60*time.Second)
 	if !syncRepl && err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -1179,7 +1179,7 @@ func testTimelineFork(t *testing.T, syncRepl, usePgrewind bool) {
 	if err := waitLines(t, standbys[1], 3, 120*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := standbys[1].WaitDBRole(common.RoleStandby, nil, 60*time.Second); err != nil {
+	if err := standbys[1].WaitDBRole(common.RoleReplica, nil, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1289,7 +1289,7 @@ func testMasterChangedAddress(t *testing.T, standbyCluster bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := master.WaitDBRole(common.RoleMaster, ptk, 30*time.Second); err != nil {
+	if err := master.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1322,7 +1322,7 @@ func TestFailedStandby(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:             &newCluster,
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
@@ -1413,7 +1413,7 @@ func TestLoweredMaxStandbysPerSender(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:             &newCluster,
 		SleepInterval:        &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:         &cluster.Duration{Duration: 5 * time.Second},
@@ -1478,7 +1478,7 @@ func TestKeeperRemoval(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -1567,7 +1567,7 @@ func TestKeeperRemoval(t *testing.T) {
 	if err := waitLines(t, standby2, 2, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := standby2.WaitDBRole(common.RoleStandby, nil, 30*time.Second); err != nil {
+	if err := standby2.WaitDBRole(common.RoleReplica, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1586,7 +1586,7 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:               &newCluster,
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
@@ -1712,7 +1712,7 @@ func TestStandbyCantSync(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -1787,7 +1787,7 @@ func TestStandbyCantSync(t *testing.T) {
 	if err := WaitClusterDataMaster(standbys[1].uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standbys[1].uid)
 	}
-	if err := standbys[1].WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := standbys[1].WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1896,7 +1896,7 @@ func TestDisappearedKeeperData(t *testing.T) {
 	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
-	if err := standby.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := standby.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1988,7 +1988,7 @@ func testForceFail(t *testing.T, syncRepl bool, standbyCluster bool) {
 	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
-	if err := standby.WaitDBRole(common.RoleMaster, ptk, 30*time.Second); err != nil {
+	if err := standby.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -2182,7 +2182,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 
 	syncRep := true
 	usePgRewind := true
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:               &newCluster,
 		SleepInterval:          &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:           &cluster.Duration{Duration: 5 * time.Second},
@@ -2326,7 +2326,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	if err := WaitClusterDataMaster(standby.uid, store, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
-	if err := standby.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := standby.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 

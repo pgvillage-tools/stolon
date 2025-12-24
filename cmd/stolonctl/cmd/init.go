@@ -107,14 +107,14 @@ func initCluster(_ *cobra.Command, args []string) {
 		die("cannot get cluster data: %v", err)
 	}
 
-	var cs *cluster.ClusterSpec
+	var cs *cluster.Spec
 	if dataSupplied {
 		if err := json.Unmarshal(data, &cs); err != nil {
 			die("failed to unmarshal cluster spec: %v", err)
 		}
 	} else {
 		// Define a new cluster spec with initMode "new"
-		cs = &cluster.ClusterSpec{}
+		cs = &cluster.Spec{}
 		newCluster := cluster.New
 		cs.InitMode = &newCluster
 	}
@@ -124,7 +124,7 @@ func initCluster(_ *cobra.Command, args []string) {
 	}
 
 	c := cluster.NewCluster(common.UID(), cs)
-	cd = cluster.NewClusterData(c)
+	cd = cluster.NewData(c)
 
 	// We ignore if cd has been modified between reading and writing
 	if err := e.PutClusterData(context.TODO(), cd); err != nil {

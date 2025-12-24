@@ -15,6 +15,7 @@
 // Package cluster defines all resources used at the cluster level
 package cluster
 
+//TODO: Split into multiple modules
 import (
 	"encoding/json"
 	"fmt"
@@ -29,54 +30,116 @@ import (
 	"github.com/sorintlab/stolon/internal/util"
 )
 
+// TODO: Rename XLOG to WAL everywhere
+
 const (
 	// CurrentCDFormatVersion represents the current version of the Cluster Data Format.
 	// It will be raised whenever we change the API
 	CurrentCDFormatVersion uint64 = 1
-	DefaultStoreTimeout           = 5 * time.Second
 
+	// DefaultStoreTimeout sets the default for a store timeout
+	DefaultStoreTimeout = 5 * time.Second
+
+	// DefaultDBNotIncreasingXLogPosTimes sets a default for the number of checks that it is ok for stolon
+	// not to detect XLog position increases on a standby. If WAL position is not increased more then this value,
+	// the standby is assumed not to be syncing properly.
 	DefaultDBNotIncreasingXLogPosTimes = 10
 
-	DefaultSleepInterval                              = 5 * time.Second
-	DefaultRequestTimeout                             = 10 * time.Second
-	DefaultConvergenceTimeout                         = 30 * time.Second
-	DefaultInitTimeout                                = 5 * time.Minute
-	DefaultSyncTimeout                                = 0
-	DefaultDBWaitReadyTimeout                         = 60 * time.Second
-	DefaultFailInterval                               = 20 * time.Second
-	DefaultDeadKeeperRemovalInterval                  = 48 * time.Hour
-	DefaultProxyCheckInterval                         = 5 * time.Second
-	DefaultProxyTimeout                               = 15 * time.Second
-	DefaultMaxStandbys               uint16           = 20
-	DefaultMaxStandbysPerSender      uint16           = 3
-	DefaultMaxStandbyLag                              = 1024 * 1204
-	DefaultSynchronousReplication                     = false
-	DefaultMinSynchronousStandbys    uint16           = 1
-	DefaultMaxSynchronousStandbys    uint16           = 1
-	DefaultAdditionalWalSenders                       = 5
-	DefaultUsePgrewind                                = false
-	DefaultMergePGParameter                           = true
-	DefaultRole                      Role             = Primary
-	DefaultSUReplAccess              SUReplAccessMode = SUReplAccessAll
-	DefaultAutomaticPgRestart                         = false
+	// DefaultSleepInterval is the default for sleeps during checks
+	DefaultSleepInterval = 5 * time.Second
+
+	// DefaultRequestTimeout is the default for a request to time out
+	DefaultRequestTimeout = 10 * time.Second
+
+	// DefaultConvergenceTimeout sets the timeout for convergence (of primaries and replica's) to be successful.
+	DefaultConvergenceTimeout = 30 * time.Second
+
+	// DefaultInitTimeout sets the default timeout fo initializing a new cluster
+	DefaultInitTimeout = 5 * time.Minute
+
+	// DefaultSyncTimeout sets the default timeout for waiting for a database recovery
+	// (including the replay of WAL files in case of Point-In-Time-Recovery)
+	DefaultSyncTimeout = 0
+
+	// DefaultDBWaitReadyTimeout sets the default for Ready status (being able to connect to PostgreSQL)
+	DefaultDBWaitReadyTimeout = 60 * time.Second
+
+	// DefaultFailInterval sets the default for the cluster to be assumed unhealthy
+	DefaultFailInterval = 20 * time.Second
+
+	// DefaultDeadKeeperRemovalInterval is the interval after which a keeper is assumed dead and is removed from the
+	// config.
+	DefaultDeadKeeperRemovalInterval = 48 * time.Hour
+
+	// DefaultProxyCheckInterval is the default for the interval for the proxy to check the endpoint
+	DefaultProxyCheckInterval = 5 * time.Second
+
+	// DefaultProxyTimeout is the default for the proxy check timeout. Once expired, all connections will be closed.
+	DefaultProxyTimeout = 15 * time.Second
+
+	// DefaultMaxStandbys sets the default for teh number of standby's per keeper (input for max_replication_slots and
+	// max_wal_senders)
+	DefaultMaxStandbys uint16 = 20
+
+	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup of old standby's is triggered.
+	DefaultMaxStandbysPerSender uint16 = 3
+
+	// DefaultMaxStandbyLag sets the default for maximum standby lag for sync replica's (1MiB).
+	// Replicas with more lag are assumed not to be valid sync replica's (yet)
+	DefaultMaxStandbyLag = 1024 * 1204
+
+	// DefaultSynchronousReplication sets the default for sync replication when not set by config
+	DefaultSynchronousReplication = false
+
+	// DefaultMinSynchronousStandbys sets the default for minimum number of sync standby's
+	DefaultMinSynchronousStandbys uint16 = 1
+
+	// DefaultMaxSynchronousStandbys sets the default for maximum number of sync standby's
+	DefaultMaxSynchronousStandbys uint16 = 1
+
+	// DefaultAdditionalWalSenders sets the default for additional wal-senders on top of as required for stolon managed
+	DefaultAdditionalWalSenders = 5
+
+	// DefaultUsePgrewind sets the default for using PgRewind (over starting over)
+	// TODO: enable pgrewind by default
+	DefaultUsePgrewind = false
+
+	// DefaultMergePGParameter sets the default for merging parameters from local cluster to config after initialization
+	DefaultMergePGParameter = true
+
+	// DefaultRole sets the default role for this cluster. A primary cluster has a primary, a Standby has only replica's
+	// and is replicating from another cluster
+	DefaultRole Role = Primary
+
+	// DefaultSUReplAccess sets the default for replication access (strict: only from other standby's in this cluster to
+	// primary; all: any replication conenction is accepted when properly authenticated)
+	DefaultSUReplAccess SUReplAccessMode = SUReplAccessAll
+
+	// DefaultAutomaticPgRestart sets the default for restarting postgres when required to apply config changes
+	DefaultAutomaticPgRestart = false
 )
 
 const (
-	NoGeneration      int64 = 0
+	// NoGeneration is the default Generation when not converging
+	NoGeneration int64 = 0
+	// InitialGeneration is the default generation when starting convergence
 	InitialGeneration int64 = 1
 )
 
+// PGParameters is a map of all PostgreSQL config as configured for this cluster
 type PGParameters map[string]string
 
+// FollowType is an enum for following internal (local primary keeper) or external (other cluster)
 type FollowType string
 
 const (
-	// Follow an db managed by a keeper in our cluster
+	// FollowTypeInternal specifies that a db managed by a keeper in our cluster is followed
 	FollowTypeInternal FollowType = "internal"
-	// Follow an external db
+	// FollowTypeExternal specifies that a db in another cluster is followed
 	FollowTypeExternal FollowType = "external"
 )
 
+// FollowConfig specifies the config for this keeper to follow another instance
 type FollowConfig struct {
 	Type FollowType `json:"type,omitempty"`
 	// Keeper ID to follow when Type is "internal"
@@ -86,6 +149,7 @@ type FollowConfig struct {
 	ArchiveRecoverySettings *ArchiveRecoverySettings `json:"archiveRecoverySettings,omitempty"`
 }
 
+// PostgresBinaryVersion specifies the PostgreSQL binary version (major / minor)
 type PostgresBinaryVersion struct {
 	Maj int
 	Min int
@@ -200,7 +264,8 @@ const (
 	SUReplAccessStrict SUReplAccessMode = "strict"
 )
 
-type ClusterSpec struct {
+// Spec holds the cluster wide configuration
+type Spec struct {
 	// Interval to wait before next check
 	SleepInterval *Duration `json:"sleepInterval,omitempty"`
 	// Time after which any request (keepers checks from sentinel etc...) will fail.
@@ -284,23 +349,26 @@ type ClusterSpec struct {
 	AutomaticPgRestart *bool `json:"automaticPgRestart"`
 }
 
-type ClusterStatus struct {
+// Status stores the status info for this cluster
+type Status struct {
 	CurrentGeneration int64 `json:"currentGeneration,omitempty"`
 	Phase             Phase `json:"phase,omitempty"`
 	// Master DB UID
 	Master string `json:"master,omitempty"`
 }
 
+// Cluster wraps cluster config, cluster status, UUID, etc together
 type Cluster struct {
 	UID        string    `json:"uid,omitempty"`
 	Generation int64     `json:"generation,omitempty"`
 	ChangeTime time.Time `json:"changeTime,omitempty"`
 
-	Spec *ClusterSpec `json:"spec,omitempty"`
+	Spec *Spec `json:"spec,omitempty"`
 
-	Status ClusterStatus `json:"status,omitempty"`
+	Status Status `json:"status,omitempty"`
 }
 
+// DeepCopy copies the entire structure and returns a complete clone
 func (c *Cluster) DeepCopy() *Cluster {
 	nc, err := copystructure.Copy(c)
 	if err != nil {
@@ -312,28 +380,29 @@ func (c *Cluster) DeepCopy() *Cluster {
 	return nc.(*Cluster)
 }
 
-func (c *ClusterSpec) DeepCopy() *ClusterSpec {
-	nc, err := copystructure.Copy(c)
+// DeepCopy copies the entire structure and returns a complete clone
+func (s *Spec) DeepCopy() *Spec {
+	nc, err := copystructure.Copy(s)
 	if err != nil {
 		panic(err)
 	}
-	if !reflect.DeepEqual(c, nc) {
+	if !reflect.DeepEqual(s, nc) {
 		panic("not equal")
 	}
-	return nc.(*ClusterSpec)
+	return nc.(*Spec)
 }
 
-// DefSpec returns a new ClusterSpec with unspecified values populated with
+// DefSpec returns a new Spec with unspecified values populated with
 // their defaults
-func (c *Cluster) DefSpec() *ClusterSpec {
+func (c *Cluster) DefSpec() *Spec {
 	return c.Spec.WithDefaults()
 }
 
-// WithDefaults returns a new ClusterSpec with unspecified values populated with
+// WithDefaults returns a new Spec with unspecified values populated with
 // their defaults
-func (os *ClusterSpec) WithDefaults() *ClusterSpec {
-	// Take a copy of the input ClusterSpec since we don't want to change the original
-	s := os.DeepCopy()
+func (s *Spec) WithDefaults() *Spec {
+	// Take a copy of the input Spec since we don't want to change the original
+	s = s.DeepCopy()
 	if s.SleepInterval == nil {
 		s.SleepInterval = &Duration{Duration: DefaultSleepInterval}
 	}
@@ -406,8 +475,8 @@ func (os *ClusterSpec) WithDefaults() *ClusterSpec {
 }
 
 // Validate validates a cluster spec.
-func (os *ClusterSpec) Validate() error {
-	s := os.WithDefaults()
+func (s *Spec) Validate() error {
+	s = s.WithDefaults()
 	if s.SleepInterval.Duration < 0 {
 		return fmt.Errorf("sleepInterval must be positive")
 	}
@@ -493,7 +562,6 @@ func (os *ClusterSpec) Validate() error {
 		}
 	default:
 		return fmt.Errorf("unknown initMode: %q", *s.InitMode)
-
 	}
 
 	switch *s.DefaultSUReplAccessMode {
@@ -525,7 +593,8 @@ func validateReplicationSlot(replicationSlot string) error {
 	return nil
 }
 
-func (c *Cluster) UpdateSpec(ns *ClusterSpec) error {
+// UpdateSpec will update the spec of a cluster
+func (c *Cluster) UpdateSpec(ns *Spec) error {
 	s := c.Spec
 	if err := ns.Validate(); err != nil {
 		return fmt.Errorf("invalid cluster spec: %v", err)
@@ -542,21 +611,24 @@ func (c *Cluster) UpdateSpec(ns *ClusterSpec) error {
 	return nil
 }
 
-func NewCluster(uid string, cs *ClusterSpec) *Cluster {
+// NewCluster returns a freshly initialized cluster object
+func NewCluster(uid string, cs *Spec) *Cluster {
 	c := &Cluster{
 		UID:        uid,
 		Generation: InitialGeneration,
 		ChangeTime: time.Now(),
 		Spec:       cs,
-		Status: ClusterStatus{
+		Status: Status{
 			Phase: Initializing,
 		},
 	}
 	return c
 }
 
+// KeeperSpec defines a spec for a Keeper resource
 type KeeperSpec struct{}
 
+// KeeperStatus defines all staus fields on a Keeper
 type KeeperStatus struct {
 	Healthy         bool      `json:"healthy,omitempty"`
 	LastHealthyTime time.Time `json:"lastHealthyTime,omitempty"`
@@ -571,6 +643,7 @@ type KeeperStatus struct {
 	CanBeSynchronousReplica *bool `json:"canBeSynchronousReplica,omitempty"`
 }
 
+// Keeper combines the spec, status and other fields belonging to a keeper
 type Keeper struct {
 	// Keeper ID
 	UID        string    `json:"uid,omitempty"`
@@ -582,6 +655,7 @@ type Keeper struct {
 	Status KeeperStatus `json:"status,omitempty"`
 }
 
+// NewKeeperFromKeeperInfo returns a freshly initialized keeper created from a KeeperInfo object
 func NewKeeperFromKeeperInfo(ki *KeeperInfo) *Keeper {
 	return &Keeper{
 		UID:        ki.UID,
@@ -596,6 +670,7 @@ func NewKeeperFromKeeperInfo(ki *KeeperInfo) *Keeper {
 	}
 }
 
+// SortedKeys returns all keys of the Keepers as a sorted list
 func (kss Keepers) SortedKeys() []string {
 	keys := []string{}
 	for k := range kss {
@@ -605,12 +680,13 @@ func (kss Keepers) SortedKeys() []string {
 	return keys
 }
 
+// DBSpec defines the spec of a database
 type DBSpec struct {
 	// The KeeperUID this db is assigned to
 	KeeperUID string `json:"keeperUID,omitempty"`
 	// Time after which any request (keepers checks from sentinel etc...) will fail.
 	RequestTimeout Duration `json:"requestTimeout,omitempty"`
-	// See ClusterSpec MaxStandbys description
+	// See Spec MaxStandbys description
 	MaxStandbys uint16 `json:"maxStandbys,omitempty"`
 	// Use Synchronous replication between master and its standbys
 	SynchronousReplication bool `json:"synchronousReplication,omitempty"`
@@ -648,6 +724,7 @@ type DBSpec struct {
 	ExternalSynchronousStandbys []string `json:"externalSynchronousStandbys"`
 }
 
+// DBStatus defines the status of a DB
 type DBStatus struct {
 	Healthy bool `json:"healthy,omitempty"`
 
@@ -678,6 +755,7 @@ type DBStatus struct {
 	OlderWalFile string `json:"olderWalFile,omitempty"`
 }
 
+// DB is an instance in a cluster
 type DB struct {
 	UID        string    `json:"uid,omitempty"`
 	Generation int64     `json:"generation,omitempty"`
@@ -688,14 +766,17 @@ type DB struct {
 	Status DBStatus `json:"status,omitempty"`
 }
 
+// ProxySpec defines the config of a Proxy instance
 type ProxySpec struct {
 	MasterDBUID    string   `json:"masterDbUid,omitempty"`
 	EnabledProxies []string `json:"enabledProxies,omitempty"`
 }
 
+// ProxyStatus defines the status of a Proxy instance
 type ProxyStatus struct {
 }
 
+// Proxy combines the Spec, Status and other config of a Proxy into one resource
 type Proxy struct {
 	UID        string    `json:"uid,omitempty"`
 	Generation int64     `json:"generation,omitempty"`
@@ -706,16 +787,20 @@ type Proxy struct {
 	Status ProxyStatus `json:"status,omitempty"`
 }
 
+// TODO: Nowadays Duration resources marshal and unmarshal properly so we can get rid of below Duration
+
 // Duration is needed to be able to marshal/unmarshal json strings with time
 // unit (eg. 3s, 100ms) instead of ugly times in nanoseconds.
 type Duration struct {
 	time.Duration
 }
 
+// MarshalJSON is needed for JSON serialization of Duration resources
 func (d Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
+// UnmarshalJSON is needed for JSON deserialization of Duration resources
 func (d *Duration) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), `"`)
 	du, err := time.ParseDuration(s)
@@ -726,12 +811,15 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Keepers can store all keepers for a cluster
 type Keepers map[string]*Keeper
+
+// DBs can store all databases for a cluster
 type DBs map[string]*DB
 
-// for simplicity keep all the changes to the various components atomic (using
+// Data is meant to keep all the changes to the various components atomic (using
 // an unique key)
-type ClusterData struct {
+type Data struct {
 	// ClusterData format version. Used to detect incompatible
 	// version and do upgrade. Needs to be bumped when a non
 	// backward compatible change is done to the other struct
@@ -744,29 +832,32 @@ type ClusterData struct {
 	Proxy         *Proxy    `json:"proxy"`
 }
 
-func NewClusterData(c *Cluster) *ClusterData {
-	return &ClusterData{
+// NewData returns a freshly initualized Data object
+func NewData(c *Cluster) *Data {
+	return &Data{
 		FormatVersion: CurrentCDFormatVersion,
 		Cluster:       c,
-		Keepers:       make(Keepers),
-		DBs:           make(DBs),
+		Keepers:       Keepers{},
+		DBs:           DBs{},
 		Proxy:         &Proxy{},
 	}
 }
 
-func (c *ClusterData) DeepCopy() *ClusterData {
-	nc, err := copystructure.Copy(c)
+// DeepCopy copies the entire structure and returns a complete clone
+func (d *Data) DeepCopy() *Data {
+	nd, err := copystructure.Copy(d)
 	if err != nil {
 		panic(err)
 	}
-	if !reflect.DeepEqual(c, nc) {
+	if !reflect.DeepEqual(d, nd) {
 		panic("not equal")
 	}
-	return nc.(*ClusterData)
+	return nd.(*Data)
 }
 
-func (cd *ClusterData) FindDB(keeper *Keeper) *DB {
-	for _, db := range cd.DBs {
+// FindDB can be used to find a DB belonging to a Keeper
+func (d *Data) FindDB(keeper *Keeper) *DB {
+	for _, db := range d.DBs {
 		if db.Spec.KeeperUID == keeper.UID {
 			return db
 		}

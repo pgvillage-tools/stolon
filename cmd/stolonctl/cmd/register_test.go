@@ -85,7 +85,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		}
 
 		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
+		clusterData := cluster.Data{
 			Cluster: &cluster.Cluster{},
 			DBs:     cluster.DBs{},
 		}
@@ -109,7 +109,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		discoveredServices := register.ServiceInfos{}
 
 		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
+		clusterData := cluster.Data{
 			Cluster: &cluster.Cluster{},
 			DBs: cluster.DBs{
 				"uid1": &cluster.DB{
@@ -143,7 +143,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		discoveredServices := register.ServiceInfos{"uid1": serviceInfo, "uid2": anotherServiceInfo, "uid3": yetAnotherServiceInfo}
 
 		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
+		clusterData := cluster.Data{
 			Cluster: &cluster.Cluster{},
 			DBs: cluster.DBs{
 				"uid1": &cluster.DB{
@@ -176,8 +176,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			discoveredServices := register.ServiceInfos{"uid1": serviceInfo, "uid2": masterServiceInfo}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -207,8 +207,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			discoveredServices := register.ServiceInfos{"uid3": masterService}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid2": &cluster.DB{
 						UID:    "uid2",
@@ -233,8 +233,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			discoveredServices := register.ServiceInfos{}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -262,8 +262,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			discoveredServices := register.ServiceInfos{"uid1": serviceInfo}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -293,7 +293,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			discoveredServices := register.ServiceInfos{"uid3": masterService}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
+			clusterData := cluster.Data{
 				Cluster: &cluster.Cluster{},
 				DBs:     cluster.DBs{},
 			}
@@ -315,8 +315,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5432, ID: "uid1", Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",

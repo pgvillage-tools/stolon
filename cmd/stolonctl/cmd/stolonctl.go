@@ -99,7 +99,7 @@ func die(format string, a ...any) {
 	os.Exit(1)
 }
 
-func getClusterData(e store.Store) (*cluster.ClusterData, *store.KVPair, error) {
+func getClusterData(e store.Store) (*cluster.Data, *store.KVPair, error) {
 	cd, pair, err := e.GetClusterData(context.TODO())
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot get cluster data: %v", err)

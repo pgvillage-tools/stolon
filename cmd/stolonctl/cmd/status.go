@@ -200,7 +200,7 @@ func renderText(status Status, generateErr error) {
 	stdout("")
 }
 
-func printTree(dbuid string, cd *cluster.ClusterData, level int, prefix string, tail bool) {
+func printTree(dbuid string, cd *cluster.Data, level int, prefix string, tail bool) {
 	// skip not existing db: specified as a follower but not available in the
 	// cluster spec (this should happen only when doing a stolonctl
 	// removekeeper)

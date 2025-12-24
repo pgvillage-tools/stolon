@@ -49,7 +49,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 	storePath := filepath.Join(common.StorePrefix, clusterName)
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},

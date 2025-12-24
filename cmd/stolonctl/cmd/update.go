@@ -49,17 +49,17 @@ func init() {
 	CmdStolonCtl.AddCommand(cmdUpdate)
 }
 
-func patchClusterSpec(cs *cluster.ClusterSpec, p []byte) (*cluster.ClusterSpec, error) {
+func patchClusterSpec(cs *cluster.Spec, p []byte) (*cluster.Spec, error) {
 	csj, err := json.Marshal(cs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal cluster spec: %v", err)
 	}
 
-	newcsj, err := strategicpatch.StrategicMergePatch(csj, p, &cluster.ClusterSpec{})
+	newcsj, err := strategicpatch.StrategicMergePatch(csj, p, &cluster.Spec{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge patch cluster spec: %v", err)
 	}
-	var newcs *cluster.ClusterSpec
+	var newcs *cluster.Spec
 	if err := json.Unmarshal(newcsj, &newcs); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal patched cluster spec: %v", err)
 	}
@@ -113,7 +113,7 @@ func update(_ *cobra.Command, args []string) {
 			die("no cluster spec available")
 		}
 
-		var newcs *cluster.ClusterSpec
+		var newcs *cluster.Spec
 		if updateOpts.patch {
 			newcs, err = patchClusterSpec(cd.Cluster.Spec, data)
 			if err != nil {

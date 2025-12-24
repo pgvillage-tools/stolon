@@ -97,7 +97,7 @@ func TestWriteClusterdata(t *testing.T) {
 
 		reader := strings.NewReader("{}")
 		store := mock_store.NewMockStore(ctrl)
-		store.EXPECT().GetClusterData(gomock.Any()).Return(&cluster.ClusterData{}, nil, nil)
+		store.EXPECT().GetClusterData(gomock.Any()).Return(&cluster.Data{}, nil, nil)
 
 		err := writeClusterdata(reader, store)
 
@@ -120,7 +120,7 @@ func TestWriteClusterdata(t *testing.T) {
 
 		reader := strings.NewReader("{}")
 		store := mock_store.NewMockStore(ctrl)
-		cd := &cluster.ClusterData{}
+		cd := &cluster.Data{}
 		store.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
 		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(errors.New("error while uploading the cluster data"))
 
@@ -145,7 +145,7 @@ func TestWriteClusterdata(t *testing.T) {
 
 		reader := strings.NewReader("{}")
 		store := mock_store.NewMockStore(ctrl)
-		cd := &cluster.ClusterData{}
+		cd := &cluster.Data{}
 		store.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
 		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(nil)
 

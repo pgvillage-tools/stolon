@@ -27,7 +27,7 @@ import (
 // from underlying store
 type Cluster struct {
 	name        string
-	cd          *cluster.ClusterData
+	cd          *cluster.Data
 	tagMasterAs Tags
 	tagSlaveAs  Tags
 }

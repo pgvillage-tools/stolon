@@ -16,6 +16,7 @@ package util
 
 import "sort"
 
+// StringInSlice checks for a string in a string slice
 func StringInSlice(s []string, e string) bool {
 	for _, v := range s {
 		if v == e {

@@ -83,17 +83,17 @@ func TestParseSynchronousStandbyNames(t *testing.T) {
 
 func TestGenerateHBA(t *testing.T) {
 	// minimal clusterdata with only the fields used by generateHBA
-	cd := &cluster.ClusterData{
+	cd := &cluster.Data{
 		Cluster: &cluster.Cluster{
-			Spec:   &cluster.ClusterSpec{},
-			Status: cluster.ClusterStatus{},
+			Spec:   &cluster.Spec{},
+			Status: cluster.Status{},
 		},
 		Keepers: cluster.Keepers{},
 		DBs: cluster.DBs{
 			"db1": &cluster.DB{
 				UID: "db1",
 				Spec: &cluster.DBSpec{
-					Role: common.RoleMaster,
+					Role: common.RolePrimary,
 				},
 				Status: cluster.DBStatus{
 					ListenAddress: "192.168.0.1",
@@ -102,7 +102,7 @@ func TestGenerateHBA(t *testing.T) {
 			"db2": &cluster.DB{
 				UID: "db2",
 				Spec: &cluster.DBSpec{
-					Role: common.RoleStandby,
+					Role: common.RoleReplica,
 					FollowConfig: &cluster.FollowConfig{
 						Type:  cluster.FollowTypeInternal,
 						DBUID: "db1",
@@ -115,7 +115,7 @@ func TestGenerateHBA(t *testing.T) {
 			"db3": &cluster.DB{
 				UID: "db3",
 				Spec: &cluster.DBSpec{
-					Role: common.RoleStandby,
+					Role: common.RoleReplica,
 					FollowConfig: &cluster.FollowConfig{
 						Type:  cluster.FollowTypeInternal,
 						DBUID: "db1",

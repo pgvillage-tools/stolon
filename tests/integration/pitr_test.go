@@ -69,7 +69,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -109,7 +109,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := populate(t, tk); err != nil {
@@ -155,7 +155,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	}
 
 	// Now initialize a new cluster with the existing keeper
-	initialClusterSpec = &cluster.ClusterSpec{
+	initialClusterSpec = &cluster.Spec{
 		InitMode:           &pitrCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -203,7 +203,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	if err := tk.WaitDBUp(60 * time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
