@@ -6,11 +6,12 @@ package mock_store
 
 import (
 	context "context"
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	cluster "github.com/sorintlab/stolon/internal/cluster"
 	store "github.com/sorintlab/stolon/internal/store"
-	reflect "reflect"
-	time "time"
 )
 
 // MockStore is a mock of Store interface
@@ -37,7 +38,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AtomicPutClusterData mocks base method
-func (m *MockStore) AtomicPutClusterData(ctx context.Context, cd *cluster.ClusterData, previous *store.KVPair) (*store.KVPair, error) {
+func (m *MockStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *store.KVPair) (*store.KVPair, error) {
 	ret := m.ctrl.Call(m, "AtomicPutClusterData", ctx, cd, previous)
 	ret0, _ := ret[0].(*store.KVPair)
 	ret1, _ := ret[1].(error)
@@ -50,7 +51,7 @@ func (mr *MockStoreMockRecorder) AtomicPutClusterData(ctx, cd, previous any) *go
 }
 
 // PutClusterData mocks base method
-func (m *MockStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData) error {
+func (m *MockStore) PutClusterData(ctx context.Context, cd *cluster.Data) error {
 	ret := m.ctrl.Call(m, "PutClusterData", ctx, cd)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -62,9 +63,9 @@ func (mr *MockStoreMockRecorder) PutClusterData(ctx, cd any) *gomock.Call {
 }
 
 // GetClusterData mocks base method
-func (m *MockStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *store.KVPair, error) {
+func (m *MockStore) GetClusterData(ctx context.Context) (*cluster.Data, *store.KVPair, error) {
 	ret := m.ctrl.Call(m, "GetClusterData", ctx)
-	ret0, _ := ret[0].(*cluster.ClusterData)
+	ret0, _ := ret[0].(*cluster.Data)
 	ret1, _ := ret[1].(*store.KVPair)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2

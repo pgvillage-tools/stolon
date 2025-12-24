@@ -40,18 +40,18 @@ var now = time.Now()
 
 func TestUpdateCluster(t *testing.T) {
 	tests := []struct {
-		cd    *cluster.ClusterData
-		outcd *cluster.ClusterData
+		cd    *cluster.Data
+		outcd *cluster.Data
 		err   error
 	}{
 		// Init phase, also test dbSpec parameters copied from clusterSpec.
 		// #0 cluster initialization, no keepers
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -65,7 +65,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 					},
@@ -74,11 +74,11 @@ func TestUpdateCluster(t *testing.T) {
 				DBs:     cluster.DBs{},
 				Proxy:   &cluster.Proxy{},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -92,7 +92,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 					},
@@ -105,11 +105,11 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #1 cluster initialization, one keeper
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -123,7 +123,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 					},
@@ -141,11 +141,11 @@ func TestUpdateCluster(t *testing.T) {
 				DBs:   cluster.DBs{},
 				Proxy: &cluster.Proxy{},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -159,7 +159,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 						Master:            "db1",
@@ -190,7 +190,7 @@ func TestUpdateCluster(t *testing.T) {
 							// revive:disable-next-line
 							PGParameters:                cluster.PGParameters{"param01": "value01", "param02": "value02"},
 							InitMode:                    cluster.NewDB,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							IncludeConfig:               true,
 							SynchronousStandbys:         nil,
@@ -203,11 +203,11 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #2 cluster initialization, more than one keeper, the first will be chosen to be the new master.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -220,7 +220,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 					},
@@ -246,11 +246,11 @@ func TestUpdateCluster(t *testing.T) {
 				DBs:   cluster.DBs{},
 				Proxy: &cluster.Proxy{},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -263,7 +263,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 						Master:            "db1",
@@ -304,7 +304,7 @@ func TestUpdateCluster(t *testing.T) {
 								"param02": "value02",
 							},
 							InitMode:                    cluster.NewDB,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							IncludeConfig:               true,
 							SynchronousStandbys:         nil,
@@ -317,11 +317,11 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #3 cluster initialization, keeper initialization failed
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -329,7 +329,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:             &newCluster,
 						MergePgParameters:    util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 						Master:            "db1",
@@ -362,7 +362,7 @@ func TestUpdateCluster(t *testing.T) {
 							KeeperUID:                   "keeper1",
 							InitMode:                    cluster.NewDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -374,11 +374,11 @@ func TestUpdateCluster(t *testing.T) {
 				},
 				Proxy: &cluster.Proxy{},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -386,7 +386,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:             &newCluster,
 						MergePgParameters:    util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Initializing,
 					},
@@ -417,17 +417,17 @@ func TestUpdateCluster(t *testing.T) {
 		// Normal phase
 		// #4 One master and one standby, both healthy: no change from previous cd
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -463,7 +463,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -484,7 +484,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -507,17 +507,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -553,7 +553,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -574,7 +574,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -600,17 +600,17 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #5 One master and one standby, master db not healthy: standby elected as new master.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -645,7 +645,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -665,7 +665,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -688,17 +688,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -733,7 +733,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -753,7 +753,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -775,17 +775,17 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #6 From the previous test, new master (db2) converged. Old master setup to follow new master (db2).
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -820,7 +820,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -840,7 +840,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -859,17 +859,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -903,7 +903,7 @@ func TestUpdateCluster(t *testing.T) {
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							SynchronousReplication:      false,
 							Followers:                   []string{"db3"},
 							SynchronousStandbys:         nil,
@@ -925,7 +925,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.ResyncDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -951,17 +951,17 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #7 One master and one standby, master db not healthy, standby not converged (old clusterview): no standby elected as new master, clusterview not changed.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -996,7 +996,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1016,7 +1016,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1039,17 +1039,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1084,7 +1084,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1104,7 +1104,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1130,17 +1130,17 @@ func TestUpdateCluster(t *testing.T) {
 		},
 		// #8 One master and one standby, master healthy but not converged: standby elected as new master.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1175,7 +1175,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1195,7 +1195,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1218,17 +1218,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -1263,7 +1263,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1283,7 +1283,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1307,17 +1307,17 @@ func TestUpdateCluster(t *testing.T) {
 		// Standby ok.
 		// No new standby db on free keeper created.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1361,7 +1361,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1382,7 +1382,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1405,17 +1405,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1459,7 +1459,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1480,7 +1480,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1508,17 +1508,17 @@ func TestUpdateCluster(t *testing.T) {
 		// Standby failed to converge (keeper healthy).
 		// New standby db on free keeper created.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1561,7 +1561,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1581,7 +1581,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1604,17 +1604,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1657,7 +1657,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1677,7 +1677,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1702,7 +1702,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.ResyncDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1729,17 +1729,17 @@ func TestUpdateCluster(t *testing.T) {
 		// #11 From previous test.
 		// new standby db "db3" converged, old standby db removed since exceeds MaxStandbysPerSender.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1782,7 +1782,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1802,7 +1802,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1827,7 +1827,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1850,17 +1850,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1903,7 +1903,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db3"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1924,7 +1924,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -1951,17 +1951,17 @@ func TestUpdateCluster(t *testing.T) {
 		// #12 One master and one standby, 2 keepers. Standby failed to converge (keeper healthy).
 		// No standby db created since there's no free keeper.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -1997,7 +1997,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2018,7 +2018,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2041,17 +2041,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2087,7 +2087,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2108,7 +2108,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2135,17 +2135,17 @@ func TestUpdateCluster(t *testing.T) {
 		// #13 One master and one keeper without db assigned.
 		// keeper2 dead for more then DeadKeeperRemovalInterval: keeper2 removed.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2181,7 +2181,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2200,17 +2200,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2238,7 +2238,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2261,11 +2261,11 @@ func TestUpdateCluster(t *testing.T) {
 		// #14 Changed clusterSpec parameters.
 		// RequestTimeout, MaxStandbys, UsePgrewind, PGParameters should bet updated in the DBSpecs.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -2277,7 +2277,7 @@ func TestUpdateCluster(t *testing.T) {
 						UsePgrewind:            util.ToPtr(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2315,7 +2315,7 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication:      false,
 							UsePgrewind:                 false,
 							PGParameters:                nil,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2338,7 +2338,7 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication: false,
 							UsePgrewind:            false,
 							PGParameters:           nil,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2361,11 +2361,11 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -2377,7 +2377,7 @@ func TestUpdateCluster(t *testing.T) {
 						UsePgrewind:            util.ToPtr(true),
 						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2418,7 +2418,7 @@ func TestUpdateCluster(t *testing.T) {
 								"param01": "value01",
 								"param02": "value02",
 							},
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -2442,7 +2442,7 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication: false,
 							UsePgrewind:            true,
 							PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2469,18 +2469,18 @@ func TestUpdateCluster(t *testing.T) {
 		// #15 One master and one standby all healthy. Synchronous replication
 		// enabled right now in the cluster spec.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2515,7 +2515,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2535,7 +2535,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2558,18 +2558,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -2604,7 +2604,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2624,7 +2624,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{fakeStandbyName},
@@ -2650,18 +2650,18 @@ func TestUpdateCluster(t *testing.T) {
 		// dbSpec.SynchronousReplication is false yet. The new master will have
 		// SynchronousReplication true and a fake sync stanby.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2696,7 +2696,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2716,7 +2716,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2739,18 +2739,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -2785,7 +2785,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -2805,7 +2805,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{fakeStandbyName},
@@ -2830,18 +2830,18 @@ func TestUpdateCluster(t *testing.T) {
 		// master db not healthy: standby elected as new master since it's in
 		// the SynchronousStandbys.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -2876,7 +2876,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -2897,7 +2897,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -2920,18 +2920,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -2966,7 +2966,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -2987,7 +2987,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db1"},
 							ExternalSynchronousStandbys: []string{},
@@ -3012,18 +3012,18 @@ func TestUpdateCluster(t *testing.T) {
 		// stanby db not healthy: standby kept inside synchronousStandbys since
 		// there's not better standby to choose
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3058,7 +3058,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -3079,7 +3079,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3102,18 +3102,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3148,7 +3148,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -3169,7 +3169,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3199,18 +3199,18 @@ func TestUpdateCluster(t *testing.T) {
 		// sync standby db2 not healthy: the other standby db3 choosed as new
 		// sync standby. Both will appear as SynchronousStandbys
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3254,7 +3254,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -3276,7 +3276,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3301,7 +3301,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3324,18 +3324,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3379,7 +3379,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -3401,7 +3401,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3426,7 +3426,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3455,18 +3455,18 @@ func TestUpdateCluster(t *testing.T) {
 		// reported (db2) and the required in the spec (db2, db3) but it's not
 		// healty so no master could be elected.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3510,7 +3510,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -3532,7 +3532,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3557,7 +3557,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3580,18 +3580,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3635,7 +3635,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -3657,7 +3657,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3682,7 +3682,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3709,18 +3709,18 @@ func TestUpdateCluster(t *testing.T) {
 		// #21 From #19. master have not yet reported the new sync standbys as in sync (db3).
 		// db2 will remain the unique real in sync db in db1.Status.SynchronousStandbys
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3764,7 +3764,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -3787,7 +3787,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3812,7 +3812,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3835,18 +3835,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -3890,7 +3890,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -3913,7 +3913,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3938,7 +3938,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -3967,18 +3967,18 @@ func TestUpdateCluster(t *testing.T) {
 		// db1.Status.SynchronousStandbys and also db1.Spec.SynchronousStandbys
 		// will contain only db2 (db3 removed)
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4022,7 +4022,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4045,7 +4045,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4070,7 +4070,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4093,18 +4093,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4148,7 +4148,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -4171,7 +4171,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4196,7 +4196,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4223,18 +4223,18 @@ func TestUpdateCluster(t *testing.T) {
 		// #23 From #19. master have reported the new sync standbys as in sync (db2, db3).
 		// db2 will be removed from synchronousStandbys
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4278,7 +4278,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4301,7 +4301,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4326,7 +4326,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4349,18 +4349,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4404,7 +4404,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4427,7 +4427,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4452,7 +4452,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4481,18 +4481,18 @@ func TestUpdateCluster(t *testing.T) {
 		// reported (db2, db3) and the required in the spec (db3) so it'll be
 		// elected as new master.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4536,7 +4536,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4558,7 +4558,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4583,7 +4583,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4606,18 +4606,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db3",
@@ -4661,7 +4661,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4683,7 +4683,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4708,7 +4708,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db1"},
 							ExternalSynchronousStandbys: []string{},
@@ -4733,18 +4733,18 @@ func TestUpdateCluster(t *testing.T) {
 		// master (db1) and db2 failed, db3 elected as master.
 		// This test checks that the db3 synchronousStandbys are correctly sorted
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -4788,7 +4788,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2", "db3"},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4810,7 +4810,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4835,7 +4835,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4858,18 +4858,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db3",
@@ -4913,7 +4913,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db2", "db3"},
 							ExternalSynchronousStandbys: []string{},
@@ -4935,7 +4935,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -4960,7 +4960,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db1", "db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -4985,18 +4985,18 @@ func TestUpdateCluster(t *testing.T) {
 		// master (db1) and async (db2) with --never-synchronous-replica.
 		// db2 is never elected as new sync.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5033,7 +5033,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
@@ -5056,7 +5056,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5079,18 +5079,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5127,7 +5127,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
@@ -5150,7 +5150,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5179,18 +5179,18 @@ func TestUpdateCluster(t *testing.T) {
 		// master (db1) and sync (db2) with --never-master.
 		// db2 is never promoted as new master.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5227,7 +5227,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -5250,7 +5250,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5273,18 +5273,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5321,7 +5321,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -5344,7 +5344,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5374,11 +5374,11 @@ func TestUpdateCluster(t *testing.T) {
 		// dbSpec.SynchronousReplication is false yet. The new master will have
 		// SynchronousReplication true and NO fake sync standby.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5386,7 +5386,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5421,7 +5421,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -5441,7 +5441,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5464,11 +5464,11 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5476,7 +5476,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -5511,7 +5511,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -5531,7 +5531,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{},
@@ -5556,11 +5556,11 @@ func TestUpdateCluster(t *testing.T) {
 		// master db not healthy: standby elected as new master since it's in
 		// the SynchronousStandbys. No fake replica is added.
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5568,7 +5568,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5603,7 +5603,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -5624,7 +5624,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5647,11 +5647,11 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5659,7 +5659,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db2",
@@ -5694,7 +5694,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -5715,7 +5715,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{},
 							SynchronousStandbys:         []string{"db1"},
 							ExternalSynchronousStandbys: []string{},
@@ -5740,11 +5740,11 @@ func TestUpdateCluster(t *testing.T) {
 		// standby db not healthy: standby removed from synchronousStandbys even though
 		// there's not better standby to choose
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5752,7 +5752,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5787,7 +5787,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{"db2"},
 							ExternalSynchronousStandbys: []string{},
@@ -5808,7 +5808,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5831,11 +5831,11 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5843,7 +5843,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5878,7 +5878,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{},
@@ -5899,7 +5899,7 @@ func TestUpdateCluster(t *testing.T) {
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -5929,11 +5929,11 @@ func TestUpdateCluster(t *testing.T) {
 		// StrictSyncRepl is set to false. Db2 is never elected as new sync, and fake replica
 		// is removed from db1
 		{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -5941,7 +5941,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -5978,7 +5978,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
@@ -6001,7 +6001,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -6024,11 +6024,11 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 			},
-			outcd: &cluster.ClusterData{
+			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
 					UID:        "cluster1",
 					Generation: 1,
-					Spec: &cluster.ClusterSpec{
+					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
 						SyncTimeout:            &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
@@ -6036,7 +6036,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.ClusterStatus{
+					Status: cluster.Status{
 						CurrentGeneration: 1,
 						Phase:             cluster.Normal,
 						Master:            "db1",
@@ -6073,7 +6073,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
-							Role:                        common.RoleMaster,
+							Role:                        common.RolePrimary,
 							Followers:                   []string{"db2"},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{},
@@ -6096,7 +6096,7 @@ func TestUpdateCluster(t *testing.T) {
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
-							Role:                   common.RoleStandby,
+							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
@@ -6258,9 +6258,9 @@ func testRandFn(_ int) int {
 	return 0
 }
 
-func testEqualCD(cd1, cd2 *cluster.ClusterData) bool {
+func testEqualCD(cd1, cd2 *cluster.Data) bool {
 	// ignore times
-	for _, cd := range []*cluster.ClusterData{cd1, cd2} {
+	for _, cd := range []*cluster.Data{cd1, cd2} {
 		cd.Cluster.ChangeTime = time.Time{}
 		for _, k := range cd.Keepers {
 			k.ChangeTime = time.Time{}

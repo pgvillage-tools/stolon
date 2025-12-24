@@ -128,8 +128,8 @@ func isSafeToWriteClusterData(store store.Store) error {
 	return nil
 }
 
-func clusterData(data []byte) (*cluster.ClusterData, error) {
-	cd := cluster.ClusterData{}
+func clusterData(data []byte) (*cluster.Data, error) {
+	cd := cluster.Data{}
 	err := json.Unmarshal(data, &cd)
 	return &cd, err
 }

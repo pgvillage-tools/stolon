@@ -212,7 +212,7 @@ func NewKVBackedStore(kvStore KVStore, path string) *KVBackedStore {
 	}
 }
 
-func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.ClusterData, previous *KVPair) (*KVPair, error) {
+func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *KVPair) (*KVPair, error) {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cl
 	return s.store.AtomicPut(ctx, path, cdj, prev, nil)
 }
 
-func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData) error {
+func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.Data) error {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return err
@@ -239,8 +239,8 @@ func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.ClusterD
 	return s.store.Put(ctx, path, cdj, nil)
 }
 
-func (s *KVBackedStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *KVPair, error) {
-	var cd *cluster.ClusterData
+func (s *KVBackedStore) GetClusterData(ctx context.Context) (*cluster.Data, *KVPair, error) {
+	var cd *cluster.Data
 	path := filepath.Join(s.clusterPath, clusterDataFile)
 	pair, err := s.store.Get(ctx, path)
 	if err != nil {

@@ -205,7 +205,7 @@ func (c *ClusterChecker) sendPollonConfData(confData pollon.ConfData) {
 	}
 }
 
-// SetProxyInfo is funcion which sets the proxy-info
+// SetProxyInfo is function which sets the proxy-info
 func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTimeout time.Duration) error {
 	proxyInfo := &cluster.ProxyInfo{
 		InfoUID:      common.UID(),

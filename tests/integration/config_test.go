@@ -59,7 +59,7 @@ func TestServerParameters(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -156,7 +156,7 @@ func TestWalLevel(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -271,7 +271,7 @@ func TestWalKeepSegments(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -444,7 +444,7 @@ func TestAlterSystem(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -627,7 +627,7 @@ func TestAdditionalReplicationSlots(t *testing.T) {
 	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
-	if err := standby.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := standby.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -667,7 +667,7 @@ func TestAutomaticPgRestart(t *testing.T) {
 	automaticPgRestart := true
 	pgParameters := map[string]string{"max_connections": "100"}
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		AutomaticPgRestart: &automaticPgRestart,
 		PGParameters:       pgParameters,
@@ -789,7 +789,7 @@ func TestAdvertise(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -880,7 +880,7 @@ func TestKeeperBootsWithWalDir(t *testing.T) {
 	automaticPgRestart := true
 	pgParameters := map[string]string{"max_connections": "100"}
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		AutomaticPgRestart: &automaticPgRestart,
 		PGParameters:       pgParameters,

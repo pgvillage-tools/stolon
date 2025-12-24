@@ -47,7 +47,7 @@ func TestInitStandbyCluster(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -105,7 +105,7 @@ func TestInitStandbyCluster(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
+	initialClusterSpec = &cluster.Spec{
 		InitMode:           &pitrCluster,
 		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
@@ -180,7 +180,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -238,7 +238,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
+	initialClusterSpec = &cluster.Spec{
 		InitMode:           &pitrCluster,
 		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
@@ -300,7 +300,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	}
 
 	// check that the cluster master has been promoted to a primary
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -329,7 +329,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
+	initialClusterSpec := &cluster.Spec{
 		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
@@ -391,7 +391,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
+	initialClusterSpec = &cluster.Spec{
 		InitMode:           &pitrCluster,
 		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
@@ -462,7 +462,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	}
 
 	// check that the cluster master has been promoted to a primary
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }

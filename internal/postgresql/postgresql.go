@@ -793,9 +793,9 @@ func (p *Manager) GetRole() (common.Role, error) {
 			return "", fmt.Errorf("error determining if %q file exists: %v", postgresStandbySignal, err)
 		}
 		if os.IsNotExist(err) {
-			return common.RoleMaster, nil
+			return common.RolePrimary, nil
 		}
-		return common.RoleStandby, nil
+		return common.RoleReplica, nil
 	} else {
 		// if recovery.conf file exists then consider it as a standby
 		_, err := os.Stat(filepath.Join(p.dataDir, postgresRecoveryConf))
@@ -803,9 +803,9 @@ func (p *Manager) GetRole() (common.Role, error) {
 			return "", fmt.Errorf("error determining if %q file exists: %v", postgresRecoveryConf, err)
 		}
 		if os.IsNotExist(err) {
-			return common.RoleMaster, nil
+			return common.RolePrimary, nil
 		}
-		return common.RoleStandby, nil
+		return common.RoleReplica, nil
 	}
 }
 

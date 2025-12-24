@@ -79,16 +79,16 @@ func TestProxyListening(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	cd := &cluster.ClusterData{
+	cd := &cluster.Data{
 		FormatVersion: cluster.CurrentCDFormatVersion,
 		Cluster: &cluster.Cluster{
 			UID:        "01",
 			Generation: 1,
-			Spec: &cluster.ClusterSpec{
+			Spec: &cluster.Spec{
 				InitMode:     &newCluster,
 				FailInterval: &cluster.Duration{Duration: 10 * time.Second},
 			},
-			Status: cluster.ClusterStatus{
+			Status: cluster.Status{
 				CurrentGeneration: 1,
 				Phase:             cluster.Normal,
 				Master:            "01",
@@ -110,7 +110,7 @@ func TestProxyListening(t *testing.T) {
 				ChangeTime: time.Time{},
 				Spec: &cluster.DBSpec{
 					KeeperUID: "01",
-					Role:      common.RoleMaster,
+					Role:      common.RolePrimary,
 					Followers: []string{"02"},
 				},
 				Status: cluster.DBStatus{

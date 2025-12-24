@@ -620,10 +620,10 @@ func (tk *TestKeeper) WaitDBRole(r common.Role, ptk *TestKeeper, timeout time.Du
 			if err != nil {
 				continue
 			}
-			if !ok && r == common.RoleMaster {
+			if !ok && r == common.RolePrimary {
 				return nil
 			}
-			if ok && r == common.RoleStandby {
+			if ok && r == common.RoleReplica {
 				return nil
 			}
 		} else {
@@ -641,11 +641,11 @@ func (tk *TestKeeper) WaitDBRole(r common.Role, ptk *TestKeeper, timeout time.Du
 				continue
 			}
 			if conninfo["host"] == ptk.pgListenAddress && conninfo["port"] == ptk.pgPort {
-				if r == common.RoleMaster {
+				if r == common.RolePrimary {
 					return nil
 				}
 			} else {
-				if r == common.RoleStandby {
+				if r == common.RoleReplica {
 					return nil
 				}
 			}
@@ -1277,7 +1277,7 @@ func WaitStandbyKeeper(e *store.KVBackedStore, keeperUID string, timeout time.Du
 			if db.UID == cd.Cluster.Status.Master {
 				continue
 			}
-			if db.Spec.KeeperUID == keeperUID && db.Spec.Role == common.RoleStandby {
+			if db.Spec.KeeperUID == keeperUID && db.Spec.Role == common.RoleReplica {
 				return nil
 			}
 		}
@@ -1425,7 +1425,7 @@ func getFreePort(tcp bool, udp bool) (string, string, error) {
 	}
 }
 
-func writeClusterSpec(dir string, cs *cluster.ClusterSpec) (string, error) {
+func writeClusterSpec(dir string, cs *cluster.Spec) (string, error) {
 	csj, err := json.Marshal(cs)
 	if err != nil {
 		return "", err
