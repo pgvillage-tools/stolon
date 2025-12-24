@@ -30,11 +30,10 @@ import (
 )
 
 const (
+	// CurrentCDFormatVersion represents the current version of the Cluster Data Format.
+	// It will be raised whenever we change the API
 	CurrentCDFormatVersion uint64 = 1
-)
-
-const (
-	DefaultStoreTimeout = 5 * time.Second
+	DefaultStoreTimeout           = 5 * time.Second
 
 	DefaultDBNotIncreasingXLogPosTimes = 10
 
@@ -191,12 +190,13 @@ type StandbySettings struct {
 	RecoveryMinApplyDelay string `json:"recoveryMinApplyDelay,omitempty"`
 }
 
+// SUReplAccessMode is an ENUM for Access Mode for Superusers (in HBA)
 type SUReplAccessMode string
 
 const (
-	// Allow access from every host
+	// SUReplAccessAll allows access from every host
 	SUReplAccessAll SUReplAccessMode = "all"
-	// Allow access from standby server IPs only
+	// SUReplAccessStrict allows access from standby server IPs only
 	SUReplAccessStrict SUReplAccessMode = "strict"
 )
 
