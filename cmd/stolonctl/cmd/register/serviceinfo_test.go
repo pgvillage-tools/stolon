@@ -276,7 +276,6 @@ func TestServiceInfosDiff(t *testing.T) {
 		if len(diff.Removed) != 0 {
 			t.Errorf("expected no service to be removed but %d service got removed", len(diff.Removed))
 		}
-
 	})
 
 	t.Run("should only add when new services are found", func(t *testing.T) {
@@ -333,7 +332,6 @@ func TestServiceInfosDiff(t *testing.T) {
 		if len(diff.Removed) != 0 {
 			t.Errorf("expected no service to be removed but %d service got removed", len(diff.Removed))
 		}
-
 	})
 
 	t.Run("should add and remove corresponding service infos", func(t *testing.T) {
