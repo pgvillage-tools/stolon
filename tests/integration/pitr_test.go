@@ -84,7 +84,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -93,7 +93,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	}
 	defer tk.Stop()
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -102,7 +102,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	}
 
 	// Wait for clusterView containing a master
-	_, err = WaitClusterDataWithMaster(sm, 30*time.Second)
+	_, err = waitClusterDataWithMaster(sm, 30*time.Second)
 	if err != nil {
 		t.Fatal("expected a master in cluster view")
 	}
@@ -184,7 +184,7 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err = NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err = newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -193,10 +193,10 @@ func testPITR(t *testing.T, recoveryTarget bool) {
 	}
 	defer ts.Stop()
 
-	if err := WaitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
+	if err := waitClusterPhase(sm, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	_, err = WaitClusterDataWithMaster(sm, 30*time.Second)
+	_, err = waitClusterDataWithMaster(sm, 30*time.Second)
 	if err != nil {
 		t.Fatal("expected a master in cluster view")
 	}

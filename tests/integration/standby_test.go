@@ -58,7 +58,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -191,7 +191,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -268,7 +268,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -294,7 +294,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	}
 
 	// promote the standby cluster to a primary cluster
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -344,7 +344,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -416,7 +416,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -424,7 +424,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -456,7 +456,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	}
 
 	// promote the standby cluster to a primary cluster
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}

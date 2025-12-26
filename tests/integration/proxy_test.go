@@ -40,13 +40,13 @@ func TestProxyListening(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	tstore, err := NewTestStore(t, dir)
+	tstore, err := newTestStore(t, dir)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 
-	tp, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
