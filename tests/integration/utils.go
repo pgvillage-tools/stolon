@@ -40,6 +40,8 @@ import (
 	"github.com/sorintlab/stolon/internal/util"
 
 	"github.com/gofrs/uuid"
+
+	// TODO: This can probably go
 	_ "github.com/lib/pq"
 	"github.com/sgotti/gexpect"
 )

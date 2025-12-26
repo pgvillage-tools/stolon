@@ -1401,7 +1401,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			}
 
 			if recoveryMode == pg.RecoveryModeRecovery {
-				// wait for the db having replyed all the wals
+				// wait for the db having replayed all the wals
 				log.Infof("waiting for recovery to be completed")
 				if err = pgm.WaitRecoveryDone(cd.Cluster.DefSpec().SyncTimeout.Duration); err != nil {
 					log.Errorw("recovery not finished", zap.Error(err))
