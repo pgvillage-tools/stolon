@@ -227,7 +227,7 @@ func IsColorLoggerEnable(cmd *cobra.Command, cfg *CommonConfig) bool {
 // NewKVStore returns a new KVStore function object
 func NewKVStore(cfg *CommonConfig) (store.KVStore, error) {
 	return store.NewKVStore(store.Config{
-		Backend:       store.Backend(cfg.StoreBackend),
+		Backend:       store.BackendType(cfg.StoreBackend),
 		Endpoints:     cfg.StoreEndpoints,
 		Timeout:       cfg.StoreTimeout,
 		CertFile:      cfg.StoreCertFile,
