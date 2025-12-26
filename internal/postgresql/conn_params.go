@@ -26,29 +26,36 @@ import (
 
 // This is based on github.com/lib/pq
 
+// ConnParams defines key/value pairs for connecting to PostgreSQL
 type ConnParams map[ConnParamKey]string
 
+// Set can add/update a key
 func (cp ConnParams) Set(k ConnParamKey, v string) {
 	cp[k] = v
 }
 
+// Get can retrieve a key/value pai
 func (cp ConnParams) Get(k ConnParamKey) (v string) {
 	return cp[k]
 }
 
+// Del can remove a key
 func (cp ConnParams) Del(k ConnParamKey) {
 	delete(cp, k)
 }
 
+// Isset returns true if the key is set
 func (cp ConnParams) Isset(k ConnParamKey) bool {
 	_, ok := cp[k]
 	return ok
 }
 
+// Equals checks 2 ConnParams to be the same
 func (cp ConnParams) Equals(cp2 ConnParams) bool {
 	return reflect.DeepEqual(cp, cp2)
 }
 
+// Copy returns a shallow copy
 func (cp ConnParams) Copy() ConnParams {
 	ncp := ConnParams{}
 	for k, v := range cp {
@@ -93,7 +100,7 @@ func (s *scanner) SkipSpaces() (rune, bool) {
 //
 // The parsing code is based on conninfo_parse from libpq's fe-connect.c
 func ParseConnString(name string) (ConnParams, error) {
-	p := make(ConnParams)
+	p := ConnParams{}
 	s := newScanner(name)
 
 	for {
@@ -171,7 +178,7 @@ func ParseConnString(name string) (ConnParams, error) {
 
 // URLToConnParams creates the connParams from the url.
 func URLToConnParams(urlStr string) (ConnParams, error) {
-	p := make(ConnParams)
+	p := ConnParams{}
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -210,10 +217,10 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 
 // ConnString returns a connection string, its entries are sorted so the
 // returned string can be reproducible and comparable
-func (p ConnParams) ConnString() string {
+func (cp ConnParams) ConnString() string {
 	var kvs []string
 	escaper := strings.NewReplacer(` `, `\ `, `'`, `\'`, `\`, `\\`)
-	for k, v := range p {
+	for k, v := range cp {
 		if v != "" {
 			kvs = append(kvs, fmt.Sprintf("%s=%s", k, "="+escaper.Replace(v)))
 		}
@@ -222,8 +229,9 @@ func (p ConnParams) ConnString() string {
 	return strings.Join(kvs, " ")
 }
 
-func (p ConnParams) WithUser(userName string) ConnParams {
-	q := maps.Clone(p)
+// WithUser returns a clone with the user fields set to the specified userName
+func (cp ConnParams) WithUser(userName string) ConnParams {
+	q := maps.Clone(cp)
 	q["user"] = userName
 	return q
 }

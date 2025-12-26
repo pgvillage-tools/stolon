@@ -14,9 +14,13 @@
 
 package postgresql
 
+// TODO: implement context properly
+
 import (
 	"bufio"
 	"context"
+
+	// TODO: replace with jackc
 	"database/sql"
 	"errors"
 	"fmt"
@@ -37,13 +41,13 @@ import (
 )
 
 const (
-	// TODO(sgotti) for now we assume wal size is the default 16MiB size
-	WalSegSize = (16 * 1024 * 1024) // 16MiB
+	// TODO: can we autodetect if this is non-default?
+	walSegSize = (16 * 1024 * 1024) // 16MiB
 	globalDB   = "postgres"
 )
 
 var (
-	ValidReplSlotName = regexp.MustCompile("^[a-z0-9_]+$")
+	validReplSlotName = regexp.MustCompile("^[a-z0-9_]+$")
 )
 
 func handledDbClose(db *sql.DB) {
@@ -125,7 +129,9 @@ func setPassword(ctx context.Context, connParams ConnParams, username, password 
 	return tx.Commit()
 }
 
-func createRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
+// TODO: remove _ parameters
+
+func createRole(ctx context.Context, connParams ConnParams, _ []string, username, password string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -151,7 +157,7 @@ func createRole(ctx context.Context, connParams ConnParams, roles []string, user
 	return tx.Commit()
 }
 
-func createPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
+func createPasswordlessRole(ctx context.Context, connParams ConnParams, _ []string, username string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -162,7 +168,7 @@ func createPasswordlessRole(ctx context.Context, connParams ConnParams, roles []
 	return err
 }
 
-func alterRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
+func alterRole(ctx context.Context, connParams ConnParams, _ []string, username, password string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -188,7 +194,7 @@ func alterRole(ctx context.Context, connParams ConnParams, roles []string, usern
 	return tx.Commit()
 }
 
-func alterPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
+func alterPasswordlessRole(ctx context.Context, connParams ConnParams, _ []string, username string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -283,6 +289,7 @@ func getSyncStandbys(ctx context.Context, connParams ConnParams) ([]string, erro
 	return syncStandbys, nil
 }
 
+// PGLsnToInt will return an uint64 representing an absolute byte in the WAL stream
 func PGLsnToInt(lsn string) (uint64, error) {
 	parts := strings.Split(lsn, "/")
 	if len(parts) != 2 {
@@ -300,6 +307,7 @@ func PGLsnToInt(lsn string) (uint64, error) {
 	return v, nil
 }
 
+// GetSystemData returns the postgreSQL system data (IDENTIFY_SYSTEM)
 func GetSystemData(ctx context.Context, replConnParams ConnParams) (*SystemData, error) {
 	// Add "replication=1" connection option
 	replConnParams["replication"] = "1"
@@ -386,8 +394,9 @@ func getTimelinesHistory(ctx context.Context, timeline uint64, replConnParams Co
 	return nil, fmt.Errorf("query returned 0 rows")
 }
 
+// IsValidReplSlotName validates if a string can be used as a name for a replication slot
 func IsValidReplSlotName(name string) bool {
-	return ValidReplSlotName.MatchString(name)
+	return validReplSlotName.MatchString(name)
 }
 
 func fileExists(path string) (bool, error) {
@@ -435,12 +444,12 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 	for rows.Next() {
 		c++
 	}
-	use_pg_file_settings := false
+	usePGFileSettings := false
 	if c > 0 {
-		use_pg_file_settings = true
+		usePGFileSettings = true
 	}
 
-	if use_pg_file_settings {
+	if usePGFileSettings {
 		// NOTE If some pg_parameters that cannot be changed without a restart
 		// are removed from the postgresql.conf file the view will contain some
 		// rows with null name and setting and the error field set to the cause.
@@ -500,7 +509,7 @@ func isRestartRequiredUsingPendingRestart(ctx context.Context, connParams ConnPa
 	return isRestartRequired, nil
 }
 
-func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams ConnParams, changedParams []string) (bool, error) {
+func isRestartRequiredUsingPgSettingsContext(_ context.Context, connParams ConnParams, changedParams []string) (bool, error) {
 	isRestartRequired := false
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
@@ -528,6 +537,7 @@ func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams Con
 	return isRestartRequired, nil
 }
 
+// IsWalFileName checks if a file name is the name of a WAL file
 func IsWalFileName(name string) bool {
 	walChars := "0123456789ABCDEF"
 	if len(name) != 24 {
@@ -547,14 +557,16 @@ func IsWalFileName(name string) bool {
 	return true
 }
 
-func XlogPosToWalFileNameNoTimeline(XLogPos uint64) string {
-	id := uint32(XLogPos >> 32)
-	offset := uint32(XLogPos)
+// XlogPosToWalFileNameNoTimeline can be used to convert a WAL location to a WAL file name
+func XlogPosToWalFileNameNoTimeline(xLogPos uint64) string {
+	id := uint32(xLogPos >> 32)
+	offset := uint32(xLogPos)
 	// TODO(sgotti) for now we assume wal size is the default 16M size
-	seg := offset / WalSegSize
+	seg := offset / walSegSize
 	return fmt.Sprintf("%08X%08X", id, seg)
 }
 
+// WalFileNameNoTimeLine returns the absolute byte from a WAL stream that a WAL file belongs to
 func WalFileNameNoTimeLine(name string) (string, error) {
 	if !IsWalFileName(name) {
 		return "", fmt.Errorf("bad wal file name")
@@ -619,15 +631,15 @@ func moveDirRecursive(src string, dest string) (err error) {
 	if entries, err = os.ReadDir(src); err != nil {
 		log.Errorf("could not read contents of folder %s: %e", src, err)
 		return err
-	} else {
-		for _, entry := range entries {
-			srcEntry := filepath.Join(src, entry.Name())
-			dstEntry := filepath.Join(dest, entry.Name())
-			if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
-				return err
-			}
+	}
+	for _, entry := range entries {
+		srcEntry := filepath.Join(src, entry.Name())
+		dstEntry := filepath.Join(dest, entry.Name())
+		if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
+			return err
 		}
 	}
+
 	// Remove this folder, which is now supposedly empty
 	if err := syscall.Rmdir(src); err != nil {
 		log.Errorf("could not remove folder %s: %e", src, err)

@@ -63,7 +63,6 @@ func TestParseTimelineHistory(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func TestValidReplSlotName(t *testing.T) {
