@@ -14,6 +14,8 @@
 
 package store
 
+// TODO: implement context
+
 import (
 	"context"
 
@@ -42,7 +44,7 @@ type libKVStore struct {
 	store libkvstore.Store
 }
 
-func (s *libKVStore) Put(ctx context.Context, key string, value []byte, options *WriteOptions) error {
+func (s *libKVStore) Put(_ context.Context, key string, value []byte, options *WriteOptions) error {
 	var libkvOptions *libkvstore.WriteOptions
 	if options != nil {
 		libkvOptions = &libkvstore.WriteOptions{TTL: options.TTL}
@@ -51,7 +53,7 @@ func (s *libKVStore) Put(ctx context.Context, key string, value []byte, options 
 	return fromLibKVStoreErr(err)
 }
 
-func (s *libKVStore) Get(ctx context.Context, key string) (*KVPair, error) {
+func (s *libKVStore) Get(_ context.Context, key string) (*KVPair, error) {
 	pair, err := s.store.Get(key)
 	if err != nil {
 		return nil, fromLibKVStoreErr(err)
@@ -59,7 +61,7 @@ func (s *libKVStore) Get(ctx context.Context, key string) (*KVPair, error) {
 	return &KVPair{Key: pair.Key, Value: pair.Value, LastIndex: pair.LastIndex}, nil
 }
 
-func (s *libKVStore) List(ctx context.Context, directory string) ([]*KVPair, error) {
+func (s *libKVStore) List(_ context.Context, directory string) ([]*KVPair, error) {
 	pairs, err := s.store.List(directory)
 	if err != nil {
 		return nil, fromLibKVStoreErr(err)
@@ -71,7 +73,7 @@ func (s *libKVStore) List(ctx context.Context, directory string) ([]*KVPair, err
 	return kvPairs, nil
 }
 
-func (s *libKVStore) AtomicPut(ctx context.Context, key string, value []byte, previous *KVPair, options *WriteOptions) (*KVPair, error) {
+func (s *libKVStore) AtomicPut(_ context.Context, key string, value []byte, previous *KVPair, options *WriteOptions) (*KVPair, error) {
 	var libkvPrevious *libkvstore.KVPair
 	if previous != nil {
 		libkvPrevious = &libkvstore.KVPair{Key: previous.Key, LastIndex: previous.LastIndex}
@@ -87,7 +89,7 @@ func (s *libKVStore) AtomicPut(ctx context.Context, key string, value []byte, pr
 	return &KVPair{Key: pair.Key, Value: pair.Value, LastIndex: pair.LastIndex}, nil
 }
 
-func (s *libKVStore) Delete(ctx context.Context, key string) error {
+func (s *libKVStore) Delete(_ context.Context, key string) error {
 	return fromLibKVStoreErr(s.store.Delete(key))
 }
 

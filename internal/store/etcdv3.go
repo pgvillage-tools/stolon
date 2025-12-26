@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package store contains all code regarding consensus stores
 package store
 
 import (
