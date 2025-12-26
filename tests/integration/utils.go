@@ -336,7 +336,7 @@ type TestKeeper struct {
 	rdb             *sql.DB
 }
 
-func NewTestKeeperWithID(t *testing.T, dir, uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.Backend, storeEndpoints string, a ...string) (*TestKeeper, error) {
+func NewTestKeeperWithID(t *testing.T, dir, uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.BackendType, storeEndpoints string, a ...string) (*TestKeeper, error) {
 	args := []string{}
 
 	dataDir := filepath.Join(dir, fmt.Sprintf("st%s", uid))
@@ -421,7 +421,7 @@ func NewTestKeeperWithID(t *testing.T, dir, uid, clusterName, pgSUUsername, pgSU
 	return tk, nil
 }
 
-func NewTestKeeper(t *testing.T, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.Backend, storeEndpoints string, a ...string) (*TestKeeper, error) {
+func NewTestKeeper(t *testing.T, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.BackendType, storeEndpoints string, a ...string) (*TestKeeper, error) {
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -708,7 +708,7 @@ type TestSentinel struct {
 	Process
 }
 
-func NewTestSentinel(t *testing.T, dir string, clusterName string, storeBackend store.Backend, storeEndpoints string, a ...string) (*TestSentinel, error) {
+func NewTestSentinel(t *testing.T, dir string, clusterName string, storeBackend store.BackendType, storeEndpoints string, a ...string) (*TestSentinel, error) {
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -747,7 +747,7 @@ type TestProxy struct {
 	rdb           *sql.DB
 }
 
-func NewTestProxy(t *testing.T, dir string, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.Backend, storeEndpoints string, a ...string) (*TestProxy, error) {
+func NewTestProxy(t *testing.T, dir string, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword string, storeBackend store.BackendType, storeEndpoints string, a ...string) (*TestProxy, error) {
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -883,7 +883,7 @@ func (tp *TestProxy) WaitRightMaster(tk *TestKeeper, timeout time.Duration) erro
 	return tk.WaitPGParameter("port", tk.pgPort, timeout)
 }
 
-func StolonCtl(t *testing.T, clusterName string, storeBackend store.Backend, storeEndpoints string, a ...string) error {
+func StolonCtl(t *testing.T, clusterName string, storeBackend store.BackendType, storeEndpoints string, a ...string) error {
 	args := []string{}
 	args = append(args, fmt.Sprintf("--cluster-name=%s", clusterName))
 	args = append(args, fmt.Sprintf("--store-backend=%s", storeBackend))
@@ -919,11 +919,11 @@ type TestStore struct {
 	listenAddress string
 	port          string
 	store         store.KVStore
-	storeBackend  store.Backend
+	storeBackend  store.BackendType
 }
 
 func NewTestStore(t *testing.T, dir string, a ...string) (*TestStore, error) {
-	storeBackend := store.Backend(os.Getenv("STOLON_TEST_STORE_BACKEND"))
+	storeBackend := store.BackendType(os.Getenv("STOLON_TEST_STORE_BACKEND"))
 	switch storeBackend {
 	case "consul":
 		return NewTestConsul(t, dir, a...)
@@ -936,7 +936,7 @@ func NewTestStore(t *testing.T, dir string, a ...string) (*TestStore, error) {
 	return nil, fmt.Errorf("wrong store backend")
 }
 
-func NewTestEtcd(t *testing.T, dir string, backend store.Backend, a ...string) (*TestStore, error) {
+func NewTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...string) (*TestStore, error) {
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -964,7 +964,7 @@ func NewTestEtcd(t *testing.T, dir string, backend store.Backend, a ...string) (
 	storeEndpoints := fmt.Sprintf("%s:%s", listenAddress, port)
 
 	storeConfig := store.Config{
-		Backend:   store.Backend(backend),
+		Backend:   store.BackendType(backend),
 		Endpoints: storeEndpoints,
 		Timeout:   defaultStoreTimeout,
 	}
