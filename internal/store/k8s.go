@@ -14,6 +14,8 @@
 
 package store
 
+// TODO: implement context
+
 import (
 	"context"
 	"encoding/json"
@@ -45,9 +47,12 @@ const (
 	// DefaultComponentLabel is the defaultlabel to set when no label is defined
 	DefaultComponentLabel = "component"
 
-	KeeperLabelValue   ComponentLabelValue = "stolon-keeper"
+	// KeeperLabelValue states the pod to be a Keeper pod
+	KeeperLabelValue ComponentLabelValue = "stolon-keeper"
+	// SentinelLabelValue states the pod to be a sentinel pod
 	SentinelLabelValue ComponentLabelValue = "stolon-sentinel"
-	ProxyLabelValue    ComponentLabelValue = "stolon-proxy"
+	// ProxyLabelValue states the pod to be a Proxy pod
+	ProxyLabelValue ComponentLabelValue = "stolon-proxy"
 )
 
 // KubeStore is a struct stores information about the pod, for example the client, name and clustername
@@ -59,6 +64,7 @@ type KubeStore struct {
 	resourceName string
 }
 
+// NewKubeStore return a freshly initialized store in k8s
 func NewKubeStore(kubecli *kubernetes.Clientset, podName, namespace, clusterName string) (*KubeStore, error) {
 	return &KubeStore{
 		client:       kubecli,
@@ -114,6 +120,7 @@ func (s *KubeStore) patchKubeStatusAnnotation(annotationData []byte) error {
 	return nil
 }
 
+// AtomicPutClusterData is an atomic way to write ClusterData to the configmap
 func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *KVPair) (*KVPair, error) {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
@@ -143,18 +150,17 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, 
 				if result.Annotations == nil {
 					// empty annotations but previous isn't nil
 					return ErrKeyModified
-				} else {
-					curcd, ok := result.Annotations[util.KubeClusterDataAnnotation]
-					if ok {
-						// check that the previous cd is the same as the current one in the
-						// configmap annotation
-						if string(previous.Value) != string(curcd) {
-							return ErrKeyModified
-						}
-					} else {
-						// no cd but previous isn't nil
+				}
+				curcd, ok := result.Annotations[util.KubeClusterDataAnnotation]
+				if ok {
+					// check that the previous cd is the same as the current one in the
+					// configmap annotation
+					if string(previous.Value) != string(curcd) {
 						return ErrKeyModified
 					}
+				} else {
+					// no cd but previous isn't nil
+					return ErrKeyModified
 				}
 			}
 			if result.Annotations == nil {
@@ -163,22 +169,21 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, 
 			result.Annotations[util.KubeClusterDataAnnotation] = string(cdj)
 			_, err = epsClient.Update(ctx, result, metav1.UpdateOptions{})
 			return err
-		} else {
-			// configmap does not exists
-
-			// previous isn't nil but configmap doesn't exists
-			if previous != nil {
-				return ErrKeyModified
-			}
-			annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-			_, err = epsClient.Create(ctx, &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        s.resourceName,
-					Annotations: annotations,
-				},
-			}, metav1.CreateOptions{})
-			return err
 		}
+		// configmap does not exists
+
+		// previous isn't nil but configmap doesn't exists
+		if previous != nil {
+			return ErrKeyModified
+		}
+		annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
+		_, err = epsClient.Create(ctx, &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        s.resourceName,
+				Annotations: annotations,
+			},
+		}, metav1.CreateOptions{})
+		return err
 	})
 	if retryErr != nil {
 		return nil, fmt.Errorf("update failed: %v", retryErr)
@@ -186,6 +191,7 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, 
 	return &KVPair{Value: cdj}, nil
 }
 
+// PutClusterData writes ClusterData to the configmap
 func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.Data) error {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
@@ -206,17 +212,16 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.Data) error 
 			result.Annotations[util.KubeClusterDataAnnotation] = string(cdj)
 			_, err = epsClient.Update(ctx, result, metav1.UpdateOptions{})
 			return err
-		} else {
-			// configmap does not exists
-			annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-			_, err = epsClient.Create(ctx, &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        s.resourceName,
-					Annotations: annotations,
-				},
-			}, metav1.CreateOptions{})
-			return err
 		}
+		// configmap does not exists
+		annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
+		_, err = epsClient.Create(ctx, &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        s.resourceName,
+				Annotations: annotations,
+			},
+		}, metav1.CreateOptions{})
+		return err
 	})
 	if retryErr != nil {
 		return fmt.Errorf("update failed: %v", retryErr)
@@ -224,15 +229,15 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.Data) error 
 	return nil
 }
 
+// GetClusterData reads ClusterData from the configmap
 func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.Data, *KVPair, error) {
 	epsClient := s.client.CoreV1().ConfigMaps(s.namespace)
 	result, err := epsClient.Get(ctx, s.resourceName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil, nil
-		} else {
-			return nil, nil, fmt.Errorf("failed to get latest version of configmap: %v", err)
 		}
+		return nil, nil, fmt.Errorf("failed to get latest version of configmap: %v", err)
 	}
 	cdj, ok := result.Annotations[util.KubeClusterDataAnnotation]
 	if !ok {
@@ -247,7 +252,8 @@ func (s *KubeStore) GetClusterData(ctx context.Context) (*cluster.Data, *KVPair,
 	return cd, &KVPair{Value: []byte(cdj)}, nil
 }
 
-func (s *KubeStore) SetKeeperInfo(ctx context.Context, id string, ms *cluster.KeeperInfo, ttl time.Duration) error {
+// SetKeeperInfo updates info to annotations on a Keeper pod
+func (s *KubeStore) SetKeeperInfo(_ context.Context, _ string, ms *cluster.KeeperInfo, _ time.Duration) error {
 	msj, err := json.Marshal(ms)
 	if err != nil {
 		return err
@@ -255,6 +261,7 @@ func (s *KubeStore) SetKeeperInfo(ctx context.Context, id string, ms *cluster.Ke
 	return s.patchKubeStatusAnnotation(msj)
 }
 
+// GetKeepersInfo reads info from annotations on all Keeper pods
 func (s *KubeStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, error) {
 	keepers := cluster.KeepersInfo{}
 
@@ -282,7 +289,8 @@ func (s *KubeStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, er
 	return keepers, nil
 }
 
-func (s *KubeStore) SetSentinelInfo(ctx context.Context, si *cluster.SentinelInfo, ttl time.Duration) error {
+// SetSentinelInfo updates info on a Sentinel pod
+func (s *KubeStore) SetSentinelInfo(_ context.Context, si *cluster.SentinelInfo, _ time.Duration) error {
 	sij, err := json.Marshal(si)
 	if err != nil {
 		return err
@@ -290,6 +298,7 @@ func (s *KubeStore) SetSentinelInfo(ctx context.Context, si *cluster.SentinelInf
 	return s.patchKubeStatusAnnotation(sij)
 }
 
+// GetSentinelsInfo reads info on all Sentinel pods
 func (s *KubeStore) GetSentinelsInfo(ctx context.Context) (cluster.SentinelsInfo, error) {
 	ssi := cluster.SentinelsInfo{}
 
@@ -317,7 +326,8 @@ func (s *KubeStore) GetSentinelsInfo(ctx context.Context) (cluster.SentinelsInfo
 	return ssi, nil
 }
 
-func (s *KubeStore) SetProxyInfo(ctx context.Context, pi *cluster.ProxyInfo, ttl time.Duration) error {
+// SetProxyInfo updates info to annotations on a Proxy pod
+func (s *KubeStore) SetProxyInfo(_ context.Context, pi *cluster.ProxyInfo, _ time.Duration) error {
 	pij, err := json.Marshal(pi)
 	if err != nil {
 		return err
@@ -325,6 +335,7 @@ func (s *KubeStore) SetProxyInfo(ctx context.Context, pi *cluster.ProxyInfo, ttl
 	return s.patchKubeStatusAnnotation(pij)
 }
 
+// GetProxiesInfo reads info from annotations on all Proxy pods
 func (s *KubeStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, error) {
 	psi := cluster.ProxiesInfo{}
 
@@ -352,6 +363,7 @@ func (s *KubeStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, er
 	return psi, nil
 }
 
+// KubeElection takes care of the election proces for stolon on k8s
 type KubeElection struct {
 	client       *kubernetes.Clientset
 	podName      string
@@ -369,6 +381,7 @@ type KubeElection struct {
 	rl resourcelock.Interface
 }
 
+// NewKubeElection returns a freshly initialized KubeElection resource
 func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterName, candidateUID string) (*KubeElection, error) {
 	resourceName := fmt.Sprintf("%s-%s", util.KubeResourcePrefix, clusterName)
 	rl, err := resourcelock.New("configmaps",
@@ -394,6 +407,7 @@ func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterN
 	}, nil
 }
 
+// RunForElection starts a campaign for getting elected
 func (e *KubeElection) RunForElection() (<-chan bool, <-chan error) {
 	if e.running {
 		panic("already running")
@@ -409,6 +423,7 @@ func (e *KubeElection) RunForElection() (<-chan bool, <-chan error) {
 	return e.electedCh, e.errCh
 }
 
+// Stop cancels campaign
 func (e *KubeElection) Stop() {
 	if !e.running {
 		panic("not running")
@@ -417,6 +432,7 @@ func (e *KubeElection) Stop() {
 	e.running = false
 }
 
+// Leader returns the current leader
 func (e *KubeElection) Leader() (string, error) {
 	ctx := context.Background()
 	ler, _, err := e.rl.Get(ctx)
