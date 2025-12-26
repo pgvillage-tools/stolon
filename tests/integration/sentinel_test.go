@@ -61,7 +61,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 	}
 	defer tk.Stop()
 
-	tp, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 	// check that the sentinel has become leader (cluster data is changed since
 	// it's updating keepers status) TODO(sgotti) find a better way to determine
 	// if the sentinel is the leader and is updating the clusterdata
-	if err := WaitClusterDataUpdated(sm, 30*time.Second); err != nil {
+	if err := waitClusterDataUpdated(sm, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -128,7 +128,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 	}
 
 	// add another proxy
-	tp2, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp2, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterDataEnabledProxiesNum(sm, 2, 3*initialClusterSpec.SleepInterval.Duration); err != nil {
+	if err := waitClusterDataEnabledProxiesNum(sm, 2, 3*initialClusterSpec.SleepInterval.Duration); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -151,7 +151,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterDataEnabledProxiesNum(sm, 1, 3*cluster.DefaultProxyTimeout); err != nil {
+	if err := waitClusterDataEnabledProxiesNum(sm, 1, 3*cluster.DefaultProxyTimeout); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -161,7 +161,7 @@ func TestSentinelEnabledProxies(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	if err := WaitClusterDataEnabledProxiesNum(sm, 2, 6*initialClusterSpec.SleepInterval.Duration); err != nil {
+	if err := waitClusterDataEnabledProxiesNum(sm, 2, 6*initialClusterSpec.SleepInterval.Duration); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }

@@ -40,11 +40,11 @@ const (
 	pgSUPassword   = "stolon_superuserpassword"
 )
 
-type testKeepers map[string]*TestKeeper
-type testSentinels map[string]*TestSentinel
+type testKeepers map[string]*testKeeper
+type testSentinels map[string]*testSentinel
 
-func setupStore(t *testing.T, dir string) *TestStore {
-	tstore, err := NewTestStore(t, dir)
+func setupStore(t *testing.T, dir string) *testStore {
+	tstore, err := newTestStore(t, dir)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 
 	// Start 3 keepers
 	for i := uint8(0); i < 3; i++ {
-		tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+		tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -103,7 +103,7 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 
 	// Start 2 sentinels
 	for i := uint8(0); i < 2; i++ {
-		ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+		ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -116,7 +116,7 @@ func TestInitWithMultipleKeepers(t *testing.T) {
 	defer shutdown(tks, tss, nil, tstore)
 
 	// Wait for clusterView containing a master
-	masterUID, err := WaitClusterDataWithMaster(sm, 60*time.Second)
+	masterUID, err := waitClusterDataWithMaster(sm, 60*time.Second)
 	if err != nil {
 		t.Fatal("expected a master in cluster view")
 	}
@@ -143,9 +143,9 @@ func setupServers(
 	numKeepers, numSentinels uint8,
 	syncRepl bool,
 	usePgrewind bool,
-	primaryKeeper *TestKeeper,
+	primaryKeeper *testKeeper,
 	otherOptions ...optionSetter,
-) (testKeepers, testSentinels, *TestProxy, *TestStore) {
+) (testKeepers, testSentinels, *testProxy, *testStore) {
 	var initialClusterSpec *cluster.Spec
 	if primaryKeeper == nil {
 		initialClusterSpec = &cluster.Spec{
@@ -208,7 +208,7 @@ func setupServers(
 	return setupServersCustom(t, clusterName, dir, numKeepers, numSentinels, initialClusterSpec)
 }
 
-func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSentinels uint8, initialClusterSpec *cluster.Spec) (testKeepers, testSentinels, *TestProxy, *TestStore) {
+func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSentinels uint8, initialClusterSpec *cluster.Spec) (testKeepers, testSentinels, *testProxy, *testStore) {
 	tstore := setupStore(t, dir)
 
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
@@ -218,12 +218,12 @@ func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSe
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	tks := map[string]*TestKeeper{}
-	tss := map[string]*TestSentinel{}
+	tks := map[string]*testKeeper{}
+	tss := map[string]*testSentinel{}
 
 	// Start sentinels
 	for i := uint8(0); i < numSentinels; i++ {
-		ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+		ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -235,7 +235,7 @@ func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSe
 
 	// Start other keepers
 	for i := uint8(0); i < numKeepers; i++ {
-		tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+		tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -245,7 +245,7 @@ func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSe
 		tks[tk.uid] = tk
 	}
 
-	tp, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -255,17 +255,17 @@ func setupServersCustom(t *testing.T, clusterName, dir string, numKeepers, numSe
 	return tks, tss, tp, tstore
 }
 
-func populate(_ *testing.T, tk *TestKeeper) error {
+func populate(_ *testing.T, tk *testKeeper) error {
 	_, err := tk.Exec("CREATE TABLE table01(ID INT PRIMARY KEY NOT NULL, VALUE INT NOT NULL)")
 	return err
 }
 
-func write(_ *testing.T, tk *TestKeeper, id, value int) error {
+func write(_ *testing.T, tk *testKeeper, id, value int) error {
 	_, err := tk.Exec("INSERT INTO table01 VALUES ($1, $2)", id, value)
 	return err
 }
 
-func getLines(_ *testing.T, q Querier) (int, error) {
+func getLines(_ *testing.T, q querier) (int, error) {
 	rows, err := q.Query("SELECT FROM table01")
 	if err != nil {
 		return 0, err
@@ -277,7 +277,7 @@ func getLines(_ *testing.T, q Querier) (int, error) {
 	return c, rows.Err()
 }
 
-func waitLines(t *testing.T, q Querier, num int, timeout time.Duration) error {
+func waitLines(t *testing.T, q querier, num int, timeout time.Duration) error {
 	start := time.Now()
 	c := -1
 	for time.Now().Add(-timeout).Before(start) {
@@ -294,7 +294,7 @@ func waitLines(t *testing.T, q Querier, num int, timeout time.Duration) error {
 	return fmt.Errorf("timeout waiting for %d lines, got: %d", num, c)
 }
 
-func shutdown(tks map[string]*TestKeeper, tss map[string]*TestSentinel, tp *TestProxy, tstore *TestStore) {
+func shutdown(tks map[string]*testKeeper, tss map[string]*testSentinel, tp *testProxy, tstore *testStore) {
 	for _, ts := range tss {
 		if ts.cmd != nil {
 			ts.Stop()
@@ -315,8 +315,8 @@ func shutdown(tks map[string]*TestKeeper, tss map[string]*TestSentinel, tp *Test
 	}
 }
 
-func waitKeeperReady(t *testing.T, sm *store.KVBackedStore, keeper *TestKeeper) {
-	if err := WaitClusterDataKeeperInitialized(keeper.uid, sm, 60*time.Second); err != nil {
+func waitKeeperReady(t *testing.T, sm *store.KVBackedStore, keeper *testKeeper) {
+	if err := waitClusterDataKeeperInitialized(keeper.uid, sm, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := keeper.WaitDBUp(60 * time.Second); err != nil {
@@ -324,9 +324,9 @@ func waitKeeperReady(t *testing.T, sm *store.KVBackedStore, keeper *TestKeeper) 
 	}
 }
 
-func waitMasterStandbysReady(t *testing.T, sm *store.KVBackedStore, tks testKeepers) (master *TestKeeper, standbys []*TestKeeper) {
+func waitMasterStandbysReady(t *testing.T, sm *store.KVBackedStore, tks testKeepers) (master *testKeeper, standbys []*testKeeper) {
 	// Wait for normal cluster phase (master ready)
-	masterUID, err := WaitClusterDataWithMaster(sm, 60*time.Second)
+	masterUID, err := waitClusterDataWithMaster(sm, 60*time.Second)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -404,8 +404,8 @@ func testFailover(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -446,12 +446,12 @@ func testFailover(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -465,7 +465,7 @@ func testFailover(t *testing.T, syncRepl bool, standbyCluster bool) {
 	master.Stop()
 
 	// Wait for cluster data containing standby as master
-	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
 	if err := standby.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
@@ -515,8 +515,8 @@ func testFailoverFailed(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -557,12 +557,12 @@ func testFailoverFailed(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -571,7 +571,7 @@ func testFailoverFailed(t *testing.T, syncRepl bool, standbyCluster bool) {
 	master.Stop()
 
 	// Wait for cluster data containing standby as master
-	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
 
@@ -586,7 +586,7 @@ func testFailoverFailed(t *testing.T, syncRepl bool, standbyCluster bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// Wait for cluster data containing previous master as master
-	err = WaitClusterDataMaster(master.uid, sm, 30*time.Second)
+	err = waitClusterDataMaster(master.uid, sm, 30*time.Second)
 	if !syncRepl && err != nil {
 		t.Fatalf("expected master %q in cluster view", master.uid)
 	}
@@ -627,8 +627,8 @@ func testFailoverTooMuchLag(t *testing.T, standbyCluster bool) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -706,8 +706,8 @@ func testOldMasterRestart(t *testing.T, syncRepl, minSync0 bool, usePgrewind boo
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -750,12 +750,12 @@ func testOldMasterRestart(t *testing.T, syncRepl, minSync0 bool, usePgrewind boo
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -780,7 +780,7 @@ func testOldMasterRestart(t *testing.T, syncRepl, minSync0 bool, usePgrewind boo
 	// writing to the new master since there's not active synchronous
 	// standby.
 	if !minSync0 {
-		tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+		tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -860,8 +860,8 @@ func testPartition1(t *testing.T, syncRepl, minSync0, usePgrewind bool, standbyC
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -904,12 +904,12 @@ func testPartition1(t *testing.T, syncRepl, minSync0, usePgrewind bool, standbyC
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -939,7 +939,7 @@ func testPartition1(t *testing.T, syncRepl, minSync0, usePgrewind bool, standbyC
 	// the test will block forever when writing to the new master since
 	// there's not active synchronous standby.
 	if !minSync0 {
-		tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+		tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
 		}
@@ -1059,7 +1059,7 @@ func testTimelineFork(t *testing.T, syncRepl, usePgrewind bool) {
 	}
 
 	// Add another standby
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -1076,12 +1076,12 @@ func testTimelineFork(t *testing.T, syncRepl, usePgrewind bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(master)
+	xLogPos, err := getXLogPos(master)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for standby[0] to have reported its state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1103,12 +1103,12 @@ func testTimelineFork(t *testing.T, syncRepl, usePgrewind bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err = GetXLogPos(master)
+	xLogPos, err = getXLogPos(master)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for standby[1] to have reported its state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standbys[1]}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standbys[1]}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1222,8 +1222,8 @@ func testMasterChangedAddress(t *testing.T, standbyCluster bool) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -1256,12 +1256,12 @@ func testMasterChangedAddress(t *testing.T, standbyCluster bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standbys[0]}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1275,7 +1275,7 @@ func testMasterChangedAddress(t *testing.T, standbyCluster bool) {
 	t.Logf("Restarting current master keeper %q with different addresses", master.uid)
 	master.Stop()
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
-	master, err = NewTestKeeperWithID(t, dir, master.uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	master, err = newTestKeeperWithID(t, dir, master.uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -1339,7 +1339,7 @@ func TestFailedStandby(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	// Wait for clusterView containing a master
-	masterUID, err := WaitClusterDataWithMaster(sm, 30*time.Second)
+	masterUID, err := waitClusterDataWithMaster(sm, 30*time.Second)
 	if err != nil {
 		t.Fatal("expected a master in cluster view")
 	}
@@ -1360,7 +1360,7 @@ func TestFailedStandby(t *testing.T) {
 		t.Fatalf("wrong number of lines, want: %d, got: %d", 1, c)
 	}
 
-	if err := WaitNumDBs(sm, 2, 30*time.Second); err != nil {
+	if err := waitNumDBs(sm, 2, 30*time.Second); err != nil {
 		t.Fatalf("expected 2 DBs in cluster data: %v", err)
 	}
 
@@ -1370,7 +1370,7 @@ func TestFailedStandby(t *testing.T) {
 	}
 	// Get current standby
 
-	var standby *TestKeeper
+	var standby *testKeeper
 	for _, db := range cd.DBs {
 		if db.UID == cd.Cluster.Status.Master {
 			continue
@@ -1386,19 +1386,19 @@ func TestFailedStandby(t *testing.T) {
 	standby.Stop()
 
 	// Wait for other keeper to have a standby db assigned
-	var newStandby *TestKeeper
+	var newStandby *testKeeper
 	for _, tk := range tks {
 		if tk.uid != master.uid && tk.uid != standby.uid {
 			newStandby = tk
 		}
 	}
 
-	if err := WaitStandbyKeeper(sm, newStandby.uid, 30*time.Second); err != nil {
+	if err := waitStandbyKeeper(sm, newStandby.uid, 30*time.Second); err != nil {
 		t.Fatalf("expected keeper %s to have a standby db assigned: %v", newStandby.uid, err)
 	}
 
 	// Wait for new standby declared as good and remove of old standby
-	if err := WaitNumDBs(sm, 2, 30*time.Second); err != nil {
+	if err := waitNumDBs(sm, 2, 30*time.Second); err != nil {
 		t.Fatalf("expected 2 DBs in cluster data: %v", err)
 	}
 }
@@ -1431,7 +1431,7 @@ func TestLoweredMaxStandbysPerSender(t *testing.T) {
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
 	// Wait for clusterView containing a master
-	masterUID, err := WaitClusterDataWithMaster(sm, 30*time.Second)
+	masterUID, err := waitClusterDataWithMaster(sm, 30*time.Second)
 	if err != nil {
 		t.Fatal("expected a master in cluster view")
 	}
@@ -1452,18 +1452,18 @@ func TestLoweredMaxStandbysPerSender(t *testing.T) {
 		t.Fatalf("wrong number of lines, want: %d, got: %d", 1, c)
 	}
 
-	if err := WaitNumDBs(sm, 3, 30*time.Second); err != nil {
+	if err := waitNumDBs(sm, 3, 30*time.Second); err != nil {
 		t.Fatalf("expected 3 DBs in cluster data: %v", err)
 	}
 
 	// Set MaxStandbysPerSender to 1
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "update", "--patch", `{ "maxStandbysPerSender" : 1 }`)
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "update", "--patch", `{ "maxStandbysPerSender" : 1 }`)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
 	// Wait for only 1 standby
-	if err := WaitNumDBs(sm, 2, 30*time.Second); err != nil {
+	if err := waitNumDBs(sm, 2, 30*time.Second); err != nil {
 		t.Fatalf("expected 2 DBs in cluster data: %v", err)
 	}
 }
@@ -1508,7 +1508,7 @@ func TestKeeperRemoval(t *testing.T) {
 	}
 
 	// Add another keeper that won't have a db assigned (since MaxStandbysPerSender == 1)
-	standby2, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	standby2, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -1519,7 +1519,7 @@ func TestKeeperRemoval(t *testing.T) {
 	}
 
 	// wait for keeper to be added to the cluster data
-	if err := WaitClusterDataKeepers([]string{master.uid, standby1.uid, standby2.uid}, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataKeepers([]string{master.uid, standby1.uid, standby2.uid}, sm, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1528,7 +1528,7 @@ func TestKeeperRemoval(t *testing.T) {
 	standby2.Stop()
 
 	// wait for standby2 keeper to be removed from the cluster data since it's dead a without an assigned db
-	if err := WaitClusterDataKeepers([]string{master.uid, standby1.uid}, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataKeepers([]string{master.uid, standby1.uid}, sm, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1540,7 +1540,7 @@ func TestKeeperRemoval(t *testing.T) {
 	// wait for a time greater than DeadKeeperRemovalInterval
 	time.Sleep(20 * time.Second)
 	// the master keeper shouldn't be removed from the cluster data
-	if err := WaitClusterDataKeepers([]string{master.uid, standby1.uid}, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataKeepers([]string{master.uid, standby1.uid}, sm, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1572,7 +1572,7 @@ func TestKeeperRemoval(t *testing.T) {
 	}
 
 	// wait for standby1 keeper to be removed from the cluster data since it's dead a without an assigned db
-	if err := WaitClusterDataKeepers([]string{master.uid, standby2.uid}, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataKeepers([]string{master.uid, standby2.uid}, sm, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -1650,7 +1650,7 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 	}
 
 	// remove master from the cluster data, must fail
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "removekeeper", master.uid)
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "removekeeper", master.uid)
 	if err == nil {
 		t.Fatalf("expected err")
 	}
@@ -1660,7 +1660,7 @@ func testKeeperRemovalStolonCtl(t *testing.T, syncRepl bool) {
 	standbys[0].Stop()
 
 	// remove standby[0] from the cluster data
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "removekeeper", standbys[0].uid)
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "removekeeper", standbys[0].uid)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -1784,7 +1784,7 @@ func TestStandbyCantSync(t *testing.T) {
 	master.Stop()
 
 	// Wait for cluster data containing standbys[1] as master
-	if err := WaitClusterDataMaster(standbys[1].uid, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standbys[1].uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standbys[1].uid)
 	}
 	if err := standbys[1].WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
@@ -1859,12 +1859,12 @@ func TestDisappearedKeeperData(t *testing.T) {
 	}
 
 	// get the master XLogPos
-	xLogPos, err := GetXLogPos(master)
+	xLogPos, err := getXLogPos(master)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1893,7 +1893,7 @@ func TestDisappearedKeeperData(t *testing.T) {
 	// master shouldn't start its postgres instance and standby should be elected as new master
 
 	// Wait for cluster data containing standby as master
-	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
 	if err := standby.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
@@ -1921,8 +1921,8 @@ func testForceFail(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ptk *TestKeeper
-	var primary *TestKeeper
+	var ptk *testKeeper
+	var primary *testKeeper
 	if standbyCluster {
 		primaryClusterName := uuid.Must(uuid.NewV4()).String()
 		ptks, ptss, ptp, ptstore := setupServers(t, primaryClusterName, dir, 1, 1, false, false, nil)
@@ -1964,12 +1964,12 @@ func testForceFail(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 
 	// get the primary/master XLogPos
-	xLogPos, err := GetXLogPos(primary)
+	xLogPos, err := getXLogPos(primary)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -1979,13 +1979,13 @@ func testForceFail(t *testing.T, syncRepl bool, standbyCluster bool) {
 	}
 
 	// mark master as failed
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "failkeeper", master.uid)
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "failkeeper", master.uid)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
 	// Wait for cluster data containing standby as master
-	if err := WaitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standby.uid, sm, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
 	if err := standby.WaitDBRole(common.RolePrimary, ptk, 30*time.Second); err != nil {
@@ -2082,12 +2082,12 @@ func testSyncStandbyNotInSync(t *testing.T, minSync0 bool) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// get the master XLogPos
-	xLogPos, err := GetXLogPos(master)
+	xLogPos, err := getXLogPos(master)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, sm, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// the proxy should connect to the right master
@@ -2198,7 +2198,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	}
 
 	// Set up sentinel
-	sentinel, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	sentinel, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -2212,7 +2212,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer os.RemoveAll(dir)
-	tk1, err := NewTestKeeper(
+	tk1, err := newTestKeeper(
 		t,
 		dir,
 		clusterName,
@@ -2238,7 +2238,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer os.RemoveAll(dir)
-	tk2, err := NewTestKeeper(
+	tk2, err := newTestKeeper(
 		t,
 		dir,
 		clusterName,
@@ -2262,7 +2262,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	store := store.NewKVBackedStore(tstore.store, storePath)
 
 	// Wait for keepers to become ready
-	if err := WaitClusterPhase(store, cluster.Normal, 60*time.Second); err != nil {
+	if err := waitClusterPhase(store, cluster.Normal, 60*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	if err := tk1.WaitDBUp(60 * time.Second); err != nil {
@@ -2272,11 +2272,11 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	keepers := map[string]*TestKeeper{tk1.uid: tk1, tk2.uid: tk2}
-	sentinels := map[string]*TestSentinel{sentinel.uid: sentinel}
+	keepers := map[string]*testKeeper{tk1.uid: tk1, tk2.uid: tk2}
+	sentinels := map[string]*testSentinel{sentinel.uid: sentinel}
 
 	// Set up proxy
-	proxy, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	proxy, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -2304,12 +2304,12 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	}
 
 	// get the master XLogPos
-	xLogPos, err := GetXLogPos(master)
+	xLogPos, err := getXLogPos(master)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	// wait for the keepers to have reported their state
-	if err := WaitClusterSyncedXLogPos([]*TestKeeper{master, standby}, xLogPos, store, 20*time.Second); err != nil {
+	if err := WaitClusterSyncedXLogPos([]*testKeeper{master, standby}, xLogPos, store, 20*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
@@ -2323,7 +2323,7 @@ func TestFailoverWithCustomWalDir(t *testing.T) {
 	master.Stop()
 
 	// Wait for cluster data containing standby as master
-	if err := WaitClusterDataMaster(standby.uid, store, 30*time.Second); err != nil {
+	if err := waitClusterDataMaster(standby.uid, store, 30*time.Second); err != nil {
 		t.Fatalf("expected master %q in cluster view", standby.uid)
 	}
 	if err := standby.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
