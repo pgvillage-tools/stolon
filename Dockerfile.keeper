@@ -35,9 +35,8 @@ ENV STKEEPER_PG_BIN_PATH=/usr/lib/postgresql/${PGVERSION}/bin \
     STKEEPER_CLUSTER_NAME=stolon \
     STKEEPER_STORE_BACKEND=etcdv3 \
     STKEEPER_DATA_DIR=/pgdata \
-    STKEEPER_PGDATA_DIR=/pgdata/postgres \
-    STKEEPER_WAL_DIR=/pgwal \
-    STKEEPER_PG_LISTEN_ADDRESS=0.0.0.0 \
+    STKEEPER_PGDATA_DIR=/pgdata/pgdata \
+    STKEEPER_WAL_DIR=/pgwal/pgwal \
     STKEEPER_PG_PORT=5432 \
     STKEEPER_PG_REPL_USERNAME=postgres
 

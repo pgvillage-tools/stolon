@@ -27,4 +27,7 @@ LABEL MAINTAINER=mannemsolutions
 WORKDIR /
 COPY --from=builder /workspace/stolon-proxy ./
 
+ENV STPROXY_CLUSTER_NAME=stolon \
+    STPROXY_STORE_BACKEND=etcdv3
+
 ENTRYPOINT ["/stolon-proxy"]
