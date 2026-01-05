@@ -30,4 +30,6 @@ COPY --from=builder /workspace/stolon-proxy ./
 ENV STPROXY_CLUSTER_NAME=stolon \
     STPROXY_STORE_BACKEND=etcdv3
 
+EXPOSE 25432
+
 ENTRYPOINT ["/stolon-proxy"]

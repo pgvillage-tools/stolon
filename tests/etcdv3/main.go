@@ -113,3 +113,27 @@ func runSentinel(
 			Started: true,
 		})
 }
+
+func runProxy(
+	ctx context.Context,
+	etcdEndpoints string,
+	nw *testcontainers.DockerNetwork,
+	aliasses map[string][]string,
+) (testcontainers.Container, error) {
+	envSettings := map[string]string{"STPROXY_STORE_ENDPOINTS": etcdEndpoints}
+	return testcontainers.GenericContainer(
+		ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: testcontainers.ContainerRequest{
+				Env: envSettings,
+				FromDockerfile: testcontainers.FromDockerfile{
+					Context:    "../../",
+					Dockerfile: "Dockerfile.proxy",
+				},
+				Networks:       []string{nw.Name},
+				NetworkAliases: aliasses,
+				WaitingFor: wait.ForLog(
+					"proxying to master address"),
+			},
+			Started: true,
+		})
+}

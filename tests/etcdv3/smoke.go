@@ -29,6 +29,7 @@ var _ = Describe("Smoke", Ordered, func() {
 		etcdContainer    *etcd.EtcdContainer
 		etcdEndpoints    string
 		sentinelCnt      testcontainers.Container
+		proxyCnt         testcontainers.Container
 		keeperContainers []testcontainers.Container
 		allContainers    []testcontainers.Container
 		keeperSettings   = map[string]string{
@@ -96,6 +97,13 @@ var _ = Describe("Smoke", Ordered, func() {
 			keeperContainers = append(keeperContainers, cnt)
 			allContainers = append(allContainers, cnt)
 		}
+
+		// Start sentinel
+		var proxyErr error
+		proxyCnt, proxyErr = runProxy(ctx, etcdEndpoints, nw,
+			map[string][]string{nw.Name: []string{"proxy"}})
+		Ω(proxyErr).NotTo(HaveOccurred())
+		allContainers = append(allContainers, proxyCnt)
 		/*
 			logs, logErr := cnt.Logs(ctx)
 			Ω(logErr).NotTo(HaveOccurred())
