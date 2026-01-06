@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"time"
 
+	"github.com/docker/go-connections/nat"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go"
@@ -17,11 +19,12 @@ import (
 var _ = Describe("Smoke", Ordered, func() {
 	const (
 		numEtcd       = 1
-		pgPassword    = "test123"
 		autoRemove    = true
 		initialConfig = `{"stolon_custom_config":{"defaultSUReplAccessMode":"strict","pgParameters":{},"pgHBA":[]}}`
 
 		numKeepers = 3
+
+		pgPassword = "test123"
 	)
 	var (
 		ctx              context.Context
@@ -35,6 +38,12 @@ var _ = Describe("Smoke", Ordered, func() {
 		keeperSettings   = map[string]string{
 			"pg-repl-password": pgPassword,
 			"pg-su-password":   pgPassword,
+		}
+		pgConn = pgConnParams{
+			"host":     "localhost",
+			"user":     pgUser,
+			"password": pgPassword,
+			"dbname":   pgDatabase,
 		}
 	)
 
@@ -50,7 +59,7 @@ var _ = Describe("Smoke", Ordered, func() {
 
 		// setup etcd
 		var etcdErr error
-		etcdContainer, etcdEndpoints, etcdErr = setupEtcd(ctx, etcdImage, nw)
+		etcdContainer, etcdEndpoints, etcdErr = runEtcd(ctx, etcdImage, nw)
 		Ω(etcdErr).NotTo(HaveOccurred())
 		allContainers = []testcontainers.Container{etcdContainer}
 
@@ -98,12 +107,13 @@ var _ = Describe("Smoke", Ordered, func() {
 			allContainers = append(allContainers, cnt)
 		}
 
-		// Start sentinel
+		// Start proxy
 		var proxyErr error
 		proxyCnt, proxyErr = runProxy(ctx, etcdEndpoints, nw,
 			map[string][]string{nw.Name: []string{"proxy"}})
 		Ω(proxyErr).NotTo(HaveOccurred())
 		allContainers = append(allContainers, proxyCnt)
+
 		/*
 			logs, logErr := cnt.Logs(ctx)
 			Ω(logErr).NotTo(HaveOccurred())
@@ -117,25 +127,41 @@ var _ = Describe("Smoke", Ordered, func() {
 		if !autoRemove {
 			return
 		}
+		if CurrentSpecReport().Failed() {
+			GinkgoWriter.Printf("Test failed! not cleaning containers")
+			return
+		}
 		for _, cnt := range allContainers {
 			Ω(cnt.Terminate(ctx)).NotTo(HaveOccurred())
 		}
 		Ω(nw.Remove(ctx)).NotTo(HaveOccurred())
 	})
-	Context("when running etcd", func() {
+	Context("when connecting to the keepers", func() {
 		It("should work properly", func() {
-			state, stateErr := etcdContainer.State(ctx)
-			Ω(stateErr).NotTo(HaveOccurred())
-			Ω(state).NotTo(BeNil())
+			for _, cnt := range keeperContainers {
+				natPort, err := cnt.MappedPort(ctx,
+					nat.Port(fmt.Sprintf("%d/tcp", keeperPort)))
+				Ω(err).NotTo(HaveOccurred())
+				Ω(pgPing(
+					ctx,
+					pgConn.setParam("port", natPort.Port())),
+				).NotTo(HaveOccurred())
+			}
 		})
 	})
-	Context("when creating a cluster with 3 instances", func() {
-		It("should create a cluster with one primary and 2 standby's", func() {
-			for _, cnt := range keeperContainers {
-				state, stateErr := cnt.State(ctx)
-				Ω(stateErr).NotTo(HaveOccurred())
-				Ω(state).NotTo(BeNil())
-			}
+	Context("when connecting through proxy", func() {
+		It("should work properly", func() {
+			natPort, err := proxyCnt.MappedPort(ctx,
+				nat.Port(fmt.Sprintf("%d/tcp", proxyPort)))
+			Ω(err).NotTo(HaveOccurred())
+			proxyConnSettings := pgConn.setParam("port", natPort.Port())
+			// This does not work directly after starting the container but does after 5s.
+			// So, we will try this for 10 seconds
+			isReadyCtx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
+			defer cancelFunc()
+			// every 100 miliseconds
+			isReadyErr := isReady(isReadyCtx, proxyConnSettings, time.Millisecond*100)
+			Ω(isReadyErr).NotTo(HaveOccurred())
 		})
 	})
 })

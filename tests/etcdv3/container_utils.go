@@ -12,10 +12,14 @@ import (
 )
 
 const (
-	etcdImage = "quay.io/coreos/etcd:v3.6.7"
+	etcdImage  = "quay.io/coreos/etcd:v3.6.7"
+	proxyPort  = 25432
+	keeperPort = 5432
+	pgUser     = "postgres"
+	pgDatabase = "postgres"
 )
 
-func setupEtcd(
+func runEtcd(
 	ctx context.Context,
 	etcdImage string,
 	nw *testcontainers.DockerNetwork,
@@ -133,6 +137,8 @@ func runProxy(
 				NetworkAliases: aliasses,
 				WaitingFor: wait.ForLog(
 					"proxying to master address"),
+				// WaitingFor: wait.ForListeningPort(
+				//     nat.Port(fmt.Sprintf("%d/tcp", proxyPort))),
 			},
 			Started: true,
 		})
