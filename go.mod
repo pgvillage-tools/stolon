@@ -87,7 +87,7 @@ require (
 	github.com/prometheus/common v0.60.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sirupsen/logrus v1.6.0 // indirect
+	github.com/sirupsen/logrus v1.8.3 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/sorintlab/tcpkeepalive v0.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
