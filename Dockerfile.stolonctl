@@ -27,4 +27,7 @@ LABEL MAINTAINER=mannemsolutions
 WORKDIR /
 COPY --from=builder /workspace/stolonctl ./
 
+ENV STOLONCTL_CLUSTER_NAME=stolon \
+    STOLONCTL_STORE_BACKEND=etcdv3
+
 ENTRYPOINT ["/stolonctl"]

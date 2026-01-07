@@ -430,7 +430,13 @@ func (p *Manager) start(args ...string) error {
 	ok := false
 	start := time.Now()
 	for time.Since(start) < startTimeout {
-		fh, err := os.Open(filepath.Join(p.dataDir, "postmaster.pid"))
+		fileName := filepath.Join(p.dataDir, "postmaster.pid")
+		fh, err := os.Open(fileName)
+		defer func() {
+			if err := fh.Close(); err != nil {
+				log.Debugf("failed to close %s: %v", fileName, err)
+			}
+		}()
 		if err == nil {
 			scanner := bufio.NewScanner(fh)
 			scanner.Split(bufio.ScanLines)
@@ -438,15 +444,9 @@ func (p *Manager) start(args ...string) error {
 				fpid := scanner.Text()
 				if fpid == strconv.Itoa(pid) {
 					ok = true
-					if err := fh.Close(); err != nil {
-						log.Fatalf("failed to close %s: %v", fh.Name(), err)
-					}
 					break
 				}
 			}
-		}
-		if err := fh.Close(); err != nil {
-			log.Fatalf("failed to close %s: %v", fh.Name(), err)
 		}
 
 		select {

@@ -27,4 +27,7 @@ LABEL MAINTAINER=mannemsolutions
 WORKDIR /
 COPY --from=builder /workspace/stolon-sentinel ./
 
+ENV STSENTINEL_CLUSTER_NAME=stolon \
+    STSENTINEL_STORE_BACKEND=etcdv3
+
 ENTRYPOINT ["/stolon-sentinel"]
