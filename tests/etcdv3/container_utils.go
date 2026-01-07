@@ -3,6 +3,7 @@ package etcdv3_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -73,6 +74,10 @@ func runKeeper(
 	aliasses map[string][]string,
 	settings map[string]string,
 ) (testcontainers.Container, error) {
+	pgVersion := os.Getenv("PGVERSION")
+	if pgVersion == "" {
+		pgVersion = "19"
+	}
 	envSettings := map[string]string{"STKEEPER_STORE_ENDPOINTS": etcdEndpoints}
 	for k, v := range settings {
 		k = fmt.Sprintf("STKEEPER_%s",
@@ -84,6 +89,10 @@ func runKeeper(
 			ContainerRequest: testcontainers.ContainerRequest{
 				Env: envSettings,
 				FromDockerfile: testcontainers.FromDockerfile{
+					KeepImage: true,
+					BuildArgs: map[string]*string{
+						"PGVERSION": &pgVersion,
+					},
 					Context:    "../../",
 					Dockerfile: "Dockerfile.keeper",
 				},
