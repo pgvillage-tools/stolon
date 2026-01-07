@@ -56,3 +56,7 @@ install-go-test-coverage:
 .PHONY: check-coverage
 check-coverage: install-go-test-coverage test
 	${GOBIN}/go-test-coverage --config=./.testcoverage.yaml
+
+.PHONY: test-e2e
+e2e-test:
+	cd ./tests/etcdv3 && go test -count=1 ./...
