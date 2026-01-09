@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sorintlab/stolon/internal/util"
@@ -88,11 +87,11 @@ type Config struct {
 
 // UnmarshalJSON deserializes a NilConfig from JSON
 func (c *NilConfig) UnmarshalJSON(in []byte) error {
-	var nc NilConfig
-	if err := json.Unmarshal(in, &nc); err != nil {
+	type Alias NilConfig
+	aux := (*Alias)(c)
+	if err := json.Unmarshal(in, aux); err != nil {
 		return err
 	}
-	*c = NilConfig(nc)
 	if err := c.Validate(); err != nil {
 		return fmt.Errorf("config validation failed: %v", err)
 	}
@@ -106,28 +105,33 @@ func (c *NilConfig) Copy() *NilConfig {
 	}
 	var nc NilConfig
 	if c.RequestTimeout != nil {
-		nc.RequestTimeout = util.ToPtr(*c.RequestTimeout)
+		nc.RequestTimeout = &Duration{c.RequestTimeout.Duration}
 	}
 	if c.SleepInterval != nil {
-		nc.SleepInterval = util.ToPtr(*c.SleepInterval)
+		nc.SleepInterval = &Duration{c.SleepInterval.Duration}
 	}
 	if c.KeeperFailInterval != nil {
-		nc.KeeperFailInterval = util.ToPtr(*c.KeeperFailInterval)
+		nc.KeeperFailInterval = &Duration{c.KeeperFailInterval.Duration}
 	}
 	if c.MaxStandbysPerSender != nil {
-		nc.MaxStandbysPerSender = util.ToPtr(*c.MaxStandbysPerSender)
+		mspr := *c.MaxStandbysPerSender
+		nc.MaxStandbysPerSender = &mspr
 	}
 	if c.SynchronousReplication != nil {
-		nc.SynchronousReplication = util.ToPtr(*c.SynchronousReplication)
+		sr := *c.SynchronousReplication
+		nc.SynchronousReplication = &sr
 	}
 	if c.InitWithMultipleKeepers != nil {
-		nc.InitWithMultipleKeepers = util.ToPtr(*c.InitWithMultipleKeepers)
+		iwmk := *c.InitWithMultipleKeepers
+		nc.InitWithMultipleKeepers = &iwmk
 	}
 	if c.UsePGRewind != nil {
-		nc.UsePGRewind = util.ToPtr(*c.UsePGRewind)
+		upgr := *c.UsePGRewind
+		nc.UsePGRewind = &upgr
 	}
 	if c.PGParameters != nil {
-		nc.PGParameters = util.ToPtr(*c.PGParameters)
+		pgp := *c.PGParameters
+		nc.PGParameters = &pgp
 	}
 	return &nc
 }
@@ -163,13 +167,25 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON will deserialize a Duration object
 func (d *Duration) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), `"`)
-	du, err := time.ParseDuration(s)
-	if err != nil {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
-	d.Duration = du
-	return nil
+
+	switch value := v.(type) {
+	case float64:
+		d.Duration = time.Duration(value)
+		return nil
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.New("invalid duration")
+	}
 }
 
 // Validate can be used to validate a NilConfig
