@@ -1,8 +1,11 @@
 package cluster
 
 import (
+	"reflect"
 	"sort"
 	"time"
+
+	"github.com/mitchellh/copystructure"
 )
 
 // KeeperSpec defines a spec for a Keeper resource
@@ -61,4 +64,57 @@ func (kss Keepers) SortedKeys() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// KeepersInfo stores all KeeperInfo resources belonging to this cluster
+type KeepersInfo map[string]*KeeperInfo
+
+// DeepCopy returns a copy of the KeepersInfo resource
+func (k KeepersInfo) DeepCopy() (dc KeepersInfo) {
+	var ok bool
+	if k == nil {
+		return nil
+	}
+	if nk, err := copystructure.Copy(k); err != nil {
+		panic(err)
+	} else if !reflect.DeepEqual(k, nk) {
+		panic("not equal")
+	} else if dc, ok = nk.(KeepersInfo); !ok {
+		panic("different type after copy")
+	}
+	return dc
+}
+
+// KeeperInfo can store all info belonging to a Keeper
+type KeeperInfo struct {
+	// An unique id for this info, used to know when this the keeper info
+	// has been updated
+	InfoUID string `json:"infoUID,omitempty"`
+
+	UID        string `json:"uid,omitempty"`
+	ClusterUID string `json:"clusterUID,omitempty"`
+	BootUUID   string `json:"bootUUID,omitempty"`
+
+	PostgresBinaryVersion PostgresBinaryVersion `json:"postgresBinaryVersion,omitempty"`
+
+	PostgresState *PostgresState `json:"postgresState,omitempty"`
+
+	CanBeMaster             *bool `json:"canBeMaster,omitempty"`
+	CanBeSynchronousReplica *bool `json:"canBeSynchronousReplica,omitempty"`
+}
+
+// DeepCopy returns a copy of the KeeperInfo resource
+func (k *KeeperInfo) DeepCopy() (dc *KeeperInfo) {
+	var ok bool
+	if k == nil {
+		return nil
+	}
+	if nk, err := copystructure.Copy(k); err != nil {
+		panic(err)
+	} else if !reflect.DeepEqual(k, nk) {
+		panic("not equal")
+	} else if dc, ok = nk.(*KeeperInfo); !ok {
+		panic("different type after copy")
+	}
+	return dc
 }

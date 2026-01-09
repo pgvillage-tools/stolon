@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// TODO: Nowadays Duration resources marshal and unmarshal properly so we can get rid of below Duration
-
 // Duration is needed to be able to marshal/unmarshal json strings with time
 // unit (eg. 3s, 100ms) instead of ugly times in nanoseconds.
 type Duration struct {
