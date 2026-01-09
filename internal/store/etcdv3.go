@@ -87,7 +87,13 @@ func (s *etcdV3Store) List(pctx context.Context, directory string) ([]*KVPair, e
 	return kvPairs, nil
 }
 
-func (s *etcdV3Store) AtomicPut(pctx context.Context, key string, value []byte, previous *KVPair, options *WriteOptions) (*KVPair, error) {
+func (s *etcdV3Store) AtomicPut(
+	pctx context.Context,
+	key string,
+	value []byte,
+	previous *KVPair,
+	options *WriteOptions,
+) (*KVPair, error) {
 	etcdv3Options := []etcdclientv3.OpOption{}
 	if options != nil {
 		if options.TTL > 0 {

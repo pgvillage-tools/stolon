@@ -46,7 +46,8 @@ func TestProxyListening(t *testing.T) {
 	}
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 
-	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername,
+		pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}

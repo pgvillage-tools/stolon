@@ -36,7 +36,8 @@ const (
 	// KubeClusterDataAnnotation is the key of the annotation that should be set on a ClusterData configmap
 	KubeClusterDataAnnotation = "stolon-clusterdata"
 
-	// KubeStatusAnnnotation is the key of the annotation that should be set to define the status for every Pod for this cluster
+	// KubeStatusAnnnotation is the key of the annotation that should be set to define the status for every Pod for
+	// this cluster
 	KubeStatusAnnnotation = "stolon-status"
 )
 

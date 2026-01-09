@@ -300,7 +300,10 @@ func TestServiceInfosDiff(t *testing.T) {
 	})
 
 	t.Run("should only remove when discovered services no longer exists", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID": ServiceInfo{ID: "masterUID"},
+			"slaveUID":  ServiceInfo{ID: "slaveUID"},
+		}
 		existingServiceInfos := ServiceInfos{}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
@@ -335,8 +338,14 @@ func TestServiceInfosDiff(t *testing.T) {
 	})
 
 	t.Run("should add and remove corresponding service infos", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
-		existingServiceInfos := ServiceInfos{"newSlaveUID": ServiceInfo{ID: "newSlaveUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID": ServiceInfo{ID: "masterUID"},
+			"slaveUID":  ServiceInfo{ID: "slaveUID"},
+		}
+		existingServiceInfos := ServiceInfos{
+			"newSlaveUID": ServiceInfo{ID: "newSlaveUID"},
+			"slaveUID":    ServiceInfo{ID: "slaveUID"},
+		}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
 
@@ -363,10 +372,16 @@ func TestServiceInfosDiff(t *testing.T) {
 	})
 
 	t.Run("should add and remove corresponding service infos", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID", Tags: Tags{"master"}}, "slaveUID": ServiceInfo{ID: "slaveUID"},
-			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID"}}
-		existingServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID", Tags: Tags{"slave"}}, "slaveUID": ServiceInfo{ID: "slaveUID"},
-			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID", Tags: Tags{"master"}}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID":       ServiceInfo{ID: "masterUID", Tags: Tags{"master"}},
+			"slaveUID":        ServiceInfo{ID: "slaveUID"},
+			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID"},
+		}
+		existingServiceInfos := ServiceInfos{
+			"masterUID":       ServiceInfo{ID: "masterUID", Tags: Tags{"slave"}},
+			"slaveUID":        ServiceInfo{ID: "slaveUID"},
+			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID", Tags: Tags{"master"}},
+		}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
 

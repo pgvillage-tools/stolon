@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/sorintlab/stolon/internal/cluster"
-	"github.com/sorintlab/stolon/internal/store"
+	stolonstore "github.com/sorintlab/stolon/internal/store"
 )
 
 // Cluster type exposes necessary methods to find master and slave
@@ -33,7 +33,7 @@ type Cluster struct {
 }
 
 // NewCluster returns an new instance of Cluster
-func NewCluster(name string, rCfg Config, store store.Store) (*Cluster, error) {
+func NewCluster(name string, rCfg Config, store stolonstore.Store) (*Cluster, error) {
 	cd, _, err := store.GetClusterData(context.TODO())
 
 	if err != nil {
@@ -41,7 +41,8 @@ func NewCluster(name string, rCfg Config, store store.Store) (*Cluster, error) {
 	} else if cd == nil {
 		return nil, errors.New("no cluster data available")
 	}
-	return &Cluster{name: name, cd: cd, tagMasterAs: NewTags(rCfg.TagMasterAs), tagSlaveAs: NewTags(rCfg.TagSlaveAs)}, nil
+	return &Cluster{name: name, cd: cd, tagMasterAs: NewTags(rCfg.TagMasterAs),
+		tagSlaveAs: NewTags(rCfg.TagSlaveAs)}, nil
 }
 
 // ServiceInfos returns all the service information from the cluster data in underlying store

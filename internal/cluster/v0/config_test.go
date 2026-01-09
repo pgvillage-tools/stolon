@@ -16,13 +16,19 @@ package v0
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sorintlab/stolon/internal/util"
+)
+
+const (
+	defaultInterval             = 20 * time.Second
+	defaultMaxStandbysPerSender = 10
 )
 
 func TestParseConfig(t *testing.T) {
@@ -50,35 +56,41 @@ func TestParseConfig(t *testing.T) {
 		{
 			in:  `{ "request_timeout": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: request_timeout must be positive"),
+			err: errors.New("config validation failed: request_timeout must be positive"),
 		},
 		{
 			in:  `{ "request_timeout": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: request_timeout must be positive"),
+			err: errors.New("config validation failed: request_timeout must be positive"),
 		},
 		{
 			in:  `{ "sleep_interval": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: sleep_interval must be positive"),
+			err: errors.New("config validation failed: sleep_interval must be positive"),
 		},
 		{
 			in:  `{ "keeper_fail_interval": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: keeper_fail_interval must be positive"),
+			err: errors.New("config validation failed: keeper_fail_interval must be positive"),
 		},
 		{
 			in:  `{ "max_standbys_per_sender": 0 }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: max_standbys_per_sender must be at least 1"),
+			err: errors.New("config validation failed: max_standbys_per_sender must be at least 1"),
 		},
 		// All options defined
 		{
-			in: `{ "request_timeout": "10s", "sleep_interval": "10s", "keeper_fail_interval": "100s", "max_standbys_per_sender": 5, "synchronous_replication": true, "init_with_multiple_keepers": true,
-			       "pg_parameters": {
-			         "param01": "value01"
-				}
-			     }`,
+			in: strings.Join([]string{
+				`{ "request_timeout": "10s", `,
+				`"sleep_interval": "10s", `,
+				`"keeper_fail_interval": "100s", `,
+				`"max_standbys_per_sender": 5, `,
+				`"synchronous_replication": true, `,
+				`"init_with_multiple_keepers": true,`,
+				`"pg_parameters": {`,
+				`  "param01": "value01"`,
+				`}}`,
+			}, "\n"),
 			cfg: mergeDefaults(&NilConfig{
 				RequestTimeout:          &Duration{10 * time.Second},
 				SleepInterval:           &Duration{10 * time.Second},
@@ -150,10 +162,10 @@ func TestNilConfigCopy(t *testing.T) {
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = &Duration{20 * time.Second}
-	newCfg.SleepInterval = &Duration{20 * time.Second}
-	newCfg.KeeperFailInterval = &Duration{20 * time.Second}
-	newCfg.MaxStandbysPerSender = util.ToPtr(uint(10))
+	newCfg.RequestTimeout = &Duration{defaultInterval}
+	newCfg.SleepInterval = &Duration{defaultInterval}
+	newCfg.KeeperFailInterval = &Duration{defaultInterval}
+	newCfg.MaxStandbysPerSender = util.ToPtr(uint(defaultMaxStandbysPerSender))
 	newCfg.SynchronousReplication = util.ToPtr(false)
 	newCfg.InitWithMultipleKeepers = util.ToPtr(false)
 	(*newCfg.PGParameters)["param01"] = "anothervalue01"
@@ -192,10 +204,10 @@ func TestConfigCopy(t *testing.T) {
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = 20 * time.Second
-	newCfg.SleepInterval = 20 * time.Second
-	newCfg.KeeperFailInterval = 20 * time.Second
-	newCfg.MaxStandbysPerSender = 10
+	newCfg.RequestTimeout = defaultInterval
+	newCfg.SleepInterval = defaultInterval
+	newCfg.KeeperFailInterval = defaultInterval
+	newCfg.MaxStandbysPerSender = defaultMaxStandbysPerSender
 	newCfg.SynchronousReplication = false
 	newCfg.InitWithMultipleKeepers = false
 	newCfg.PGParameters["param01"] = "anothervalue01"

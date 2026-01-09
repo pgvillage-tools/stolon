@@ -15,9 +15,10 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"os/user"
+
+	"errors"
 )
 
 // GetUser returns the linux username running stolon
@@ -32,5 +33,5 @@ func GetUser() (string, error) {
 		return name, nil
 	}
 
-	return "", fmt.Errorf("cannot detect current user")
+	return "", errors.New("cannot detect current user")
 }

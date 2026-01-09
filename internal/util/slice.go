@@ -40,7 +40,8 @@ func CompareStringSlice(a []string, b []string) bool {
 	return true
 }
 
-// CompareStringSliceNoOrder compares two slices of strings regardless of their order, a nil slice is considered an empty one
+// CompareStringSliceNoOrder compares two slices of strings regardless of their order, a nil slice is considered an
+// empty one
 func CompareStringSliceNoOrder(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false

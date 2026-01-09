@@ -215,10 +215,7 @@ func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTime
 	}
 	log.Debugf("proxyInfo dump: %s", spew.Sdump(proxyInfo))
 
-	if err := c.e.SetProxyInfo(context.TODO(), proxyInfo, 2*proxyTimeout); err != nil {
-		return err
-	}
-	return nil
+	return c.e.SetProxyInfo(context.TODO(), proxyInfo, 2*proxyTimeout)
 }
 
 // Check reads the cluster data and applies the right pollon configuration.

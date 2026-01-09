@@ -27,18 +27,19 @@ import (
 type KeepersInfo map[string]*KeeperInfo
 
 // DeepCopy returns a copy of the KeepersInfo resource
-func (k KeepersInfo) DeepCopy() KeepersInfo {
+func (k KeepersInfo) DeepCopy() (dc KeepersInfo) {
+	var ok bool
 	if k == nil {
 		return nil
 	}
-	nk, err := copystructure.Copy(k)
-	if err != nil {
+	if nk, err := copystructure.Copy(k); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(k, nk) {
+	} else if !reflect.DeepEqual(k, nk) {
 		panic("not equal")
+	} else if dc, ok = nk.(KeepersInfo); !ok {
+		panic("different type after copy")
 	}
-	return nk.(KeepersInfo)
+	return dc
 }
 
 // KeeperInfo can store all info belonging to a Keeper
@@ -60,18 +61,19 @@ type KeeperInfo struct {
 }
 
 // DeepCopy returns a copy of the KeeperInfo resource
-func (k *KeeperInfo) DeepCopy() *KeeperInfo {
+func (k *KeeperInfo) DeepCopy() (dc *KeeperInfo) {
+	var ok bool
 	if k == nil {
 		return nil
 	}
-	nk, err := copystructure.Copy(k)
-	if err != nil {
+	if nk, err := copystructure.Copy(k); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(k, nk) {
+	} else if !reflect.DeepEqual(k, nk) {
 		panic("not equal")
+	} else if dc, ok = nk.(*KeeperInfo); !ok {
+		panic("different type after copy")
 	}
-	return nk.(*KeeperInfo)
+	return dc
 }
 
 // PostgresTimelinesHistory stores all PostgreSQL timelines belonging to this cluster
@@ -115,18 +117,19 @@ type PostgresState struct {
 }
 
 // DeepCopy returns a copy of the PostgresState resource
-func (p *PostgresState) DeepCopy() *PostgresState {
+func (p *PostgresState) DeepCopy() (dc *PostgresState) {
+	var ok bool
 	if p == nil {
 		return nil
 	}
-	np, err := copystructure.Copy(p)
-	if err != nil {
+	if np, err := copystructure.Copy(p); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(p, np) {
+	} else if !reflect.DeepEqual(p, np) {
 		panic("not equal")
+	} else if dc, ok = np.(*PostgresState); !ok {
+		panic("different type after copy")
 	}
-	return np.(*PostgresState)
+	return dc
 }
 
 // SentinelsInfo stores all SentinelInfo resources for a cluster
@@ -161,18 +164,19 @@ type ProxyInfo struct {
 type ProxiesInfo map[string]*ProxyInfo
 
 // DeepCopy returns a copy of the ProxiesInfo resource
-func (p ProxiesInfo) DeepCopy() ProxiesInfo {
+func (p ProxiesInfo) DeepCopy() (dc ProxiesInfo) {
+	var ok bool
 	if p == nil {
 		return nil
 	}
-	np, err := copystructure.Copy(p)
-	if err != nil {
+	if np, err := copystructure.Copy(p); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(p, np) {
+	} else if !reflect.DeepEqual(p, np) {
 		panic("not equal")
+	} else if dc, ok = np.(ProxiesInfo); !ok {
+		panic("different type after copy")
 	}
-	return np.(ProxiesInfo)
+	return dc
 }
 
 // ToSlice converts the ProxiesInfo map into a slice of ProxyInfo resources

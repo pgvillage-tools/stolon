@@ -21,7 +21,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/sorintlab/stolon/internal/cluster"
-	mock_store "github.com/sorintlab/stolon/internal/mock/store"
+	mockstore "github.com/sorintlab/stolon/internal/mock/store"
 )
 
 func TestWriteClusterdata(t *testing.T) {
@@ -32,7 +32,7 @@ func TestWriteClusterdata(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 		reader := strings.Reader{}
 		err := writeClusterdata(&reader, store)
 
@@ -52,7 +52,7 @@ func TestWriteClusterdata(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 		reader := strings.NewReader("{a}")
 		err := writeClusterdata(reader, store)
 
@@ -73,7 +73,7 @@ func TestWriteClusterdata(t *testing.T) {
 		defer ctrl.Finish()
 
 		reader := strings.NewReader("{}")
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 
 		store.EXPECT().GetClusterData(gomock.Any()).Return(nil, nil, errors.New("Error in getting cluster data"))
 
@@ -96,7 +96,7 @@ func TestWriteClusterdata(t *testing.T) {
 		defer ctrl.Finish()
 
 		reader := strings.NewReader("{}")
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 		store.EXPECT().GetClusterData(gomock.Any()).Return(&cluster.Data{}, nil, nil)
 
 		err := writeClusterdata(reader, store)
@@ -119,7 +119,7 @@ func TestWriteClusterdata(t *testing.T) {
 		defer ctrl.Finish()
 
 		reader := strings.NewReader("{}")
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 		cd := &cluster.Data{}
 		store.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
 		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(errors.New("error while uploading the cluster data"))
@@ -144,7 +144,7 @@ func TestWriteClusterdata(t *testing.T) {
 		defer ctrl.Finish()
 
 		reader := strings.NewReader("{}")
-		store := mock_store.NewMockStore(ctrl)
+		store := mockstore.NewMockStore(ctrl)
 		cd := &cluster.Data{}
 		store.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
 		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(nil)

@@ -25,7 +25,7 @@ import (
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/internal/cluster"
-	"github.com/sorintlab/stolon/internal/store"
+	ststore "github.com/sorintlab/stolon/internal/store"
 
 	"github.com/spf13/cobra"
 )
@@ -116,7 +116,7 @@ func readClusterdata(_ *cobra.Command, _ []string) {
 	stdout("%s", clusterdataj)
 }
 
-func isSafeToWriteClusterData(store store.Store) error {
+func isSafeToWriteClusterData(store ststore.Store) error {
 	if cd, _, err := store.GetClusterData(context.TODO()); err != nil {
 		return err
 	} else if cd != nil {
@@ -134,7 +134,7 @@ func clusterData(data []byte) (*cluster.Data, error) {
 	return &cd, err
 }
 
-func writeClusterdata(reader io.Reader, s store.Store) error {
+func writeClusterdata(reader io.Reader, s ststore.Store) error {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("error while reading data: %v", err)

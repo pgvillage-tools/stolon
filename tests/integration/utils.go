@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -57,6 +58,11 @@ var (
 	defaultPGParameters = cluster.PGParameters{"log_destination": "stderr", "logging_collector": "false"}
 
 	defaultStoreTimeout = 1 * time.Second
+
+	errTimeout = errors.New("timeout")
+
+	driverName = "postgres"
+	dbName     = "postgres"
 )
 
 var curPort = minPort
@@ -120,7 +126,7 @@ func getSystemData(q replQuerier) (*pg.SystemData, error) {
 		}
 		return &sd, nil
 	}
-	return nil, fmt.Errorf("query returned 0 rows")
+	return nil, errors.New("query returned 0 rows")
 }
 
 func getXLogPos(q replQuerier) (uint64, error) {
@@ -318,7 +324,7 @@ func (p *process) Wait(timeout time.Duration) error {
 	}()
 	select {
 	case <-timeoutCh:
-		return fmt.Errorf("timeout waiting on process")
+		return errors.New("timeout waiting on process")
 	case <-endCh:
 		return nil
 	}
@@ -377,7 +383,7 @@ func newTestKeeperWithID(
 		"password": pgSUPassword,
 		"host":     pgListenAddress,
 		"port":     pgPort,
-		"dbname":   "postgres",
+		"dbname":   dbName,
 		"sslmode":  "disable",
 	}
 
@@ -386,26 +392,26 @@ func newTestKeeperWithID(
 		"password":    pgReplPassword,
 		"host":        pgListenAddress,
 		"port":        pgPort,
-		"dbname":      "postgres",
+		"dbname":      dbName,
 		"sslmode":     "disable",
 		"replication": "1",
 	}
 
 	connString := connParams.ConnString()
-	db, err := sql.Open("postgres", connString)
+	db, err := sql.Open(dbName, connString)
 	if err != nil {
 		return nil, err
 	}
 
 	replConnString := replConnParams.ConnString()
-	rdb, err := sql.Open("postgres", replConnString)
+	rdb, err := sql.Open(dbName, replConnString)
 	if err != nil {
 		return nil, err
 	}
 
 	bin := os.Getenv("STKEEPER_BIN")
 	if bin == "" {
-		return nil, fmt.Errorf("missing STKEEPER_BIN env")
+		return nil, errors.New("missing STKEEPER_BIN env")
 	}
 	tk := &testKeeper{
 		t: t,
@@ -439,7 +445,8 @@ func newTestKeeper(
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
-	return newTestKeeperWithID(t, dir, uid, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, storeBackend, storeEndpoints, a...)
+	return newTestKeeperWithID(t, dir, uid, clusterName, pgSUUsername, pgSUPassword,
+		pgReplUsername, pgReplPassword, storeBackend, storeEndpoints, a...)
 }
 
 func (tk *testKeeper) PGDataVersion() (*semver.Version, error) {
@@ -559,7 +566,7 @@ func (tk *testKeeper) WaitDBUp(timeout time.Duration) error {
 		tk.t.Logf("tk: %v, error: %v", tk.uid, err)
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (tk *testKeeper) WaitDBDown(timeout time.Duration) error {
@@ -571,7 +578,7 @@ func (tk *testKeeper) WaitDBDown(timeout time.Duration) error {
 		}
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (tk *testKeeper) GetPGProcess() (*os.Process, error) {
@@ -584,7 +591,7 @@ func (tk *testKeeper) GetPGProcess() (*os.Process, error) {
 	scanner := bufio.NewScanner(fh)
 	scanner.Split(bufio.ScanLines)
 	if !scanner.Scan() {
-		return nil, fmt.Errorf("not enough lines in pid file")
+		return nil, errors.New("not enough lines in pid file")
 	}
 	pidStr := scanner.Text()
 	pid, err := strconv.Atoi(string(pidStr))
@@ -618,7 +625,7 @@ func (tk *testKeeper) isInRecovery() (bool, error) {
 		}
 		return false, nil
 	}
-	return false, fmt.Errorf("no rows returned")
+	return false, errors.New("no rows returned")
 }
 
 func (tk *testKeeper) WaitDBRole(r common.Role, ptk *testKeeper, timeout time.Duration) error {
@@ -666,7 +673,7 @@ func (tk *testKeeper) WaitDBRole(r common.Role, ptk *testKeeper, timeout time.Du
 		}
 	}
 
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (tk *testKeeper) WaitPGParameter(parameter, value string, timeout time.Duration) error {
@@ -744,7 +751,7 @@ func newTestSentinel(
 
 	bin := os.Getenv("STSENTINEL_BIN")
 	if bin == "" {
-		return nil, fmt.Errorf("missing STSENTINEL_BIN env")
+		return nil, errors.New("missing STSENTINEL_BIN env")
 	}
 	ts := &testSentinel{
 		t: t,
@@ -800,7 +807,7 @@ func newTestProxy(
 		"password": pgSUPassword,
 		"host":     listenAddress,
 		"port":     port,
-		"dbname":   "postgres",
+		"dbname":   dbName,
 		"sslmode":  "disable",
 	}
 
@@ -809,26 +816,26 @@ func newTestProxy(
 		"password":    pgReplPassword,
 		"host":        listenAddress,
 		"port":        port,
-		"dbname":      "postgres",
+		"dbname":      dbName,
 		"sslmode":     "disable",
 		"replication": "1",
 	}
 
 	connString := connParams.ConnString()
-	db, err := sql.Open("postgres", connString)
+	db, err := sql.Open(dbName, connString)
 	if err != nil {
 		return nil, err
 	}
 
 	replConnString := replConnParams.ConnString()
-	rdb, err := sql.Open("postgres", replConnString)
+	rdb, err := sql.Open(dbName, replConnString)
 	if err != nil {
 		return nil, err
 	}
 
 	bin := os.Getenv("STPROXY_BIN")
 	if bin == "" {
-		return nil, fmt.Errorf("missing STPROXY_BIN env")
+		return nil, errors.New("missing STPROXY_BIN env")
 	}
 	tp := &testProxy{
 		t: t,
@@ -856,7 +863,7 @@ func (tp *testProxy) WaitListening(timeout time.Duration) error {
 		}
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (tp *testProxy) CheckListening() bool {
@@ -873,7 +880,7 @@ func (tp *testProxy) WaitNotListening(timeout time.Duration) error {
 		}
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (tp *testProxy) Exec(query string, args ...any) (sql.Result, error) {
@@ -908,7 +915,8 @@ func (tp *testProxy) GetPGParameters() (common.Parameters, error) {
 }
 
 func (tp *testProxy) WaitRightMaster(tk *testKeeper, timeout time.Duration) error {
-	return tk.WaitPGParameter("port", tk.pgPort, timeout)
+	const waitParam = "port"
+	return tk.WaitPGParameter(waitParam, tk.pgPort, timeout)
 }
 
 func stolonCtl(
@@ -928,7 +936,7 @@ func stolonCtl(
 
 	bin := os.Getenv("STCTL_BIN")
 	if bin == "" {
-		return fmt.Errorf("missing STCTL_BIN env")
+		return errors.New("missing STCTL_BIN env")
 	}
 	cmd := exec.Command(bin, args...)
 	pr, pw, err := os.Pipe()
@@ -967,7 +975,7 @@ func newTestStore(t *testing.T, dir string, a ...string) (*testStore, error) {
 	case "etcdv2", "etcdv3":
 		return newTestEtcd(t, dir, storeBackend, a...)
 	}
-	return nil, fmt.Errorf("wrong store backend")
+	return nil, errors.New("wrong store backend")
 }
 
 func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...string) (*testStore, error) {
@@ -1009,7 +1017,7 @@ func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...strin
 
 	bin := os.Getenv("ETCD_BIN")
 	if bin == "" {
-		return nil, fmt.Errorf("missing ETCD_BIN env")
+		return nil, errors.New("missing ETCD_BIN env")
 	}
 	tstore := &testStore{
 		t: t,
@@ -1093,7 +1101,7 @@ func newTestConsul(t *testing.T, dir string, a ...string) (*testStore, error) {
 
 	bin := os.Getenv("CONSUL_BIN")
 	if bin == "" {
-		return nil, fmt.Errorf("missing CONSUL_BIN env")
+		return nil, errors.New("missing CONSUL_BIN env")
 	}
 	ts := &testStore{
 		t: t,
@@ -1128,7 +1136,7 @@ func (ts *testStore) WaitUp(timeout time.Duration) error {
 		time.Sleep(sleepInterval)
 	}
 
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func (ts *testStore) WaitDown(timeout time.Duration) error {
@@ -1143,7 +1151,7 @@ func (ts *testStore) WaitDown(timeout time.Duration) error {
 		time.Sleep(sleepInterval)
 	}
 
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterDataUpdated(e *store.KVBackedStore, timeout time.Duration) error {
@@ -1163,7 +1171,7 @@ func waitClusterDataUpdated(e *store.KVBackedStore, timeout time.Duration) error
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterDataWithMaster(e *store.KVBackedStore, timeout time.Duration) (string, error) {
@@ -1179,7 +1187,7 @@ func waitClusterDataWithMaster(e *store.KVBackedStore, timeout time.Duration) (s
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return "", fmt.Errorf("timeout")
+	return "", errTimeout
 }
 
 func waitClusterDataMaster(master string, e *store.KVBackedStore, timeout time.Duration) error {
@@ -1197,7 +1205,7 @@ func waitClusterDataMaster(master string, e *store.KVBackedStore, timeout time.D
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterDataKeeperInitialized(keeperUID string, e *store.KVBackedStore, timeout time.Duration) error {
@@ -1218,13 +1226,14 @@ func waitClusterDataKeeperInitialized(keeperUID string, e *store.KVBackedStore, 
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 // WaitClusterDataSynchronousStandbys waits for:
 // * synchronous standby defined in masterdb spec
 // * synchronous standby reported from masterdb status
-func WaitClusterDataSynchronousStandbys(synchronousStandbys []string, e *store.KVBackedStore, timeout time.Duration) error {
+func WaitClusterDataSynchronousStandbys(synchronousStandbys []string, e *store.KVBackedStore,
+	timeout time.Duration) error {
 	sort.Strings(synchronousStandbys)
 	start := time.Now()
 	for time.Now().Add(-timeout).Before(start) {
@@ -1264,7 +1273,7 @@ func WaitClusterDataSynchronousStandbys(synchronousStandbys []string, e *store.K
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterPhase(e *store.KVBackedStore, phase cluster.Phase, timeout time.Duration) error {
@@ -1280,7 +1289,7 @@ func waitClusterPhase(e *store.KVBackedStore, phase cluster.Phase, timeout time.
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitNumDBs(e *store.KVBackedStore, n int, timeout time.Duration) error {
@@ -1296,7 +1305,7 @@ func waitNumDBs(e *store.KVBackedStore, n int, timeout time.Duration) error {
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitStandbyKeeper(e *store.KVBackedStore, keeperUID string, timeout time.Duration) error {
@@ -1318,7 +1327,7 @@ func waitStandbyKeeper(e *store.KVBackedStore, keeperUID string, timeout time.Du
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterDataKeepers(keepersUIDs []string, e *store.KVBackedStore, timeout time.Duration) error {
@@ -1341,12 +1350,13 @@ func waitClusterDataKeepers(keepersUIDs []string, e *store.KVBackedStore, timeou
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 // WaitClusterSyncedXLogPos waits for all the specified keepers to have the same
 // reported XLogPos and that it's >= than master XLogPos
-func WaitClusterSyncedXLogPos(keepers []*testKeeper, xLogPos uint64, e *store.KVBackedStore, timeout time.Duration) error {
+func WaitClusterSyncedXLogPos(keepers []*testKeeper, xLogPos uint64, e *store.KVBackedStore,
+	timeout time.Duration) error {
 	keepersUIDs := []string{}
 	for _, sk := range keepers {
 		keepersUIDs = append(keepersUIDs, sk.uid)
@@ -1389,7 +1399,7 @@ func WaitClusterSyncedXLogPos(keepers []*testKeeper, xLogPos uint64, e *store.KV
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func waitClusterDataEnabledProxiesNum(e *store.KVBackedStore, n int, timeout time.Duration) error {
@@ -1407,7 +1417,7 @@ func waitClusterDataEnabledProxiesNum(e *store.KVBackedStore, n int, timeout tim
 	end:
 		time.Sleep(sleepInterval)
 	}
-	return fmt.Errorf("timeout")
+	return errTimeout
 }
 
 func testFreeTCPPort(port int) error {
@@ -1434,7 +1444,7 @@ func getFreePort(tcp bool, udp bool) (string, string, error) {
 	defer portMutex.Unlock()
 
 	if !tcp && !udp {
-		return "", "", fmt.Errorf("at least one of tcp or udp port shuld be required")
+		return "", "", errors.New("at least one of tcp or udp port shuld be required")
 	}
 	localhostIP, err := net.ResolveIPAddr("ip", "localhost")
 	if err != nil {
@@ -1443,7 +1453,7 @@ func getFreePort(tcp bool, udp bool) (string, string, error) {
 	for {
 		curPort++
 		if curPort > maxPort {
-			return "", "", fmt.Errorf("all available ports to test have been exausted")
+			return "", "", errors.New("all available ports to test have been exausted")
 		}
 		if tcp {
 			if err := testFreeTCPPort(curPort); err != nil {
