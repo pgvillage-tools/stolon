@@ -24,7 +24,7 @@ import (
 	"github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
 	slog "github.com/sorintlab/stolon/internal/log"
-	"github.com/sorintlab/stolon/internal/store"
+	stolonstore "github.com/sorintlab/stolon/internal/store"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -185,7 +185,7 @@ func registerCluster(sigs chan os.Signal, cfg *config, rCfg *register.Config) er
 
 func checkAndRegisterMasterAndSlaves(
 	clusterName string,
-	store store.Store,
+	store stolonstore.Store,
 	discovery register.ServiceDiscovery,
 	registerMaster bool,
 ) {
@@ -212,7 +212,11 @@ func checkAndRegisterMasterAndSlaves(
 	}
 }
 
-func getExistingServices(clusterName string, store store.Store, includeMaster bool) (register.ServiceInfos, error) {
+func getExistingServices(
+	clusterName string,
+	store stolonstore.Store,
+	includeMaster bool,
+) (register.ServiceInfos, error) {
 	cluster, err := register.NewCluster(clusterName, rCfg, store)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get cluster data: %v", err)

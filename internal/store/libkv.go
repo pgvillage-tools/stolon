@@ -73,7 +73,13 @@ func (s *libKVStore) List(_ context.Context, directory string) ([]*KVPair, error
 	return kvPairs, nil
 }
 
-func (s *libKVStore) AtomicPut(_ context.Context, key string, value []byte, previous *KVPair, options *WriteOptions) (*KVPair, error) {
+func (s *libKVStore) AtomicPut(
+	_ context.Context,
+	key string,
+	value []byte,
+	previous *KVPair,
+	options *WriteOptions,
+) (*KVPair, error) {
 	var libkvPrevious *libkvstore.KVPair
 	if previous != nil {
 		libkvPrevious = &libkvstore.KVPair{Key: previous.Key, LastIndex: previous.LastIndex}

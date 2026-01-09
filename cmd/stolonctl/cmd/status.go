@@ -29,6 +29,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	tabWidth = 8
+)
+
 var cmdStatus = &cobra.Command{
 	Use:   "status",
 	Run:   status,
@@ -128,7 +132,7 @@ func renderText(status Status, generateErr error) {
 	}
 
 	tabOut := new(tabwriter.Writer)
-	tabOut.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	tabOut.Init(os.Stdout, 0, tabWidth, 1, '\t', 0)
 
 	stdout("=== Active sentinels ===")
 	stdout("")
@@ -164,7 +168,16 @@ func renderText(status Status, generateErr error) {
 	} else {
 		tabPrint(tabOut, "UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
 		for _, k := range status.Keepers {
-			tabPrint(tabOut, "%s\t%t\t%s\t%t\t%d\t%d\t\n", k.UID, k.Healthy, k.ListenAddress, k.PgHealthy, k.PgWantedGeneration, k.PgCurrentGeneration)
+			tabPrint(
+				tabOut,
+				"%s\t%t\t%s\t%t\t%d\t%d\t\n",
+				k.UID,
+				k.Healthy,
+				k.ListenAddress,
+				k.PgHealthy,
+				k.PgWantedGeneration,
+				k.PgCurrentGeneration,
+			)
 			tabFlush(tabOut)
 		}
 	}
@@ -248,7 +261,7 @@ func printTree(dbuid string, cd *cluster.Data, level int, prefix string, tail bo
 func generateStatus() (Status, error) {
 	status := Status{}
 	tabOut := new(tabwriter.Writer)
-	tabOut.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	tabOut.Init(os.Stdout, 0, tabWidth, 1, '\t', 0)
 
 	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
 	if err != nil {
@@ -329,19 +342,19 @@ func generateStatus() (Status, error) {
 	}
 	status.Keepers = keepers
 
-	cluster := ClusterStatus{}
+	clusterStatus := ClusterStatus{}
 	if cd.Cluster == nil || cd.DBs == nil {
-		cluster.Available = false
+		clusterStatus.Available = false
 	} else {
 		master := cd.Cluster.Status.Master
-		cluster.Available = true
+		clusterStatus.Available = true
 
 		if master != "" {
-			cluster.MasterDBUID = cd.DBs[master].UID
-			cluster.MasterKeeperUID = cd.Keepers[cd.DBs[master].Spec.KeeperUID].UID
+			clusterStatus.MasterDBUID = cd.DBs[master].UID
+			clusterStatus.MasterKeeperUID = cd.Keepers[cd.DBs[master].Spec.KeeperUID].UID
 		}
 	}
-	status.Cluster = cluster
+	status.Cluster = clusterStatus
 
 	return status, nil
 }

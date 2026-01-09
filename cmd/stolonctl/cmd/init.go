@@ -124,7 +124,7 @@ func initCluster(_ *cobra.Command, args []string) {
 	}
 
 	c := cluster.NewCluster(common.UID(), cs)
-	cd = cluster.NewData(c)
+	cd = cluster.NewClusterData(c)
 
 	// We ignore if cd has been modified between reading and writing
 	if err := e.PutClusterData(context.TODO(), cd); err != nil {

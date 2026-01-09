@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -62,6 +63,7 @@ const (
 // TODO(sgotti) fix this in libkv?
 // consul min ttl is 10s and libkv divides this by 2
 const minTTL = 20 * time.Second
+const dialTimeout = 20 * time.Second
 
 var urlSchemeRegexp = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9+-.]*)://`)
 
@@ -159,14 +161,14 @@ func NewKVStore(cfg Config) (KVStore, error) {
 			scheme = curscheme
 		}
 		if scheme != curscheme {
-			return nil, fmt.Errorf("all the endpoints must have the same scheme")
+			return nil, errors.New("all the endpoints must have the same scheme")
 		}
 		addrs = append(addrs, addr)
 	}
 
 	var tlsConfig *tls.Config
 	if scheme != "http" && scheme != "https" {
-		return nil, fmt.Errorf("endpoints scheme must be http or https")
+		return nil, errors.New("endpoints scheme must be http or https")
 	}
 	if scheme == "https" {
 		var err error
@@ -192,8 +194,8 @@ func NewKVStore(cfg Config) (KVStore, error) {
 		config := etcdclientv3.Config{
 			Endpoints:            addrs,
 			TLS:                  tlsConfig,
-			DialTimeout:          20 * time.Second,
-			DialKeepAliveTime:    1 * time.Second,
+			DialTimeout:          dialTimeout,
+			DialKeepAliveTime:    time.Second,
 			DialKeepAliveTimeout: cfg.Timeout,
 		}
 

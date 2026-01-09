@@ -52,14 +52,27 @@ import (
 
 var log = slog.S()
 
-const errorMsgPgInst string = "failed to stop pg instance"
-const errorMsgDbState string = "failed to save db local state"
-const followedStr string = "followedDB"
-const ownerRWPermisions = 0600
-const ownerRWExecPermisions = 0700
-const ownerRWOtherRPermisions = 0644
-const trust string = "trust"
-const decimal = 10
+const (
+	errorMsgPgInst          = "failed to stop pg instance"
+	errorMsgDbState         = "failed to save db local state"
+	followedStr             = "followedDB"
+	ownerRWPermisions       = 0600
+	ownerRWExecPermisions   = 0700
+	ownerRWOtherRPermisions = 0644
+	decimal                 = 10
+
+	authTrust = "trust"
+	authMd5   = "md5"
+	authCert  = "cert"
+	authIdent = "ident"
+	authPeer  = "peer"
+
+	conTypeHost         = "host"
+	conTypeHostSsl      = "hostssl"
+	conTypeHostNoSsl    = "hostnossl"
+	conTypeHostGssEnc   = "hostgssenc"
+	conTypeHostNoGssEnc = "hostnogssenc"
+)
 
 // CmdKeeper exports the main keeper process
 var CmdKeeper = &cobra.Command{
@@ -92,19 +105,19 @@ type DBLocalState struct {
 }
 
 // DeepCopy is a function that copies the state of a local database
-func (s *DBLocalState) DeepCopy() *DBLocalState {
+func (s *DBLocalState) DeepCopy() (dc *DBLocalState) {
+	var ok bool
 	if s == nil {
 		return nil
 	}
-	ns, err := copystructure.Copy(s)
-	if err != nil {
+	if ns, err := copystructure.Copy(s); err != nil {
 		panic(err)
-	}
-	// paranoid test
-	if !reflect.DeepEqual(s, ns) {
+	} else if !reflect.DeepEqual(s, ns) {
 		panic("not equal")
+	} else if dc, ok = ns.(*DBLocalState); !ok {
+		panic("different type after copy")
 	}
-	return ns.(*DBLocalState)
+	return dc
 }
 
 type config struct {
@@ -152,15 +165,15 @@ func init() {
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgPort, "pg-port", "5432", "postgresql instance listening port")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgAdvertisePort, "pg-advertise-port", "", "postgresql instance port from outside. Use it to expose port different than local port with a PAT networking config")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgBinPath, "pg-bin-path", "", "absolute path to postgresql binaries. If empty they will be searched in the current PATH")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplConnType, "pg-repl-connection-type", "host", "postgres replication user connection type. Default is host.")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplAuthMethod, "pg-repl-auth-method", "md5", "postgres replication user auth method. Default is md5.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplConnType, "pg-repl-connection-type", conTypeHost, "postgres replication user connection type. Default is host.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplAuthMethod, "pg-repl-auth-method", authMd5, "postgres replication user auth method. Default is authMd5.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplLocalAuthMethod, "pg-repl-local-auth-method", "", "postgres replication user auth method. Default is same as pg-repl-auth-method.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplSslMode, "pg-repl-ssl-mode", "prefer", "postgres replication user ssl-mode. Default is prefer.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplUsername, "pg-repl-username", "", "postgres replication user name. Required. It'll be created on db initialization. Must be the same for all keepers.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplPassword, "pg-repl-password", "", "postgres replication user password. Only one of --pg-repl-password or --pg-repl-passwordfile must be provided. Must be the same for all keepers.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplPasswordFile, "pg-repl-passwordfile", "", "postgres replication user password file. Only one of --pg-repl-password or --pg-repl-passwordfile must be provided. Must be the same for all keepers.")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUConnType, "pg-su-connection-type", "host", "postgres superuser connection type. Default is host.")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUAuthMethod, "pg-su-auth-method", "md5", "postgres superuser auth method. Default is md5.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUConnType, "pg-su-connection-type", conTypeHost, "postgres superuser connection type. Default is host.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUAuthMethod, "pg-su-auth-method", authMd5, "postgres superuser auth method. Default is authMd5.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSULocalAuthMethod, "pg-su-local-auth-method", "", "postgres superuser auth method. Default is same as pg-su-auth-method.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUUsername, "pg-su-username", "", "postgres superuser user name. Used for keeper managed instance access and pg_rewind based synchronization. It'll be created on db initialization. Defaults to the name of the effective user running stolon-keeper. Must be the same for all keepers.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUPassword, "pg-su-password", "", "postgres superuser password. Only one of --pg-su-password or --pg-su-passwordfile must be provided. Must be the same for all keepers.")
@@ -206,10 +219,10 @@ var managedPGParameters = []string{
 	"recovery_target_action",
 }
 
-func readPasswordFromFile(filepath string) (string, error) {
-	fi, err := os.Lstat(filepath)
+func readPasswordFromFile(filePath string) (string, error) {
+	fi, err := os.Lstat(filePath)
 	if err != nil {
-		return "", fmt.Errorf("unable to read password from file %s: %v", filepath, err)
+		return "", fmt.Errorf("unable to read password from file %s: %v", filePath, err)
 	}
 
 	if fi.Mode() > ownerRWPermisions {
@@ -218,14 +231,14 @@ func readPasswordFromFile(filepath string) (string, error) {
 			// revive:disable-next-line
 			"password file permissions are too open. This file should only be readable to the user executing stolon! Continuing...",
 			"file",
-			filepath,
+			filePath,
 			"mode",
 			fmt.Sprintf("%#o", fi.Mode()))
 	}
 
-	pwBytes, err := os.ReadFile(filepath)
+	pwBytes, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", fmt.Errorf("unable to read password from file %s: %v", filepath, err)
+		return "", fmt.Errorf("unable to read password from file %s: %v", filePath, err)
 	}
 	return string(pwBytes), nil
 }
@@ -321,7 +334,7 @@ func (p *PostgresKeeper) mandatoryPGParameters(db *cluster.DB) common.Parameters
 func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnParams {
 	cp := pg.ConnParams{
 		"user":             p.pgSUUsername,
-		"host":             followedDB.Status.ListenAddress,
+		conTypeHost:        followedDB.Status.ListenAddress,
 		"port":             followedDB.Status.Port,
 		"application_name": common.StolonName(db.UID),
 		"dbname":           "postgres",
@@ -332,7 +345,7 @@ func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnPara
 		// and reuse config for sslmode for repl user instead.
 		"sslmode": p.pgReplSslMode,
 	}
-	if p.pgSUAuthMethod == "md5" {
+	if p.pgSUAuthMethod == authMd5 {
 		cp.Set("password", p.pgSUPassword)
 	}
 	return cp
@@ -344,14 +357,14 @@ func (p *PostgresKeeper) getReplConnParams() pg.ConnParams {
 	/*
 		cp := pg.ConnParams{
 			"user":             p.pgReplUsername,
-			"host":             followedDB.Status.ListenAddress,
+			conTypeHost:             followedDB.Status.ListenAddress,
 			"port":             followedDB.Status.Port,
 			"application_name": common.StolonName(db.UID),
 			// prefer ssl if available (already the default for postgres libpq but not for golang lib pq)
 			"sslmode": "prefer",
 		}
 	*/
-	if p.pgReplAuthMethod == "md5" {
+	if p.pgReplAuthMethod == authMd5 {
 		cp.Set("password", p.pgReplPassword)
 	}
 	return cp
@@ -359,13 +372,13 @@ func (p *PostgresKeeper) getReplConnParams() pg.ConnParams {
 
 func (p *PostgresKeeper) getLocalConnParams() pg.ConnParams {
 	cp := pg.ConnParams{
-		"user":   p.pgSUUsername,
-		"host":   common.PgUnixSocketDirectories,
-		"port":   p.pgPort,
-		"dbname": "postgres",
+		"user":      p.pgSUUsername,
+		conTypeHost: common.PgUnixSocketDirectories,
+		"port":      p.pgPort,
+		"dbname":    "postgres",
 		// no sslmode defined since it's not needed and supported over unix sockets
 	}
-	if p.pgSUAuthMethod == "md5" {
+	if p.pgSUAuthMethod == authMd5 {
 		cp.Set("password", p.pgSUPassword)
 	}
 	return cp
@@ -373,13 +386,13 @@ func (p *PostgresKeeper) getLocalConnParams() pg.ConnParams {
 
 func (p *PostgresKeeper) getLocalReplConnParams() pg.ConnParams {
 	cp := pg.ConnParams{
-		"user":     p.pgReplUsername,
-		"password": p.pgReplPassword,
-		"host":     common.PgUnixSocketDirectories,
-		"port":     p.pgPort,
+		"user":      p.pgReplUsername,
+		"password":  p.pgReplPassword,
+		conTypeHost: common.PgUnixSocketDirectories,
+		"port":      p.pgPort,
 		// no sslmode defined since it's not needed and supported over unix sockets
 	}
-	if p.pgReplAuthMethod == "md5" {
+	if p.pgReplAuthMethod == authMd5 {
 		cp.Set("password", p.pgReplPassword)
 	}
 	return cp
@@ -645,7 +658,7 @@ func (p *PostgresKeeper) dbLocalStateCopy() *DBLocalState {
 }
 
 func (p *PostgresKeeper) usePgrewind(db *cluster.DB) bool {
-	return p.pgSUUsername != "" && (p.pgSUPassword != "" || p.pgSUAuthMethod == "cert") && db.Spec.UsePgrewind
+	return p.pgSUUsername != "" && (p.pgSUPassword != "" || p.pgSUAuthMethod == authCert) && db.Spec.UsePgrewind
 }
 
 func (p *PostgresKeeper) updateKeeperInfo() error {
@@ -681,10 +694,7 @@ func (p *PostgresKeeper) updateKeeperInfo() error {
 
 	// The time to live is just to automatically remove old entries, it's
 	// not used to determine if the keeper info has been updated.
-	if err := p.e.SetKeeperInfo(context.TODO(), keeperUID, keeperInfo, p.sleepInterval); err != nil {
-		return err
-	}
-	return nil
+	return p.e.SetKeeperInfo(context.TODO(), keeperUID, keeperInfo, p.sleepInterval)
 }
 
 func (p *PostgresKeeper) updatePGState(pctx context.Context) {
@@ -1991,9 +2001,9 @@ func IsMaster(db *cluster.DB) bool {
 // localAuthMethod returns the authentication method that works for local connections
 // cert does not work for local connections, in which case we should fall back to peer authentication
 func localAuthMethod(authMethod string) string {
-	if authMethod == "cert" {
+	if authMethod == authCert {
 		log.Info("using peer instead of cert for local connection authentication method")
-		return "peer"
+		return authPeer
 	}
 	return authMethod
 }
@@ -2005,8 +2015,8 @@ func localAuthMethod(authMethod string) string {
 // connections and pgReplUsername replication connections.
 func (p *PostgresKeeper) generateHBA(cd *cluster.Data, db *cluster.DB, onlyInternal bool) []string {
 	// Minimal entries for local normal and replication connections needed by the stolon keeper
-	// Matched local connections are for postgres database and suUsername user with md5 auth
-	// Matched local replication connections are for replUsername user with md5 auth
+	// Matched local connections are for postgres database and suUsername user with authMd5 auth
+	// Matched local replication connections are for replUsername user with authMd5 auth
 	computedHBA := []string{
 		fmt.Sprintf("local postgres %s %s", p.pgSUUsername, localAuthMethod(p.pgSULocalAuthMethod)),
 		fmt.Sprintf("local replication %s %s", p.pgReplUsername, localAuthMethod(p.pgReplLocalAuthMethod)),
@@ -2055,7 +2065,7 @@ func (p *PostgresKeeper) generateHBA(cd *cluster.Data, db *cluster.DB, onlyInter
 
 	if !onlyInternal {
 		// By default, if no custom pg_hba entries are provided, accept
-		// connections for all databases and users with md5 auth
+		// connections for all databases and users with authMd5 auth
 		if db.Spec.PGHBA != nil {
 			computedHBA = append(computedHBA, db.Spec.PGHBA...)
 		} else {
@@ -2108,17 +2118,17 @@ func keeper(c *cobra.Command, _ []string) {
 	}
 
 	validAuthMethods := map[string]struct{}{}
-	validAuthMethods["trust"] = struct{}{}
-	validAuthMethods["md5"] = struct{}{}
-	validAuthMethods["cert"] = struct{}{}
-	validAuthMethods["ident"] = struct{}{}
-	validAuthMethods["peer"] = struct{}{}
+	validAuthMethods[authTrust] = struct{}{}
+	validAuthMethods[authMd5] = struct{}{}
+	validAuthMethods[authCert] = struct{}{}
+	validAuthMethods[authIdent] = struct{}{}
+	validAuthMethods[authPeer] = struct{}{}
 	validConnectionTypes := map[string]struct{}{}
-	validConnectionTypes["host"] = struct{}{}
-	validConnectionTypes["hostssl"] = struct{}{}
-	validConnectionTypes["hostnossl"] = struct{}{}
-	validConnectionTypes["hostgssenc"] = struct{}{}
-	validConnectionTypes["hostnogssenc"] = struct{}{}
+	validConnectionTypes[conTypeHost] = struct{}{}
+	validConnectionTypes[conTypeHostSsl] = struct{}{}
+	validConnectionTypes[conTypeHostNoSsl] = struct{}{}
+	validConnectionTypes[conTypeHostGssEnc] = struct{}{}
+	validConnectionTypes[conTypeHostNoGssEnc] = struct{}{}
 	switch cfg.LogLevel {
 	case "error":
 		slog.SetLevel(zap.ErrorLevel)
@@ -2201,47 +2211,47 @@ func keeper(c *cobra.Command, _ []string) {
 		log.Fatalf("--pg-su-connection-type must be one of: host, hostssl, hostnossl, hostgssenc, hostnogssenc")
 	}
 	if _, ok := validAuthMethods[cfg.pgReplAuthMethod]; !ok {
-		log.Fatalf("--pg-repl-auth-method must be one of: ident, md5, password, trust or cert")
+		log.Fatalf("--pg-repl-auth-method must be one of: ident, authMd5, password, trust or cert")
 	}
 	if cfg.pgReplUsername == "" {
 		log.Fatalf("--pg-repl-username is required")
 	}
 	if _, ok := validAuthMethods[cfg.pgReplLocalAuthMethod]; !ok {
-		log.Fatalf("--pg-repl-local-auth-method must be one of: ident, md5, password, trust or cert")
+		log.Fatalf("--pg-repl-local-auth-method must be one of: ident, authMd5, password, trust or cert")
 	}
-	if cfg.pgReplAuthMethod == trust {
+	if cfg.pgReplAuthMethod == authTrust {
 		log.Warn("not utilizing a password for replication between hosts is extremely dangerous")
 		if cfg.pgReplPassword != "" || cfg.pgReplPasswordFile != "" {
 			// revive:disable-next-line
 			log.Fatalf("can not utilize --pg-repl-auth-method trust together with --pg-repl-password or --pg-repl-passwordfile")
 		}
 	}
-	if cfg.pgSUAuthMethod == trust || cfg.pgSULocalAuthMethod == trust {
+	if cfg.pgSUAuthMethod == authTrust || cfg.pgSULocalAuthMethod == authTrust {
 		log.Warn("not utilizing a password for superuser is extremely dangerous")
-		if (cfg.pgSUAuthMethod == trust ||
-			cfg.pgSULocalAuthMethod == trust) && (cfg.pgSUPassword != "" ||
+		if (cfg.pgSUAuthMethod == authTrust ||
+			cfg.pgSULocalAuthMethod == authTrust) && (cfg.pgSUPassword != "" ||
 			cfg.pgSUPasswordFile != "") {
 			// revive:disable-next-line
 			log.Fatalf("can not utilize --pg-su-auth-method trust and --pg-su-auth-method trust together with --pg-su-password or --pg-su-passwordfile")
 		}
 	}
-	if cfg.pgReplAuthMethod == "md5" && cfg.pgReplPassword == "" && cfg.pgReplPasswordFile == "" {
+	if cfg.pgReplAuthMethod == authMd5 && cfg.pgReplPassword == "" && cfg.pgReplPasswordFile == "" {
 		log.Fatalf("one of --pg-repl-password or --pg-repl-passwordfile is required")
 	}
-	if cfg.pgReplAuthMethod == "md5" && cfg.pgReplPassword != "" && cfg.pgReplPasswordFile != "" {
+	if cfg.pgReplAuthMethod == authMd5 && cfg.pgReplPassword != "" && cfg.pgReplPasswordFile != "" {
 		log.Fatalf("only one of --pg-repl-password or --pg-repl-passwordfile must be provided")
 	}
 	if _, ok := validAuthMethods[cfg.pgSUAuthMethod]; !ok {
-		log.Fatalf("--pg-su-auth-method must be one of: ident, md5, password, trust or cert")
+		log.Fatalf("--pg-su-auth-method must be one of: ident, authMd5, password, trust or cert")
 	}
-	if cfg.pgSUAuthMethod == "md5" && cfg.pgSUPassword == "" && cfg.pgSUPasswordFile == "" {
+	if cfg.pgSUAuthMethod == authMd5 && cfg.pgSUPassword == "" && cfg.pgSUPasswordFile == "" {
 		log.Fatalf("one of --pg-su-password or --pg-su-passwordfile is required")
 	}
-	if cfg.pgSUAuthMethod == "md5" && cfg.pgSUPassword != "" && cfg.pgSUPasswordFile != "" {
+	if cfg.pgSUAuthMethod == authMd5 && cfg.pgSUPassword != "" && cfg.pgSUPasswordFile != "" {
 		log.Fatalf("only one of --pg-su-password or --pg-su-passwordfile must be provided")
 	}
 	if _, ok := validAuthMethods[cfg.pgSULocalAuthMethod]; !ok {
-		log.Fatalf("--pg-su-local-auth-method must be one of: ident, md5, password, trust or cert")
+		log.Fatalf("--pg-su-local-auth-method must be one of: ident, authMd5, password, trust or cert")
 	}
 
 	if cfg.pgReplPasswordFile != "" {
@@ -2281,7 +2291,7 @@ func keeper(c *cobra.Command, _ []string) {
 		if cfg.pgReplAuthMethod != cfg.pgSUAuthMethod {
 			log.Fatalf("do not support different auth methods when utilizing superuser for replication.")
 		}
-		if cfg.pgSUPassword != cfg.pgReplPassword && cfg.pgSUAuthMethod == "md5" && cfg.pgReplAuthMethod == "md5" {
+		if cfg.pgSUPassword != cfg.pgReplPassword && cfg.pgSUAuthMethod == authMd5 && cfg.pgReplAuthMethod == authMd5 {
 			// revive:disable-next-line
 			log.Fatalf("provided superuser name and replication user name are the same but provided passwords are different")
 		}

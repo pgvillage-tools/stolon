@@ -26,7 +26,7 @@ import (
 	"github.com/sorintlab/stolon/internal/util"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -152,14 +152,13 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, 
 					return ErrKeyModified
 				}
 				curcd, ok := result.Annotations[util.KubeClusterDataAnnotation]
-				if ok {
-					// check that the previous cd is the same as the current one in the
-					// configmap annotation
-					if string(previous.Value) != string(curcd) {
-						return ErrKeyModified
-					}
-				} else {
+				if !ok {
 					// no cd but previous isn't nil
+					return ErrKeyModified
+				}
+				// check that the previous cd is the same as the current one in the
+				// configmap annotation
+				if string(previous.Value) != string(curcd) {
 					return ErrKeyModified
 				}
 			}
@@ -177,7 +176,7 @@ func (s *KubeStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, 
 			return ErrKeyModified
 		}
 		annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-		_, err = epsClient.Create(ctx, &v1.ConfigMap{
+		_, err = epsClient.Create(ctx, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        s.resourceName,
 				Annotations: annotations,
@@ -215,7 +214,7 @@ func (s *KubeStore) PutClusterData(ctx context.Context, cd *cluster.Data) error 
 		}
 		// configmap does not exists
 		annotations := map[string]string{util.KubeClusterDataAnnotation: string(cdj)}
-		_, err = epsClient.Create(ctx, &v1.ConfigMap{
+		_, err = epsClient.Create(ctx, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        s.resourceName,
 				Annotations: annotations,
@@ -382,7 +381,10 @@ type KubeElection struct {
 }
 
 // NewKubeElection returns a freshly initialized KubeElection resource
-func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterName, candidateUID string) (*KubeElection, error) {
+func NewKubeElection(
+	kubecli *kubernetes.Clientset,
+	podName, namespace, clusterName, candidateUID string,
+) (*KubeElection, error) {
 	resourceName := fmt.Sprintf("%s-%s", util.KubeResourcePrefix, clusterName)
 	rl, err := resourcelock.New("configmaps",
 		namespace,
@@ -393,7 +395,7 @@ func NewKubeElection(kubecli *kubernetes.Clientset, podName, namespace, clusterN
 			Identity:      candidateUID,
 			EventRecorder: createRecorder(kubecli, "stolon-sentinel", namespace),
 		})
-	//https://github.com/kubernetes/client-go/blob/master/tools/leaderelection/resourcelock/interface.go
+	// https://github.com/kubernetes/client-go/blob/master/tools/leaderelection/resourcelock/interface.go
 	if err != nil {
 		return nil, fmt.Errorf("error creating lock: %v", err)
 	}
@@ -472,6 +474,7 @@ func (e *KubeElection) campaign() {
 
 func createRecorder(kubecli kubernetes.Interface, name, namespace string) record.EventRecorder {
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: v1core.New(kubecli.CoreV1().RESTClient()).Events(namespace)})
-	return eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: name})
+	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{
+		Interface: v1core.New(kubecli.CoreV1().RESTClient()).Events(namespace)})
+	return eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: name})
 }

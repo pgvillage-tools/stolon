@@ -75,7 +75,7 @@ func pgDataVersion(dataDir string) (*semver.Version, error) {
 func binaryVersion(binPath string) (*semver.Version, error) {
 	name := filepath.Join(binPath, "postgres")
 	cmd := exec.Command(name, "-V")
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw("execing cmd", logCmd, cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, output: %s", err, string(out))

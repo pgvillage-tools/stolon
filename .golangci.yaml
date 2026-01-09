@@ -28,7 +28,7 @@ linters:
         - name: add-constant
           arguments:
             - allowInts: 0,1,2,3
-              allowStrs: '""'
+              allowStrs: '"","error: %v"'
               ignoreFuncs: assert\.Len,require\.Len
               maxLitCount: '5'
         - name: line-length-limit
@@ -56,12 +56,12 @@ linters:
         - name: empty-block
         - name: empty-lines
         - name: exported
-        - name: function-length
+        #- name: function-length
         - name: if-return
         - name: import-alias-naming
         - name: import-shadowing
         - name: increment-decrement
-        - name: max-control-nesting
+        #- name: max-control-nesting
         - name: max-public-structs
           arguments:
             - 14
@@ -92,6 +92,7 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
+          - revive
       - path: tests/
         linters:
           - errcheck

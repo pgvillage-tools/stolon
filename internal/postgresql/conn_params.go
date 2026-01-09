@@ -15,6 +15,7 @@
 package postgresql
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
@@ -143,7 +144,7 @@ func ParseConnString(name string) (ConnParams, error) {
 			for !unicode.IsSpace(r) {
 				if r == '\\' {
 					if r, ok = s.Next(); !ok {
-						return nil, fmt.Errorf(`missing character after backslash`)
+						return nil, errors.New(`missing character after backslash`)
 					}
 				}
 				valRunes = append(valRunes, r)
@@ -156,7 +157,7 @@ func ParseConnString(name string) (ConnParams, error) {
 		quote:
 			for {
 				if r, ok = s.Next(); !ok {
-					return nil, fmt.Errorf(`unterminated quoted string literal in connection string`)
+					return nil, errors.New(`unterminated quoted string literal in connection string`)
 				}
 				switch r {
 				case '\'':

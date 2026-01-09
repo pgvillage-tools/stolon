@@ -15,12 +15,11 @@
 // Package cluster defines all resources used at the cluster level
 package cluster
 
-//TODO: Split into multiple modules
+// TODO: Split into multiple modules
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 	"time"
 
@@ -81,7 +80,7 @@ const (
 	// max_wal_senders)
 	DefaultMaxStandbys uint16 = 20
 
-	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup of old standby's is triggered.
+	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup of old standby's is triggered
 	DefaultMaxStandbysPerSender uint16 = 3
 
 	// DefaultMaxStandbyLag sets the default for maximum standby lag for sync replica's (1MiB).
@@ -129,79 +128,11 @@ const (
 // PGParameters is a map of all PostgreSQL config as configured for this cluster
 type PGParameters map[string]string
 
-// FollowType is an enum for following internal (local primary keeper) or external (other cluster)
-type FollowType string
-
-const (
-	// FollowTypeInternal specifies that a db managed by a keeper in our cluster is followed
-	FollowTypeInternal FollowType = "internal"
-	// FollowTypeExternal specifies that a db in another cluster is followed
-	FollowTypeExternal FollowType = "external"
-)
-
-// FollowConfig specifies the config for this keeper to follow another instance
-type FollowConfig struct {
-	Type FollowType `json:"type,omitempty"`
-	// Keeper ID to follow when Type is "internal"
-	DBUID string `json:"dbuid,omitempty"`
-	// Standby settings when Type is "external"
-	StandbySettings         *StandbySettings         `json:"standbySettings,omitempty"`
-	ArchiveRecoverySettings *ArchiveRecoverySettings `json:"archiveRecoverySettings,omitempty"`
-}
-
 // PostgresBinaryVersion specifies the PostgreSQL binary version (major / minor)
 type PostgresBinaryVersion struct {
 	Maj int
 	Min int
 }
-
-// Phase is an enum for the phase that a cluster is in
-type Phase string
-
-const (
-	// Initializing phase means the cluster is initializing
-	Initializing Phase = "initializing"
-	// Normal phase means the cluster is initialized and ready to be used
-	Normal Phase = "normal"
-)
-
-// Role defines the role that a Keeper has
-type Role string
-
-const (
-	// Primary means that bthe instance is promoted and available for read/write
-	Primary Role = "master"
-	// Replica means that the instance is replicating changes for another upstream replica or Primary
-	Replica Role = "standby"
-)
-
-// InitMode is an enum for the init mode that a Cluster is in
-type InitMode string
-
-const (
-	// New initializes a cluster starting from a freshly initialized database cluster. Valid only when cluster role is master.
-	New InitMode = "new"
-	// PITR initializes a cluster doing a point in time recovery on a keeper.
-	PITR InitMode = "pitr"
-	// ExistingCluster reuses an already Initialized cluster
-	ExistingCluster InitMode = "existing"
-)
-
-// DBInitMode is an enum for the init mode that a database is in
-type DBInitMode string
-
-const (
-	// NoDB does not initialize a database
-	NoDB DBInitMode = "none"
-	// ExistingDB reuses the existing db
-	ExistingDB DBInitMode = "existing"
-	// NewDB initializes a new database
-	NewDB DBInitMode = "new"
-	// PITRDB initialized a database using Point in time Recovery
-	PITRDB DBInitMode = "pitr"
-	// ResyncDB syncs a database from another source
-	ResyncDB DBInitMode = "resync"
-)
 
 // NewConfig  defines the config for a new Cluster
 type NewConfig struct {
@@ -231,13 +162,15 @@ type StandbyConfig struct {
 	ArchiveRecoverySettings *ArchiveRecoverySettings `json:"archiveRecoverySettings,omitempty"`
 }
 
-// ArchiveRecoverySettings defines the archive recovery settings in the recovery.conf file (https://www.postgresql.org/docs/9.6/static/archive-recovery-settings.html )
+// ArchiveRecoverySettings defines the archive recovery settings in the recovery.conf file
+// (https://www.postgresql.org/docs/9.6/static/archive-recovery-settings.html )
 type ArchiveRecoverySettings struct {
 	// value for restore_command
 	RestoreCommand string `json:"restoreCommand,omitempty"`
 }
 
-// RecoveryTargetSettings defines the recovery target settings in the recovery.conf file (https://www.postgresql.org/docs/9.6/static/recovery-target-settings.html )
+// RecoveryTargetSettings defines the recovery target settings in the recovery.conf file
+// (https://www.postgresql.org/docs/9.6/static/recovery-target-settings.html )
 type RecoveryTargetSettings struct {
 	RecoveryTarget         string `json:"recoveryTarget,omitempty"`
 	RecoveryTargetLsn      string `json:"recoveryTargetLsn,omitempty"`
@@ -247,7 +180,8 @@ type RecoveryTargetSettings struct {
 	RecoveryTargetTimeline string `json:"recoveryTargetTimeline,omitempty"`
 }
 
-// StandbySettings defines the standby settings in the recovery.conf file (https://www.postgresql.org/docs/9.6/static/standby-settings.html )
+// StandbySettings defines the standby settings in the recovery.conf file
+// (https://www.postgresql.org/docs/9.6/static/standby-settings.html )
 type StandbySettings struct {
 	PrimaryConninfo       string `json:"primaryConninfo,omitempty"`
 	PrimarySlotName       string `json:"primarySlotName,omitempty"`
@@ -336,8 +270,10 @@ type Spec struct {
 	ExistingConfig *ExistingConfig `json:"existingConfig,omitempty"`
 	// Standby config when role is standby
 	StandbyConfig *StandbyConfig `json:"standbyConfig,omitempty"`
-	// Define the mode of the default hba rules needed for replication by standby keepers (the su and repl auth methods will be the one provided in the keeper command line options)
-	// Values can be "all" or "strict", "all" allow access from all ips, "strict" restrict master access to standby servers ips.
+	// Define the mode of the default hba rules needed for replication by standby keepers
+	// (the su and repl auth methods will be the one provided in the keeper command line options)
+	// Values can be "all" or "strict", "all" allow access from all ips, "strict" restrict
+	// master access to standby servers ips.
 	// Default is "all"
 	DefaultSUReplAccessMode *SUReplAccessMode `json:"defaultSUReplAccessMode,omitempty"`
 	// Map of postgres parameters
@@ -369,27 +305,29 @@ type Cluster struct {
 }
 
 // DeepCopy copies the entire structure and returns a complete clone
-func (c *Cluster) DeepCopy() *Cluster {
-	nc, err := copystructure.Copy(c)
-	if err != nil {
+func (c *Cluster) DeepCopy() (dc *Cluster) {
+	var ok bool
+	if nc, err := copystructure.Copy(c); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(c, nc) {
+	} else if !reflect.DeepEqual(c, nc) {
 		panic("not equal")
+	} else if dc, ok = nc.(*Cluster); !ok {
+		panic("different type after copy")
 	}
-	return nc.(*Cluster)
+	return dc
 }
 
 // DeepCopy copies the entire structure and returns a complete clone
-func (s *Spec) DeepCopy() *Spec {
-	nc, err := copystructure.Copy(s)
-	if err != nil {
+func (s *Spec) DeepCopy() (dc *Spec) {
+	var ok bool
+	if nc, err := copystructure.Copy(s); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(s, nc) {
+	} else if !reflect.DeepEqual(s, nc) {
 		panic("not equal")
+	} else if dc, ok = nc.(*Spec); !ok {
+		panic("different type after copy")
 	}
-	return nc.(*Spec)
+	return dc
 }
 
 // DefSpec returns a new Spec with unspecified values populated with
@@ -478,52 +416,52 @@ func (s *Spec) WithDefaults() *Spec {
 func (s *Spec) Validate() error {
 	s = s.WithDefaults()
 	if s.SleepInterval.Duration < 0 {
-		return fmt.Errorf("sleepInterval must be positive")
+		return errors.New("sleepInterval must be positive")
 	}
 	if s.RequestTimeout.Duration < 0 {
-		return fmt.Errorf("requestTimeout must be positive")
+		return errors.New("requestTimeout must be positive")
 	}
 	if s.ConvergenceTimeout.Duration < 0 {
-		return fmt.Errorf("convergenceTimeout must be positive")
+		return errors.New("convergenceTimeout must be positive")
 	}
 	if s.InitTimeout.Duration < 0 {
-		return fmt.Errorf("initTimeout must be positive")
+		return errors.New("initTimeout must be positive")
 	}
 	if s.SyncTimeout.Duration < 0 {
-		return fmt.Errorf("syncTimeout must be positive")
+		return errors.New("syncTimeout must be positive")
 	}
 	if s.DBWaitReadyTimeout.Duration < 0 {
-		return fmt.Errorf("dbWaitReadyTimeout must be positive")
+		return errors.New("dbWaitReadyTimeout must be positive")
 	}
 	if s.FailInterval.Duration < 0 {
-		return fmt.Errorf("failInterval must be positive")
+		return errors.New("failInterval must be positive")
 	}
 	if s.DeadKeeperRemovalInterval.Duration < 0 {
-		return fmt.Errorf("deadKeeperRemovalInterval must be positive")
+		return errors.New("deadKeeperRemovalInterval must be positive")
 	}
 	if s.ProxyCheckInterval.Duration < 0 {
-		return fmt.Errorf("proxyCheckInterval must be positive")
+		return errors.New("proxyCheckInterval must be positive")
 	}
 	if s.ProxyTimeout.Duration < 0 {
-		return fmt.Errorf("proxyTimeout must be positive")
+		return errors.New("proxyTimeout must be positive")
 	}
 	if s.ProxyCheckInterval.Duration >= s.ProxyTimeout.Duration {
-		return fmt.Errorf("proxyCheckInterval should be less than proxyTimeout")
+		return errors.New("proxyCheckInterval should be less than proxyTimeout")
 	}
 	if *s.MaxStandbys < 1 {
-		return fmt.Errorf("maxStandbys must be at least 1")
+		return errors.New("maxStandbys must be at least 1")
 	}
 	if *s.MaxStandbysPerSender < 1 {
-		return fmt.Errorf("maxStandbysPerSender must be at least 1")
+		return errors.New("maxStandbysPerSender must be at least 1")
 	}
 	if *s.MaxSynchronousStandbys < 1 {
-		return fmt.Errorf("maxSynchronousStandbys must be at least 1")
+		return errors.New("maxSynchronousStandbys must be at least 1")
 	}
 	if *s.MaxSynchronousStandbys < *s.MinSynchronousStandbys {
-		return fmt.Errorf("maxSynchronousStandbys must be greater or equal to minSynchronousStandbys")
+		return errors.New("maxSynchronousStandbys must be greater or equal to minSynchronousStandbys")
 	}
 	if s.InitMode == nil {
-		return fmt.Errorf("initMode undefined")
+		return errors.New("initMode undefined")
 	}
 	for _, replicationSlot := range s.AdditionalMasterReplicationSlots {
 		if err := validateReplicationSlot(replicationSlot); err != nil {
@@ -534,31 +472,31 @@ func (s *Spec) Validate() error {
 	// The unique validation we're doing on pgHBA entries is that they don't contain a newline character
 	for _, e := range s.PGHBA {
 		if strings.Contains(e, "\n") {
-			return fmt.Errorf("pgHBA entries cannot contain newline characters")
+			return errors.New("pgHBA entries cannot contain newline characters")
 		}
 	}
 
 	switch *s.InitMode {
 	case New:
 		if *s.Role == Replica {
-			return fmt.Errorf("invalid cluster role standby when initMode is \"new\"")
+			return errors.New("invalid cluster role standby when initMode is \"new\"")
 		}
 	case ExistingCluster:
 		if s.ExistingConfig == nil {
-			return fmt.Errorf("existingConfig undefined. Required when initMode is \"existing\"")
+			return errors.New("existingConfig undefined. Required when initMode is \"existing\"")
 		}
 		if s.ExistingConfig.KeeperUID == "" {
-			return fmt.Errorf("existingConfig.keeperUID undefined")
+			return errors.New("existingConfig.keeperUID undefined")
 		}
 	case PITR:
 		if s.PITRConfig == nil {
-			return fmt.Errorf("pitrConfig undefined. Required when initMode is \"pitr\"")
+			return errors.New("pitrConfig undefined. Required when initMode is \"pitr\"")
 		}
 		if s.PITRConfig.DataRestoreCommand == "" {
-			return fmt.Errorf("pitrConfig.DataRestoreCommand undefined")
+			return errors.New("pitrConfig.DataRestoreCommand undefined")
 		}
 		if s.PITRConfig.RecoveryTargetSettings != nil && *s.Role == Replica {
-			return fmt.Errorf("cannot define pitrConfig.RecoveryTargetSettings when required cluster role is standby")
+			return errors.New("cannot define pitrConfig.RecoveryTargetSettings when required cluster role is standby")
 		}
 	default:
 		return fmt.Errorf("unknown initMode: %q", *s.InitMode)
@@ -575,7 +513,7 @@ func (s *Spec) Validate() error {
 	case Primary:
 	case Replica:
 		if s.StandbyConfig == nil {
-			return fmt.Errorf("standbyConfig undefined. Required when cluster role is \"standby\"")
+			return errors.New("standbyConfig undefined. Required when cluster role is \"standby\"")
 		}
 	default:
 		return fmt.Errorf("unknown role: %q", *s.InitMode)
@@ -602,10 +540,10 @@ func (c *Cluster) UpdateSpec(ns *Spec) error {
 	ds := s.WithDefaults()
 	dns := ns.WithDefaults()
 	if *ds.InitMode != *dns.InitMode {
-		return fmt.Errorf("cannot change cluster init mode")
+		return errors.New("cannot change cluster init mode")
 	}
 	if *ds.Role == Primary && *dns.Role == Replica {
-		return fmt.Errorf("cannot update a cluster from master role to standby role")
+		return errors.New("cannot update a cluster from master role to standby role")
 	}
 	c.Spec = ns
 	return nil
@@ -623,244 +561,4 @@ func NewCluster(uid string, cs *Spec) *Cluster {
 		},
 	}
 	return c
-}
-
-// KeeperSpec defines a spec for a Keeper resource
-type KeeperSpec struct{}
-
-// KeeperStatus defines all staus fields on a Keeper
-type KeeperStatus struct {
-	Healthy         bool      `json:"healthy,omitempty"`
-	LastHealthyTime time.Time `json:"lastHealthyTime,omitempty"`
-
-	BootUUID string `json:"bootUUID,omitempty"`
-
-	PostgresBinaryVersion PostgresBinaryVersion `json:"postgresBinaryVersion,omitempty"`
-
-	ForceFail bool `json:"forceFail,omitempty"`
-
-	CanBeMaster             *bool `json:"canBeMaster,omitempty"`
-	CanBeSynchronousReplica *bool `json:"canBeSynchronousReplica,omitempty"`
-}
-
-// Keeper combines the spec, status and other fields belonging to a keeper
-type Keeper struct {
-	// Keeper ID
-	UID        string    `json:"uid,omitempty"`
-	Generation int64     `json:"generation,omitempty"`
-	ChangeTime time.Time `json:"changeTime,omitempty"`
-
-	Spec *KeeperSpec `json:"spec,omitempty"`
-
-	Status KeeperStatus `json:"status,omitempty"`
-}
-
-// NewKeeperFromKeeperInfo returns a freshly initialized keeper created from a KeeperInfo object
-func NewKeeperFromKeeperInfo(ki *KeeperInfo) *Keeper {
-	return &Keeper{
-		UID:        ki.UID,
-		Generation: InitialGeneration,
-		ChangeTime: time.Time{},
-		Spec:       &KeeperSpec{},
-		Status: KeeperStatus{
-			Healthy:         true,
-			LastHealthyTime: time.Now(),
-			BootUUID:        ki.BootUUID,
-		},
-	}
-}
-
-// SortedKeys returns all keys of the Keepers as a sorted list
-func (kss Keepers) SortedKeys() []string {
-	keys := []string{}
-	for k := range kss {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// DBSpec defines the spec of a database
-type DBSpec struct {
-	// The KeeperUID this db is assigned to
-	KeeperUID string `json:"keeperUID,omitempty"`
-	// Time after which any request (keepers checks from sentinel etc...) will fail.
-	RequestTimeout Duration `json:"requestTimeout,omitempty"`
-	// See Spec MaxStandbys description
-	MaxStandbys uint16 `json:"maxStandbys,omitempty"`
-	// Use Synchronous replication between master and its standbys
-	SynchronousReplication bool `json:"synchronousReplication,omitempty"`
-	// Whether to use pg_rewind
-	UsePgrewind bool `json:"usePgrewind,omitempty"`
-	// AdditionalWalSenders defines the number of additional wal_senders in
-	// addition to the ones internally defined by stolon
-	AdditionalWalSenders uint16 `json:"additionalWalSenders"`
-	// AdditionalReplicationSlots is a list of additional replication slots.
-	// Replication slots not defined here will be dropped from the instance
-	// (i.e. manually created replication slots will be removed).
-	AdditionalReplicationSlots []string `json:"additionalReplicationSlots"`
-	// InitMode defines the db initialization mode. Current modes are: none, new
-	InitMode DBInitMode `json:"initMode,omitempty"`
-	// Init configuration used when InitMode is "new"
-	NewConfig *NewConfig `json:"newConfig,omitempty"`
-	// Point in time recovery init configuration used when InitMode is "pitr"
-	PITRConfig *PITRConfig `json:"pitrConfig,omitempty"`
-	// Map of postgres parameters
-	PGParameters PGParameters `json:"pgParameters,omitempty"`
-	// Additional pg_hba.conf entries
-	// We don't set omitempty since we want to distinguish between null or empty slice
-	PGHBA []string `json:"pgHBA"`
-	// DB Role (master or standby)
-	Role common.Role `json:"role,omitempty"`
-	// FollowConfig when Role is "standby"
-	FollowConfig *FollowConfig `json:"followConfig,omitempty"`
-	// Followers DB UIDs
-	Followers []string `json:"followers"`
-	// Whether to include previous postgresql.conf
-	IncludeConfig bool `json:"includePreviousConfig,omitempty"`
-	// SynchronousStandbys are the standbys to be configured as synchronous
-	SynchronousStandbys []string `json:"synchronousStandbys"`
-	// External SynchronousStandbys are external standbys names to be configured as synchronous
-	ExternalSynchronousStandbys []string `json:"externalSynchronousStandbys"`
-}
-
-// DBStatus defines the status of a DB
-type DBStatus struct {
-	Healthy bool `json:"healthy,omitempty"`
-
-	CurrentGeneration int64 `json:"currentGeneration,omitempty"`
-
-	ListenAddress string `json:"listenAddress,omitempty"`
-	Port          string `json:"port,omitempty"`
-
-	SystemID         string                   `json:"systemdID,omitempty"`
-	TimelineID       uint64                   `json:"timelineID,omitempty"`
-	XLogPos          uint64                   `json:"xLogPos,omitempty"`
-	TimelinesHistory PostgresTimelinesHistory `json:"timelinesHistory,omitempty"`
-
-	PGParameters PGParameters `json:"pgParameters,omitempty"`
-
-	// DBUIDs of the internal standbys currently reported as in sync by the instance
-	CurSynchronousStandbys []string `json:"-"`
-
-	// DBUIDs of the internal standbys that we know are in sync.
-	// They could be currently down but we know that they were reported as in
-	// sync in the past and they are defined inside synchronous_standby_names
-	// so the instance will wait for acknowledge from them.
-	SynchronousStandbys []string `json:"synchronousStandbys"`
-
-	// NOTE(sgotti) we currently don't report the external synchronous standbys.
-	// If/when needed lets add a new ExternalSynchronousStandbys field
-
-	OlderWalFile string `json:"olderWalFile,omitempty"`
-}
-
-// DB is an instance in a cluster
-type DB struct {
-	UID        string    `json:"uid,omitempty"`
-	Generation int64     `json:"generation,omitempty"`
-	ChangeTime time.Time `json:"changeTime,omitempty"`
-
-	Spec *DBSpec `json:"spec,omitempty"`
-
-	Status DBStatus `json:"status,omitempty"`
-}
-
-// ProxySpec defines the config of a Proxy instance
-type ProxySpec struct {
-	MasterDBUID    string   `json:"masterDbUid,omitempty"`
-	EnabledProxies []string `json:"enabledProxies,omitempty"`
-}
-
-// ProxyStatus defines the status of a Proxy instance
-type ProxyStatus struct {
-}
-
-// Proxy combines the Spec, Status and other config of a Proxy into one resource
-type Proxy struct {
-	UID        string    `json:"uid,omitempty"`
-	Generation int64     `json:"generation,omitempty"`
-	ChangeTime time.Time `json:"changeTime,omitempty"`
-
-	Spec ProxySpec `json:"spec,omitempty"`
-
-	Status ProxyStatus `json:"status,omitempty"`
-}
-
-// TODO: Nowadays Duration resources marshal and unmarshal properly so we can get rid of below Duration
-
-// Duration is needed to be able to marshal/unmarshal json strings with time
-// unit (eg. 3s, 100ms) instead of ugly times in nanoseconds.
-type Duration struct {
-	time.Duration
-}
-
-// MarshalJSON is needed for JSON serialization of Duration resources
-func (d Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
-}
-
-// UnmarshalJSON is needed for JSON deserialization of Duration resources
-func (d *Duration) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), `"`)
-	du, err := time.ParseDuration(s)
-	if err != nil {
-		return err
-	}
-	d.Duration = du
-	return nil
-}
-
-// Keepers can store all keepers for a cluster
-type Keepers map[string]*Keeper
-
-// DBs can store all databases for a cluster
-type DBs map[string]*DB
-
-// Data is meant to keep all the changes to the various components atomic (using
-// an unique key)
-type Data struct {
-	// ClusterData format version. Used to detect incompatible
-	// version and do upgrade. Needs to be bumped when a non
-	// backward compatible change is done to the other struct
-	// members.
-	FormatVersion uint64    `json:"formatVersion"`
-	ChangeTime    time.Time `json:"changeTime"`
-	Cluster       *Cluster  `json:"cluster"`
-	Keepers       Keepers   `json:"keepers"`
-	DBs           DBs       `json:"dbs"`
-	Proxy         *Proxy    `json:"proxy"`
-}
-
-// NewData returns a freshly initualized Data object
-func NewData(c *Cluster) *Data {
-	return &Data{
-		FormatVersion: CurrentCDFormatVersion,
-		Cluster:       c,
-		Keepers:       Keepers{},
-		DBs:           DBs{},
-		Proxy:         &Proxy{},
-	}
-}
-
-// DeepCopy copies the entire structure and returns a complete clone
-func (d *Data) DeepCopy() *Data {
-	nd, err := copystructure.Copy(d)
-	if err != nil {
-		panic(err)
-	}
-	if !reflect.DeepEqual(d, nd) {
-		panic("not equal")
-	}
-	return nd.(*Data)
-}
-
-// FindDB can be used to find a DB belonging to a Keeper
-func (d *Data) FindDB(keeper *Keeper) *DB {
-	for _, db := range d.DBs {
-		if db.Spec.KeeperUID == keeper.UID {
-			return db
-		}
-	}
-	return nil
 }

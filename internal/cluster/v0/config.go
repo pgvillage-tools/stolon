@@ -16,6 +16,7 @@ package v0
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -36,7 +37,8 @@ const (
 	// DefaultKeeperFailInterval sets the default for the keeper to be assumed unhealthy
 	DefaultKeeperFailInterval = 20 * time.Second
 
-	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup of old standby's is triggered.
+	// DefaultMaxStandbysPerSender sets the default for number of standby's before cleanup
+	// of old standby's is triggered.
 	DefaultMaxStandbysPerSender uint = 3
 
 	// DefaultSynchronousReplication sets the default for sync replication when not set by config
@@ -173,16 +175,16 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 // Validate can be used to validate a NilConfig
 func (c *NilConfig) Validate() error {
 	if c.RequestTimeout != nil && (*c.RequestTimeout).Duration < 0 {
-		return fmt.Errorf("request_timeout must be positive")
+		return errors.New("request_timeout must be positive")
 	}
 	if c.SleepInterval != nil && (*c.SleepInterval).Duration < 0 {
-		return fmt.Errorf("sleep_interval must be positive")
+		return errors.New("sleep_interval must be positive")
 	}
 	if c.KeeperFailInterval != nil && (*c.KeeperFailInterval).Duration < 0 {
-		return fmt.Errorf("keeper_fail_interval must be positive")
+		return errors.New("keeper_fail_interval must be positive")
 	}
 	if c.MaxStandbysPerSender != nil && *c.MaxStandbysPerSender < 1 {
-		return fmt.Errorf("max_standbys_per_sender must be at least 1")
+		return errors.New("max_standbys_per_sender must be at least 1")
 	}
 	return nil
 }
