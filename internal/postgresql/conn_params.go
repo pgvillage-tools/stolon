@@ -185,7 +185,7 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 		return nil, err
 	}
 
-	if u.Scheme != "postgres" {
+	if u.Scheme != "postgres" && u.Scheme != "postgresql" {
 		return nil, fmt.Errorf("invalid connection protocol: %s", u.Scheme)
 	}
 
