@@ -32,6 +32,7 @@ var cmdInit = &cobra.Command{
 	Short: "Initialize a new cluster",
 }
 
+// Initoptions is a struct which can contain initiation options
 type InitOptions struct {
 	file     string
 	forceYes bool
@@ -46,7 +47,7 @@ func init() {
 	CmdStolonCtl.AddCommand(cmdInit)
 }
 
-func initCluster(cmd *cobra.Command, args []string) {
+func initCluster(_ *cobra.Command, args []string) {
 	if len(args) > 1 {
 		die("too many arguments")
 	}

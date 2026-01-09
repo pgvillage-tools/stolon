@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cmd is a package which provides utilities that underly the specific command
 package cmd
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -59,17 +61,34 @@ var cmdWriteClusterData = &cobra.Command{
 }
 
 func init() {
-	cmdReadClusterData.PersistentFlags().BoolVar(&readClusterdataOpts.pretty, "pretty", false, "pretty print")
+	cmdReadClusterData.PersistentFlags().BoolVar(
+		&readClusterdataOpts.pretty,
+		"pretty",
+		false,
+		"pretty print",
+	)
 	cmdClusterData.AddCommand(cmdReadClusterData)
 
-	cmdWriteClusterData.PersistentFlags().StringVarP(&writeClusterdataOpts.file, "file", "f", "", "file containing the new cluster data")
-	cmdWriteClusterData.PersistentFlags().BoolVarP(&writeClusterdataOpts.forceYes, "yes", "y", false, "don't ask for confirmation")
+	cmdWriteClusterData.PersistentFlags().StringVarP(
+		&writeClusterdataOpts.file,
+		"file",
+		"f",
+		"",
+		"file containing the new cluster data",
+	)
+	cmdWriteClusterData.PersistentFlags().BoolVarP(
+		&writeClusterdataOpts.forceYes,
+		"yes",
+		"y",
+		false,
+		"don't ask for confirmation",
+	)
 	cmdClusterData.AddCommand(cmdWriteClusterData)
 
 	CmdStolonCtl.AddCommand(cmdClusterData)
 }
 
-func readClusterdata(cmd *cobra.Command, args []string) {
+func readClusterdata(_ *cobra.Command, _ []string) {
 	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
@@ -102,10 +121,9 @@ func isSafeToWriteClusterData(store store.Store) error {
 		return err
 	} else if cd != nil {
 		if !writeClusterdataOpts.forceYes {
-			return fmt.Errorf("WARNING: cluster data already available use --yes to override")
-		} else {
-			stdout("WARNING: The current cluster data will be removed")
+			return errors.New("WARNING: cluster data already available use --yes to override")
 		}
+		stdout("WARNING: The current cluster data will be removed")
 	}
 	return nil
 }

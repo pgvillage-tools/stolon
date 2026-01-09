@@ -339,14 +339,18 @@ func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnPara
 }
 
 func (p *PostgresKeeper) getReplConnParams(db, followedDB *cluster.DB) pg.ConnParams {
-	cp := pg.ConnParams{
-		"user":             p.pgReplUsername,
-		"host":             followedDB.Status.ListenAddress,
-		"port":             followedDB.Status.Port,
-		"application_name": common.StolonName(db.UID),
-		// prefer ssl if available (already the default for postgres libpq but not for golang lib pq)
-		"sslmode": "prefer",
-	}
+	cp := pg.ConnParams{}.
+		WithUser(p.pgReplUsername)
+	/*
+		cp := pg.ConnParams{
+			"user":             p.pgReplUsername,
+			"host":             followedDB.Status.ListenAddress,
+			"port":             followedDB.Status.Port,
+			"application_name": common.StolonName(db.UID),
+			// prefer ssl if available (already the default for postgres libpq but not for golang lib pq)
+			"sslmode": "prefer",
+		}
+	*/
 	if p.pgReplAuthMethod == "md5" {
 		cp.Set("password", p.pgReplPassword)
 	}
@@ -2114,13 +2118,13 @@ func keeper(c *cobra.Command, _ []string) {
 		cfg.pgSUUsername = user
 	}
 
-	validAuthMethods := make(map[string]struct{})
+	validAuthMethods := map[string]struct{}{}
 	validAuthMethods["trust"] = struct{}{}
 	validAuthMethods["md5"] = struct{}{}
 	validAuthMethods["cert"] = struct{}{}
 	validAuthMethods["ident"] = struct{}{}
 	validAuthMethods["peer"] = struct{}{}
-	validConnectionTypes := make(map[string]struct{})
+	validConnectionTypes := map[string]struct{}{}
 	validConnectionTypes["host"] = struct{}{}
 	validConnectionTypes["hostssl"] = struct{}{}
 	validConnectionTypes["hostnossl"] = struct{}{}

@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 
@@ -75,7 +75,7 @@ func TestWriteClusterdata(t *testing.T) {
 		reader := strings.NewReader("{}")
 		store := mock_store.NewMockStore(ctrl)
 
-		store.EXPECT().GetClusterData(gomock.Any()).Return(nil, nil, fmt.Errorf("Error in getting cluster data"))
+		store.EXPECT().GetClusterData(gomock.Any()).Return(nil, nil, errors.New("Error in getting cluster data"))
 
 		err := writeClusterdata(reader, store)
 
@@ -122,7 +122,7 @@ func TestWriteClusterdata(t *testing.T) {
 		store := mock_store.NewMockStore(ctrl)
 		cd := &cluster.ClusterData{}
 		store.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
-		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(fmt.Errorf("error while uploading the cluster data"))
+		store.EXPECT().PutClusterData(gomock.Any(), cd).Return(errors.New("error while uploading the cluster data"))
 
 		err := writeClusterdata(reader, store)
 
