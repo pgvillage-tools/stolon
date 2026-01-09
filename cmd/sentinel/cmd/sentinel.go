@@ -2061,7 +2061,7 @@ func (p ProxyInfoHistories) DeepCopy() (cp ProxyInfoHistories) {
 		panic(err)
 	} else if !reflect.DeepEqual(p, np) {
 		panic("not equal")
-	} else if np, ok = np.(ProxyInfoHistories); !ok {
+	} else if cp, ok = np.(ProxyInfoHistories); !ok {
 		panic("unexpectedly copy is not same type")
 	}
 	return cp

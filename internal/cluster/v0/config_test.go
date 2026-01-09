@@ -27,8 +27,13 @@ import (
 )
 
 const (
-	defaultInterval             = 20 * time.Second
-	defaultMaxStandbysPerSender = 10
+	defaultMaxStandbysPerSender uint = 10
+)
+
+var (
+	durTenSeconds     = Duration{10 * time.Second}
+	durHundredSeconds = Duration{100 * time.Second}
+	twentySeconds     = 20 * time.Second
 )
 
 func TestParseConfig(t *testing.T) {
@@ -92,9 +97,9 @@ func TestParseConfig(t *testing.T) {
 				`}}`,
 			}, "\n"),
 			cfg: mergeDefaults(&NilConfig{
-				RequestTimeout:          &Duration{10 * time.Second},
-				SleepInterval:           &Duration{10 * time.Second},
-				KeeperFailInterval:      &Duration{100 * time.Second},
+				RequestTimeout:          &durTenSeconds,
+				SleepInterval:           &durTenSeconds,
+				KeeperFailInterval:      &durHundredSeconds,
 				MaxStandbysPerSender:    util.ToPtr(uint(5)),
 				SynchronousReplication:  util.ToPtr(true),
 				InitWithMultipleKeepers: util.ToPtr(true),
@@ -138,9 +143,9 @@ func TestNilConfigCopy(t *testing.T) {
 	// possible to take a shallow copy since cfg must absolutely
 	// not change as it's used for the reflect.DeepEqual comparison.
 	cfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{10 * time.Second},
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durTenSeconds,
 		MaxStandbysPerSender:    util.ToPtr(uint(5)),
 		SynchronousReplication:  util.ToPtr(true),
 		InitWithMultipleKeepers: util.ToPtr(true),
@@ -149,29 +154,27 @@ func TestNilConfigCopy(t *testing.T) {
 		},
 	})
 	origCfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{10 * time.Second},
-		MaxStandbysPerSender:    util.ToPtr(uint(5)),
-		SynchronousReplication:  util.ToPtr(true),
-		InitWithMultipleKeepers: util.ToPtr(true),
-		PGParameters: &map[string]string{
-			"param01": "value01",
-		},
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durTenSeconds,
+		MaxStandbysPerSender:    cfg.MaxStandbysPerSender,
+		SynchronousReplication:  cfg.SynchronousReplication,
+		InitWithMultipleKeepers: cfg.InitWithMultipleKeepers,
+		PGParameters:            cfg.PGParameters,
 	})
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = &Duration{defaultInterval}
-	newCfg.SleepInterval = &Duration{defaultInterval}
-	newCfg.KeeperFailInterval = &Duration{defaultInterval}
-	newCfg.MaxStandbysPerSender = util.ToPtr(uint(defaultMaxStandbysPerSender))
+	newCfg.RequestTimeout = &Duration{twentySeconds}
+	newCfg.SleepInterval = &Duration{twentySeconds}
+	newCfg.KeeperFailInterval = &Duration{twentySeconds}
+	newCfg.MaxStandbysPerSender = util.ToPtr(defaultMaxStandbysPerSender)
 	newCfg.SynchronousReplication = util.ToPtr(false)
 	newCfg.InitWithMultipleKeepers = util.ToPtr(false)
 	(*newCfg.PGParameters)["param01"] = "anothervalue01"
 
 	if !reflect.DeepEqual(origCfg, cfg) {
-		t.Errorf("Original config shouldn't be changed")
+		t.Errorf("Original config %v shouldn't be changed %v", origCfg, cfg)
 	}
 }
 
@@ -180,9 +183,9 @@ func TestConfigCopy(t *testing.T) {
 	// possible to take a shallow copy since cfg must absolutely
 	// not change as it's used for the reflect.DeepEqual comparison.
 	cfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{100 * time.Second},
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durHundredSeconds,
 		MaxStandbysPerSender:    util.ToPtr(uint(5)),
 		SynchronousReplication:  util.ToPtr(true),
 		InitWithMultipleKeepers: util.ToPtr(true),
@@ -191,9 +194,9 @@ func TestConfigCopy(t *testing.T) {
 		},
 	}).ToConfig()
 	origCfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{100 * time.Second},
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durHundredSeconds,
 		MaxStandbysPerSender:    util.ToPtr(uint(5)),
 		SynchronousReplication:  util.ToPtr(true),
 		InitWithMultipleKeepers: util.ToPtr(true),
@@ -204,9 +207,9 @@ func TestConfigCopy(t *testing.T) {
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = defaultInterval
-	newCfg.SleepInterval = defaultInterval
-	newCfg.KeeperFailInterval = defaultInterval
+	newCfg.RequestTimeout = twentySeconds
+	newCfg.SleepInterval = twentySeconds
+	newCfg.KeeperFailInterval = twentySeconds
 	newCfg.MaxStandbysPerSender = defaultMaxStandbysPerSender
 	newCfg.SynchronousReplication = false
 	newCfg.InitWithMultipleKeepers = false
