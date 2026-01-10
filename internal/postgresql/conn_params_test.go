@@ -66,18 +66,21 @@ var _ = Describe("ConnParams", func() {
 			Ω(cn.ConnString()).To(Equal("dbname==mydb1 host==myhost password==password port==5434 user==myself"))
 		})
 	})
-	When("Getting a clone with another user", func() {
+	When("Getting a clone with other settings", func() {
 		It("should work as expected", func() {
 			cp1 := ConnParams{
 				ConnParamKeyHost: "::1",
 				ConnParamKeyPort: "5432",
 				ConnParamKeyUser: "myself",
 			}
-			cp2 := cp1.WithUser("someoneelse")
+			cp2 := cp1.WithUser("someoneelse").
+				WithAppName("myapp").
+				WithPort(5433).
+				WithSSLMode("verify-full")
 			Ω(cp1).To(HaveKeyWithValue(ConnParamKeyUser, "myself"))
 			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyUser, "someoneelse"))
 			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyHost, cp1[ConnParamKeyHost]))
-			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyPort, cp1[ConnParamKeyPort]))
+			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyPort, "5433"))
 		})
 	})
 })

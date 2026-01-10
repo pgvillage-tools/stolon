@@ -233,6 +233,39 @@ func (cp ConnParams) ConnString() string {
 // WithUser returns a clone with the user fields set to the specified userName
 func (cp ConnParams) WithUser(userName string) ConnParams {
 	q := maps.Clone(cp)
-	q["user"] = userName
+	q[ConnParamKeyUser] = userName
+	return q
+}
+
+// WithHost returns a clone with the host fields set to the specified hostName
+func (cp ConnParams) WithHost(hostName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyHost] = hostName
+	return q
+}
+
+// WithPort returns a clone with the port fields set as specified
+func (cp ConnParams) WithPort(port uint) ConnParams {
+	return cp.WithSPort(fmt.Sprintf("%d", port))
+}
+
+// WithSPort returns a clone with the port fields set as specified
+func (cp ConnParams) WithSPort(port string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyPort] = port
+	return q
+}
+
+// WithAppName returns a clone with the port fields set as specified
+func (cp ConnParams) WithAppName(appName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyAppName] = appName
+	return q
+}
+
+// WithSSLMode returns a clone with the port fields set as specified
+func (cp ConnParams) WithSSLMode(sslMode string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeySSLMode] = sslMode
 	return q
 }

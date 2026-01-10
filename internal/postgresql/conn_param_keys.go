@@ -12,4 +12,8 @@ const (
 	ConnParamKeyPort ConnParamKey = "port"
 	// ConnParamKeyUser defines the key for the username
 	ConnParamKeyUser ConnParamKey = "user"
+	// ConnParamKeyAppName defines the key for the application name
+	ConnParamKeyAppName ConnParamKey = "application_name"
+	// ConnParamKeySSLMode defines the key for the ssl mode
+	ConnParamKeySSLMode ConnParamKey = "sslmode"
 )

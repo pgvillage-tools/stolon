@@ -359,19 +359,13 @@ func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnPara
 	return cp
 }
 
-func (p *PostgresKeeper) getReplConnParams() pg.ConnParams {
+func (p *PostgresKeeper) getReplConnParams(db, followedDB *cluster.DB) pg.ConnParams {
 	cp := pg.ConnParams{}.
-		WithUser(p.pgReplUsername)
-	/*
-		cp := pg.ConnParams{
-			connParamUser:    p.pgReplUsername,
-			connParamHost:    followedDB.Status.ListenAddress,
-			connParamPort:    followedDB.Status.Port,
-			connParamAppName: common.StolonName(db.UID),
-			// prefer ssl if available (already the default for postgres libpq but not for golang lib pq)
-			connParamSslMode: "prefer",
-		}
-	*/
+		WithUser(p.pgReplUsername).
+		WithHost(followedDB.Status.ListenAddress).
+		WithSPort(followedDB.Status.Port).
+		WithAppName(common.StolonName(db.UID)).
+		WithSSLMode("prefer")
 	if p.pgReplAuthMethod == authMd5 {
 		cp.Set(connParamPassword, p.pgReplPassword)
 	}
@@ -989,7 +983,7 @@ func (p *PostgresKeeper) Start(ctx context.Context) {
 
 func (p *PostgresKeeper) resync(db, masterDB, followedDB *cluster.DB, tryPgrewind bool) error {
 	pgm := p.pgm
-	replConnParams := p.getReplConnParams()
+	replConnParams := p.getReplConnParams(db, followedDB)
 	standbySettings := &cluster.StandbySettings{
 		PrimaryConninfo: replConnParams.ConnString(),
 		PrimarySlotName: common.StolonName(db.UID)}
@@ -1717,7 +1711,12 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 		case cluster.FollowTypeInternal:
 			followedUID := db.Spec.FollowConfig.DBUID
 			log.Infow("our db requested role is standby", followedStr, followedUID)
-			replConnParams := p.getReplConnParams()
+			followedDB, ok := cd.DBs[followedUID]
+			if !ok {
+				log.Errorw("no db data available for followed db", followedStr, followedUID)
+				return
+			}
+			replConnParams := p.getReplConnParams(db, followedDB)
 			standbySettings = &cluster.StandbySettings{
 				PrimaryConninfo: replConnParams.ConnString(),
 				PrimarySlotName: common.StolonName(db.UID)}
@@ -1749,7 +1748,13 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			// Update our primary_conninfo if replConnString changed
 			switch db.Spec.FollowConfig.Type {
 			case cluster.FollowTypeInternal:
-				newReplConnParams := p.getReplConnParams()
+				followedUID := db.Spec.FollowConfig.DBUID
+				followedDB, ok := cd.DBs[followedUID]
+				if !ok {
+					log.Errorw("no db data available for followed db", followedStr, followedUID)
+					return
+				}
+				newReplConnParams := p.getReplConnParams(db, followedDB)
 				log.Debugw("newReplConnParams", "newReplConnParams", newReplConnParams)
 
 				standbySettings := &cluster.StandbySettings{
