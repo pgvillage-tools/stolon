@@ -63,7 +63,7 @@ var _ = Describe("ConnParams", func() {
 		It("should work as expected", func() {
 			cn, err := URLToConnParams(`postgresql://myself:password@myhost:5434/mydb1`)
 			Ω(err).NotTo(HaveOccurred())
-			Ω(cn.ConnString()).To(Equal("dbname==mydb1 host==myhost password==password port==5434 user==myself"))
+			Ω(cn.ConnString()).To(Equal("dbname=mydb1 host=myhost password=password port=5434 user=myself"))
 		})
 	})
 	When("Getting a clone with other settings", func() {

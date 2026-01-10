@@ -58,6 +58,7 @@ const (
 	exitStatusInaccessibleDatadir = 4
 
 	argDatadir = "-D"
+	argDbName  = "-d"
 	logExec    = "execing cmd"
 )
 
@@ -1095,9 +1096,9 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 	fcp.Set("options", "-c synchronous_commit=off")
 	followedConnString := fcp.ConnString()
 
-	log.Infow("running pg_basebackup")
+	log.Infow("running pg_basebackup", "connstring", followedConnString)
 	name := filepath.Join(p.pgBinPath, "pg_basebackup")
-	args := []string{"-R", "-v", "-P", "-Xs", argDatadir, p.dataDir, argDatadir, followedConnString}
+	args := []string{"-R", "-v", "-P", "-Xs", argDatadir, p.dataDir, argDbName, followedConnString}
 	if replSlot != "" {
 		args = append(args, "--slot", replSlot)
 	}

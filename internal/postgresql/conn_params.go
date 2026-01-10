@@ -223,7 +223,7 @@ func (cp ConnParams) ConnString() string {
 	escaper := strings.NewReplacer(` `, `\ `, `'`, `\'`, `\`, `\\`)
 	for k, v := range cp {
 		if v != "" {
-			kvs = append(kvs, fmt.Sprintf("%s=%s", k, "="+escaper.Replace(v)))
+			kvs = append(kvs, fmt.Sprintf("%s=%s", k, escaper.Replace(v)))
 		}
 	}
 	sort.Strings(kvs)
