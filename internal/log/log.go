@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package log is a util module for logging in stolon
 package log
 
 import (
@@ -56,30 +57,37 @@ func init() {
 	sColor = logger.Sugar()
 }
 
+// SetDebug will enable debug logging
 func SetDebug() {
 	level.SetLevel(zapcore.DebugLevel)
 }
 
+// SetLevel will set a log level
 func SetLevel(lvl zapcore.Level) {
 	level.SetLevel(lvl)
 }
 
+// IsDebug returns if debug logging is enabled
 func IsDebug() bool {
 	return level.Level() == zapcore.DebugLevel
 }
 
+// S will return the sugared logger being used for logging
 func S() *zap.SugaredLogger {
 	return s
 }
 
+// StdLog returns a new logger
 func StdLog() *log.Logger {
 	return zap.NewStdLog(s.Desugar())
 }
 
+// SColor will return a SUgared logger with color enabled
 func SColor() *zap.SugaredLogger {
 	return sColor
 }
 
+// StdLogColor will return a InfoLogger with coloer enabled
 func StdLogColor() *log.Logger {
 	return zap.NewStdLog(sColor.Desugar())
 }

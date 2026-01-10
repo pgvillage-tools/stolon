@@ -17,9 +17,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_register "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
+	mockregister "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
 	"github.com/sorintlab/stolon/internal/cluster"
-	mock_store "github.com/sorintlab/stolon/internal/mock/store"
+	mockstore "github.com/sorintlab/stolon/internal/mock/store"
 	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/sorintlab/stolon/cmd"
@@ -27,7 +27,6 @@ import (
 )
 
 func TestCheckConfig(t *testing.T) {
-
 	t.Run("should check for cluster name", func(t *testing.T) {
 		c := config{}
 		rc := register.Config{}
@@ -74,8 +73,8 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockStore := mock_store.NewMockStore(ctrl)
-		mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+		mockStore := mockstore.NewMockStore(ctrl)
+		mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 		clusterName := "test-cluster"
 		serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Tags: []string{"slave"}}
@@ -86,7 +85,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		}
 
 		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
+		clusterData := cluster.Data{
 			Cluster: &cluster.Cluster{},
 			DBs:     cluster.DBs{},
 		}
@@ -101,16 +100,28 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockStore := mock_store.NewMockStore(ctrl)
-		mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+		mockStore := mockstore.NewMockStore(ctrl)
+		mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 		clusterName := "test-cluster"
-		serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432, Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
-		anotherServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2", Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
+		serviceInfo := register.ServiceInfo{
+			Name:  clusterName,
+			ID:    "uid1",
+			Port:  5432,
+			Tags:  []string{"slave"},
+			Check: register.HealthCheck{TCP: ":5432", Interval: "10s"},
+		}
+		anotherServiceInfo := register.ServiceInfo{
+			Name:  clusterName,
+			Port:  5433,
+			ID:    "uid2",
+			Tags:  []string{"slave"},
+			Check: register.HealthCheck{TCP: ":5433", Interval: "10s"},
+		}
 		discoveredServices := register.ServiceInfos{}
 
 		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
+		clusterData := cluster.Data{
 			Cluster: &cluster.Cluster{},
 			DBs: cluster.DBs{
 				"uid1": &cluster.DB{
@@ -130,55 +141,62 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
 	})
 
-	t.Run("should register existing services and deregister the discovered service which are no longer available", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+	t.Run("should register existing services and deregister the discovered service which are no longer available",
+		func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		mockStore := mock_store.NewMockStore(ctrl)
-		mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
-		clusterName := "test-cluster"
-		serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432, Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
-		anotherServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2", Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
-		yetAnotherServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5434, ID: "uid3", Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
-		discoveredServices := register.ServiceInfos{"uid1": serviceInfo, "uid2": anotherServiceInfo, "uid3": yetAnotherServiceInfo}
+			clusterName := "test-cluster"
+			serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432,
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
+			anotherServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2",
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
+			yetAnotherServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5434, ID: "uid3",
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
+			discoveredServices := register.ServiceInfos{"uid1": serviceInfo, "uid2": anotherServiceInfo,
+				"uid3": yetAnotherServiceInfo}
 
-		mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-		clusterData := cluster.ClusterData{
-			Cluster: &cluster.Cluster{},
-			DBs: cluster.DBs{
-				"uid1": &cluster.DB{
-					UID:    "uid1",
-					Status: cluster.DBStatus{Port: "5432", Healthy: true},
+			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{},
+				DBs: cluster.DBs{
+					"uid1": &cluster.DB{
+						UID:    "uid1",
+						Status: cluster.DBStatus{Port: "5432", Healthy: true},
+					},
+					"uid2": &cluster.DB{
+						UID:    "uid2",
+						Status: cluster.DBStatus{Port: "5433", Healthy: true},
+					},
 				},
-				"uid2": &cluster.DB{
-					UID:    "uid2",
-					Status: cluster.DBStatus{Port: "5433", Healthy: true},
-				},
-			},
-		}
-		mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
-		mockServiceDiscovery.EXPECT().DeRegister(&yetAnotherServiceInfo)
+			}
+			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
+			mockServiceDiscovery.EXPECT().DeRegister(&yetAnotherServiceInfo)
 
-		checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
-	})
+			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+		})
 
 	t.Run("master registration is not allowed", func(t *testing.T) {
 		t.Run("should deregister the master even it exists", func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
-			serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432, Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
-			masterServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2", Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}, IsMaster: true}
+			serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432,
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
+			masterServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2",
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}, IsMaster: true}
 			discoveredServices := register.ServiceInfos{"uid1": serviceInfo, "uid2": masterServiceInfo}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -200,16 +218,17 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
-			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5434, ID: "uid2", Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
+			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5434, ID: "uid2",
+				Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
 			discoveredServices := register.ServiceInfos{"uid3": masterService}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid2": &cluster.DB{
 						UID:    "uid2",
@@ -227,15 +246,15 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
 			discoveredServices := register.ServiceInfos{}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -254,17 +273,19 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
-			serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432, Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
-			masterServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2", Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}, IsMaster: true}
+			serviceInfo := register.ServiceInfo{Name: clusterName, ID: "uid1", Port: 5432,
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
+			masterServiceInfo := register.ServiceInfo{Name: clusterName, Port: 5433, ID: "uid2",
+				Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}, IsMaster: true}
 			discoveredServices := register.ServiceInfos{"uid1": serviceInfo}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -286,15 +307,16 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
-			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5434, ID: "uid3", Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
+			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5434, ID: "uid3",
+				Tags: []string{"slave"}, Check: register.HealthCheck{TCP: ":5433", Interval: "10s"}}
 			discoveredServices := register.ServiceInfos{"uid3": masterService}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
+			clusterData := cluster.Data{
 				Cluster: &cluster.Cluster{},
 				DBs:     cluster.DBs{},
 			}
@@ -308,16 +330,17 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockStore := mock_store.NewMockStore(ctrl)
-			mockServiceDiscovery := mock_register.NewMockServiceDiscovery(ctrl)
+			mockStore := mockstore.NewMockStore(ctrl)
+			mockServiceDiscovery := mockregister.NewMockServiceDiscovery(ctrl)
 
 			clusterName := "test-cluster"
 			discoveredServices := register.ServiceInfos{}
-			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5432, ID: "uid1", Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
+			masterService := register.ServiceInfo{IsMaster: true, Name: clusterName, Port: 5432, ID: "uid1",
+				Tags: []string{"master"}, Check: register.HealthCheck{TCP: ":5432", Interval: "10s"}}
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
-			clusterData := cluster.ClusterData{
-				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
+			clusterData := cluster.Data{
+				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",

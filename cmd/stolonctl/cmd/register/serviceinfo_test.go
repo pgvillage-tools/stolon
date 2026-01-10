@@ -276,7 +276,6 @@ func TestServiceInfosDiff(t *testing.T) {
 		if len(diff.Removed) != 0 {
 			t.Errorf("expected no service to be removed but %d service got removed", len(diff.Removed))
 		}
-
 	})
 
 	t.Run("should only add when new services are found", func(t *testing.T) {
@@ -298,11 +297,13 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be added but not", id)
 			}
 		}
-
 	})
 
 	t.Run("should only remove when discovered services no longer exists", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID": ServiceInfo{ID: "masterUID"},
+			"slaveUID":  ServiceInfo{ID: "slaveUID"},
+		}
 		existingServiceInfos := ServiceInfos{}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
@@ -320,7 +321,6 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be removed but not", id)
 			}
 		}
-
 	})
 
 	t.Run("should not add or remove when discovered and existing services are same", func(t *testing.T) {
@@ -335,12 +335,17 @@ func TestServiceInfosDiff(t *testing.T) {
 		if len(diff.Removed) != 0 {
 			t.Errorf("expected no service to be removed but %d service got removed", len(diff.Removed))
 		}
-
 	})
 
 	t.Run("should add and remove corresponding service infos", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
-		existingServiceInfos := ServiceInfos{"newSlaveUID": ServiceInfo{ID: "newSlaveUID"}, "slaveUID": ServiceInfo{ID: "slaveUID"}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID": ServiceInfo{ID: "masterUID"},
+			"slaveUID":  ServiceInfo{ID: "slaveUID"},
+		}
+		existingServiceInfos := ServiceInfos{
+			"newSlaveUID": ServiceInfo{ID: "newSlaveUID"},
+			"slaveUID":    ServiceInfo{ID: "slaveUID"},
+		}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
 
@@ -367,10 +372,16 @@ func TestServiceInfosDiff(t *testing.T) {
 	})
 
 	t.Run("should add and remove corresponding service infos", func(t *testing.T) {
-		discoveredServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID", Tags: Tags{"master"}}, "slaveUID": ServiceInfo{ID: "slaveUID"},
-			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID"}}
-		existingServiceInfos := ServiceInfos{"masterUID": ServiceInfo{ID: "masterUID", Tags: Tags{"slave"}}, "slaveUID": ServiceInfo{ID: "slaveUID"},
-			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID", Tags: Tags{"master"}}}
+		discoveredServiceInfos := ServiceInfos{
+			"masterUID":       ServiceInfo{ID: "masterUID", Tags: Tags{"master"}},
+			"slaveUID":        ServiceInfo{ID: "slaveUID"},
+			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID"},
+		}
+		existingServiceInfos := ServiceInfos{
+			"masterUID":       ServiceInfo{ID: "masterUID", Tags: Tags{"slave"}},
+			"slaveUID":        ServiceInfo{ID: "slaveUID"},
+			"anotherSlaveUID": ServiceInfo{ID: "anotherSlaveUID", Tags: Tags{"master"}},
+		}
 
 		diff := existingServiceInfos.Diff(discoveredServiceInfos)
 
@@ -394,7 +405,6 @@ func TestServiceInfosDiff(t *testing.T) {
 				t.Errorf("expected %s to be added but not", id)
 			}
 		}
-
 	})
 }
 

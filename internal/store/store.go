@@ -26,15 +26,18 @@ import (
 
 var (
 	// ErrKeyNotFound is thrown when the key is not found in the store during a Get operation
-	ErrKeyNotFound      = errors.New("Key not found in store")
-	ErrKeyModified      = errors.New("Unable to complete atomic operation, key modified")
+	ErrKeyNotFound = errors.New("Key not found in store")
+	// ErrKeyModified is thrown when the key was modified while perfroming the atomic operation
+	ErrKeyModified = errors.New("Unable to complete atomic operation, key modified")
+	// ErrElectionNoLeader is thrown when there is no leader
 	ErrElectionNoLeader = errors.New("election: no leader")
 )
 
+// Store is an interface for a kv store which could be consul, or etcd (v2 or v3)
 type Store interface {
-	AtomicPutClusterData(ctx context.Context, cd *cluster.ClusterData, previous *KVPair) (*KVPair, error)
-	PutClusterData(ctx context.Context, cd *cluster.ClusterData) error
-	GetClusterData(ctx context.Context) (*cluster.ClusterData, *KVPair, error)
+	AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *KVPair) (*KVPair, error)
+	PutClusterData(ctx context.Context, cd *cluster.Data) error
+	GetClusterData(ctx context.Context) (*cluster.Data, *KVPair, error)
 	SetKeeperInfo(ctx context.Context, id string, ms *cluster.KeeperInfo, ttl time.Duration) error
 	GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, error)
 	SetSentinelInfo(ctx context.Context, si *cluster.SentinelInfo, ttl time.Duration) error
@@ -43,6 +46,7 @@ type Store interface {
 	GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, error)
 }
 
+// Election takes care of the election proces with a kv backend
 type Election interface {
 	// TODO(sgotti) this mimics the current docker/leadership API and the etcdv3
 	// implementations adapt to it. In future it could be replaced with a better

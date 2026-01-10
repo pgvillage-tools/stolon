@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/sorintlab/stolon/internal/cluster"
-	mock_store "github.com/sorintlab/stolon/internal/mock/store"
+	mockstore "github.com/sorintlab/stolon/internal/mock/store"
 )
 
 func TestNewCluster(t *testing.T) {
@@ -28,7 +28,7 @@ func TestNewCluster(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockStore := mock_store.NewMockStore(ctrl)
+		mockStore := mockstore.NewMockStore(ctrl)
 		mockStore.EXPECT().GetClusterData(gomock.Any()).Return(nil, nil, errors.New("unable to fetch cluster data"))
 
 		_, err := NewCluster("test", Config{}, mockStore)
@@ -42,7 +42,7 @@ func TestNewCluster(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockStore := mock_store.NewMockStore(ctrl)
+		mockStore := mockstore.NewMockStore(ctrl)
 		mockStore.EXPECT().GetClusterData(gomock.Any()).Return(nil, nil, nil)
 
 		_, err := NewCluster("test", Config{}, mockStore)
@@ -55,9 +55,9 @@ func TestNewCluster(t *testing.T) {
 	t.Run("should create new cluster", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		cd := &cluster.ClusterData{}
+		cd := &cluster.Data{}
 
-		mockStore := mock_store.NewMockStore(ctrl)
+		mockStore := mockstore.NewMockStore(ctrl)
 		mockStore.EXPECT().GetClusterData(gomock.Any()).Return(cd, nil, nil)
 
 		expected := Cluster{name: "test", cd: cd}
@@ -78,7 +78,7 @@ func TestNewCluster(t *testing.T) {
 
 func TestServiceInfos(t *testing.T) {
 	t.Run("should return error if cluster data not available", func(t *testing.T) {
-		cl := Cluster{cd: &cluster.ClusterData{}, name: "test"}
+		cl := Cluster{cd: &cluster.Data{}, name: "test"}
 
 		_, err := cl.ServiceInfos()
 
@@ -88,14 +88,17 @@ func TestServiceInfos(t *testing.T) {
 	})
 
 	t.Run("should get all the healthy service infos form the cluster data", func(t *testing.T) {
-		master := &cluster.DB{UID: "master", Status: cluster.DBStatus{Healthy: true, ListenAddress: "127.0.0.1", Port: "5432"}}
-		slave := &cluster.DB{UID: "slave1", Status: cluster.DBStatus{Healthy: true, ListenAddress: "127.0.0.1", Port: "5433"}}
-		anotherSlave := &cluster.DB{UID: "slave2", Status: cluster.DBStatus{Healthy: false, ListenAddress: "127.0.0.1", Port: "5433"}}
+		master := &cluster.DB{UID: "master", Status: cluster.DBStatus{Healthy: true,
+			ListenAddress: "127.0.0.1", Port: "5432"}}
+		slave := &cluster.DB{UID: "slave1", Status: cluster.DBStatus{Healthy: true,
+			ListenAddress: "127.0.0.1", Port: "5433"}}
+		anotherSlave := &cluster.DB{UID: "slave2", Status: cluster.DBStatus{Healthy: false,
+			ListenAddress: "127.0.0.1", Port: "5433"}}
 		cl := Cluster{
-			cd: &cluster.ClusterData{
+			cd: &cluster.Data{
 				DBs: map[string]*cluster.DB{"master": master, "slave1": slave, "slave2": anotherSlave},
 				Cluster: &cluster.Cluster{
-					Status: cluster.ClusterStatus{Master: "master"},
+					Status: cluster.Status{Master: "master"},
 				},
 			},
 			name:        "test",

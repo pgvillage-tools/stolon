@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is a package that provides functionality concerning postgresSQL lifecycles
 package main
 
 import (
@@ -30,12 +31,11 @@ import (
 func main() {
 	// use os.Args instead of "flags" because "flags" will mess up the man pages!
 	var outDir string
-	if len(os.Args) == 2 {
-		outDir = os.Args[1]
-	} else {
+	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s [output directory]", os.Args[0])
 		os.Exit(1)
 	}
+	outDir = os.Args[1]
 
 	if err := doc.GenMarkdownTree(keepercmd.CmdKeeper, outDir); err != nil {
 		log.Fatal(err)

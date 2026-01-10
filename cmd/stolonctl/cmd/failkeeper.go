@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// revive:disable
+
 var failKeeperCmd = &cobra.Command{
 	Use:   "failkeeper [keeper uid]",
 	Short: `Force keeper as "temporarily" failed. The sentinel will compute a new clusterdata considering it as failed and then restore its state to the real one.`,
@@ -28,11 +30,13 @@ var failKeeperCmd = &cobra.Command{
 	Run:   failKeeper,
 }
 
+//revive:enable
+
 func init() {
 	CmdStolonCtl.AddCommand(failKeeperCmd)
 }
 
-func failKeeper(cmd *cobra.Command, args []string) {
+func failKeeper(_ *cobra.Command, args []string) {
 	if len(args) > 1 {
 		die("too many arguments")
 	}

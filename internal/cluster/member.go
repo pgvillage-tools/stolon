@@ -23,61 +23,17 @@ import (
 	"github.com/mitchellh/copystructure"
 )
 
-type KeepersInfo map[string]*KeeperInfo
-
-func (k KeepersInfo) DeepCopy() KeepersInfo {
-	if k == nil {
-		return nil
-	}
-	nk, err := copystructure.Copy(k)
-	if err != nil {
-		panic(err)
-	}
-	if !reflect.DeepEqual(k, nk) {
-		panic("not equal")
-	}
-	return nk.(KeepersInfo)
-}
-
-type KeeperInfo struct {
-	// An unique id for this info, used to know when this the keeper info
-	// has been updated
-	InfoUID string `json:"infoUID,omitempty"`
-
-	UID        string `json:"uid,omitempty"`
-	ClusterUID string `json:"clusterUID,omitempty"`
-	BootUUID   string `json:"bootUUID,omitempty"`
-
-	PostgresBinaryVersion PostgresBinaryVersion `json:"postgresBinaryVersion,omitempty"`
-
-	PostgresState *PostgresState `json:"postgresState,omitempty"`
-
-	CanBeMaster             *bool `json:"canBeMaster,omitempty"`
-	CanBeSynchronousReplica *bool `json:"canBeSynchronousReplica,omitempty"`
-}
-
-func (k *KeeperInfo) DeepCopy() *KeeperInfo {
-	if k == nil {
-		return nil
-	}
-	nk, err := copystructure.Copy(k)
-	if err != nil {
-		panic(err)
-	}
-	if !reflect.DeepEqual(k, nk) {
-		panic("not equal")
-	}
-	return nk.(*KeeperInfo)
-}
-
+// PostgresTimelinesHistory stores all PostgreSQL timelines belonging to this cluster
 type PostgresTimelinesHistory []*PostgresTimelineHistory
 
+// PostgresTimelineHistory defines a PostgreSQL timeline
 type PostgresTimelineHistory struct {
 	TimelineID  uint64 `json:"timelineID,omitempty"`
 	SwitchPoint uint64 `json:"switchPoint,omitempty"`
 	Reason      string `json:"reason,omitempty"`
 }
 
+// GetTimelineHistory returns a PostgresTimelineHistory for a PostgresTimelinesHistory
 func (tlsh PostgresTimelinesHistory) GetTimelineHistory(id uint64) *PostgresTimelineHistory {
 	for _, tlh := range tlsh {
 		if tlh.TimelineID == id {
@@ -87,6 +43,7 @@ func (tlsh PostgresTimelinesHistory) GetTimelineHistory(id uint64) *PostgresTime
 	return nil
 }
 
+// PostgresState defines the state of a PostgreSQL instance
 type PostgresState struct {
 	UID        string `json:"uid,omitempty"`
 	Generation int64  `json:"generation,omitempty"`
@@ -106,30 +63,35 @@ type PostgresState struct {
 	OlderWalFile        string            `json:"olderWalFile,omitempty"`
 }
 
-func (p *PostgresState) DeepCopy() *PostgresState {
+// DeepCopy returns a copy of the PostgresState resource
+func (p *PostgresState) DeepCopy() (dc *PostgresState) {
+	var ok bool
 	if p == nil {
 		return nil
 	}
-	np, err := copystructure.Copy(p)
-	if err != nil {
+	if np, err := copystructure.Copy(p); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(p, np) {
+	} else if !reflect.DeepEqual(p, np) {
 		panic("not equal")
+	} else if dc, ok = np.(*PostgresState); !ok {
+		panic("different type after copy")
 	}
-	return np.(*PostgresState)
+	return dc
 }
 
+// SentinelsInfo stores all SentinelInfo resources for a cluster
 type SentinelsInfo []*SentinelInfo
 
 func (s SentinelsInfo) Len() int           { return len(s) }
 func (s SentinelsInfo) Less(i, j int) bool { return s[i].UID < s[j].UID }
 func (s SentinelsInfo) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
+// SentinelInfo stores all info for a sentinel
 type SentinelInfo struct {
 	UID string
 }
 
+// ProxyInfo stores all info for a proxy
 type ProxyInfo struct {
 	// An unique id for this info, used to know when the proxy info
 	// has been updated
@@ -145,22 +107,26 @@ type ProxyInfo struct {
 	ProxyTimeout time.Duration
 }
 
+// ProxiesInfo stores inbfo about all Proxies for this cluster
 type ProxiesInfo map[string]*ProxyInfo
 
-func (p ProxiesInfo) DeepCopy() ProxiesInfo {
+// DeepCopy returns a copy of the ProxiesInfo resource
+func (p ProxiesInfo) DeepCopy() (dc ProxiesInfo) {
+	var ok bool
 	if p == nil {
 		return nil
 	}
-	np, err := copystructure.Copy(p)
-	if err != nil {
+	if np, err := copystructure.Copy(p); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(p, np) {
+	} else if !reflect.DeepEqual(p, np) {
 		panic("not equal")
+	} else if dc, ok = np.(ProxiesInfo); !ok {
+		panic("different type after copy")
 	}
-	return np.(ProxiesInfo)
+	return dc
 }
 
+// ToSlice converts the ProxiesInfo map into a slice of ProxyInfo resources
 func (p ProxiesInfo) ToSlice() ProxiesInfoSlice {
 	pis := ProxiesInfoSlice{}
 	for _, pi := range p {
@@ -169,6 +135,7 @@ func (p ProxiesInfo) ToSlice() ProxiesInfoSlice {
 	return pis
 }
 
+// ProxiesInfoSlice defines a slice of ProxyInfo resources
 type ProxiesInfoSlice []*ProxyInfo
 
 func (p ProxiesInfoSlice) Len() int           { return len(p) }

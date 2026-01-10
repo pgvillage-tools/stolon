@@ -21,6 +21,7 @@ import (
 	"time"
 )
 
+// Now returns the current datetime as a Unix timestamp
 func Now() int64 {
 	return time.Now().UnixNano()
 }

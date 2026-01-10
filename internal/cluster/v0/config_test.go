@@ -16,12 +16,24 @@ package v0
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/sorintlab/stolon/internal/util"
+)
+
+const (
+	defaultMaxStandbysPerSender uint = 10
+)
+
+var (
+	durTenSeconds     = Duration{10 * time.Second}
+	durHundredSeconds = Duration{100 * time.Second}
+	twentySeconds     = 20 * time.Second
 )
 
 func TestParseConfig(t *testing.T) {
@@ -49,42 +61,48 @@ func TestParseConfig(t *testing.T) {
 		{
 			in:  `{ "request_timeout": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: request_timeout must be positive"),
+			err: errors.New("config validation failed: request_timeout must be positive"),
 		},
 		{
 			in:  `{ "request_timeout": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: request_timeout must be positive"),
+			err: errors.New("config validation failed: request_timeout must be positive"),
 		},
 		{
 			in:  `{ "sleep_interval": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: sleep_interval must be positive"),
+			err: errors.New("config validation failed: sleep_interval must be positive"),
 		},
 		{
 			in:  `{ "keeper_fail_interval": "-3s" }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: keeper_fail_interval must be positive"),
+			err: errors.New("config validation failed: keeper_fail_interval must be positive"),
 		},
 		{
 			in:  `{ "max_standbys_per_sender": 0 }`,
 			cfg: nil,
-			err: fmt.Errorf("config validation failed: max_standbys_per_sender must be at least 1"),
+			err: errors.New("config validation failed: max_standbys_per_sender must be at least 1"),
 		},
 		// All options defined
 		{
-			in: `{ "request_timeout": "10s", "sleep_interval": "10s", "keeper_fail_interval": "100s", "max_standbys_per_sender": 5, "synchronous_replication": true, "init_with_multiple_keepers": true,
-			       "pg_parameters": {
-			         "param01": "value01"
-				}
-			     }`,
+			in: strings.Join([]string{
+				`{ "request_timeout": "10s", `,
+				`"sleep_interval": "10s", `,
+				`"keeper_fail_interval": "100s", `,
+				`"max_standbys_per_sender": 5, `,
+				`"synchronous_replication": true, `,
+				`"init_with_multiple_keepers": true,`,
+				`"pg_parameters": {`,
+				`  "param01": "value01"`,
+				`}}`,
+			}, "\n"),
 			cfg: mergeDefaults(&NilConfig{
-				RequestTimeout:          &Duration{10 * time.Second},
-				SleepInterval:           &Duration{10 * time.Second},
-				KeeperFailInterval:      &Duration{100 * time.Second},
-				MaxStandbysPerSender:    UintP(5),
-				SynchronousReplication:  BoolP(true),
-				InitWithMultipleKeepers: BoolP(true),
+				RequestTimeout:          &durTenSeconds,
+				SleepInterval:           &durTenSeconds,
+				KeeperFailInterval:      &durHundredSeconds,
+				MaxStandbysPerSender:    util.ToPtr(uint(5)),
+				SynchronousReplication:  util.ToPtr(true),
+				InitWithMultipleKeepers: util.ToPtr(true),
 				PGParameters: &map[string]string{
 					"param01": "value01",
 				},
@@ -112,7 +130,6 @@ func TestParseConfig(t *testing.T) {
 				t.Error(spew.Sprintf("#%d: wrong config: got: %#v, want: %#v", i, cfg, tt.cfg))
 			}
 		}
-
 	}
 }
 
@@ -126,42 +143,39 @@ func TestNilConfigCopy(t *testing.T) {
 	// possible to take a shallow copy since cfg must absolutely
 	// not change as it's used for the reflect.DeepEqual comparison.
 	cfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{10 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durTenSeconds,
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
 	})
 	origCfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{10 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
-		PGParameters: &map[string]string{
-			"param01": "value01",
-		},
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durTenSeconds,
+		MaxStandbysPerSender:    cfg.MaxStandbysPerSender,
+		SynchronousReplication:  cfg.SynchronousReplication,
+		InitWithMultipleKeepers: cfg.InitWithMultipleKeepers,
+		PGParameters:            cfg.PGParameters,
 	})
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = &Duration{20 * time.Second}
-	newCfg.SleepInterval = &Duration{20 * time.Second}
-	newCfg.KeeperFailInterval = &Duration{20 * time.Second}
-	newCfg.MaxStandbysPerSender = UintP(10)
-	newCfg.SynchronousReplication = BoolP(false)
-	newCfg.InitWithMultipleKeepers = BoolP(false)
+	newCfg.RequestTimeout = &Duration{twentySeconds}
+	newCfg.SleepInterval = &Duration{twentySeconds}
+	newCfg.KeeperFailInterval = &Duration{twentySeconds}
+	newCfg.MaxStandbysPerSender = util.ToPtr(defaultMaxStandbysPerSender)
+	newCfg.SynchronousReplication = util.ToPtr(false)
+	newCfg.InitWithMultipleKeepers = util.ToPtr(false)
 	(*newCfg.PGParameters)["param01"] = "anothervalue01"
 
 	if !reflect.DeepEqual(origCfg, cfg) {
-		t.Errorf("Original config shouldn't be changed")
+		t.Errorf("Original config %v shouldn't be changed %v", origCfg, cfg)
 	}
-
 }
 
 func TestConfigCopy(t *testing.T) {
@@ -169,23 +183,23 @@ func TestConfigCopy(t *testing.T) {
 	// possible to take a shallow copy since cfg must absolutely
 	// not change as it's used for the reflect.DeepEqual comparison.
 	cfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{100 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durHundredSeconds,
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
 	}).ToConfig()
 	origCfg := mergeDefaults(&NilConfig{
-		RequestTimeout:          &Duration{10 * time.Second},
-		SleepInterval:           &Duration{10 * time.Second},
-		KeeperFailInterval:      &Duration{100 * time.Second},
-		MaxStandbysPerSender:    UintP(5),
-		SynchronousReplication:  BoolP(true),
-		InitWithMultipleKeepers: BoolP(true),
+		RequestTimeout:          &durTenSeconds,
+		SleepInterval:           &durTenSeconds,
+		KeeperFailInterval:      &durHundredSeconds,
+		MaxStandbysPerSender:    util.ToPtr(uint(5)),
+		SynchronousReplication:  util.ToPtr(true),
+		InitWithMultipleKeepers: util.ToPtr(true),
 		PGParameters: &map[string]string{
 			"param01": "value01",
 		},
@@ -193,10 +207,10 @@ func TestConfigCopy(t *testing.T) {
 
 	// Now take a origCfg copy, change all its fields and check that origCfg isn't changed
 	newCfg := origCfg.Copy()
-	newCfg.RequestTimeout = 20 * time.Second
-	newCfg.SleepInterval = 20 * time.Second
-	newCfg.KeeperFailInterval = 20 * time.Second
-	newCfg.MaxStandbysPerSender = 10
+	newCfg.RequestTimeout = twentySeconds
+	newCfg.SleepInterval = twentySeconds
+	newCfg.KeeperFailInterval = twentySeconds
+	newCfg.MaxStandbysPerSender = defaultMaxStandbysPerSender
 	newCfg.SynchronousReplication = false
 	newCfg.InitWithMultipleKeepers = false
 	newCfg.PGParameters["param01"] = "anothervalue01"
@@ -204,5 +218,4 @@ func TestConfigCopy(t *testing.T) {
 	if !reflect.DeepEqual(origCfg, cfg) {
 		t.Errorf("Original config shouldn't be changed")
 	}
-
 }

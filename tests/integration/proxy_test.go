@@ -40,13 +40,14 @@ func TestProxyListening(t *testing.T) {
 
 	clusterName := uuid.Must(uuid.NewV4()).String()
 
-	tstore, err := NewTestStore(t, dir)
+	tstore, err := newTestStore(t, dir)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	storeEndpoints := fmt.Sprintf("%s:%s", tstore.listenAddress, tstore.port)
 
-	tp, err := NewTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tp, err := newTestProxy(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername,
+		pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -79,18 +80,18 @@ func TestProxyListening(t *testing.T) {
 
 	sm := store.NewKVBackedStore(tstore.store, storePath)
 
-	cd := &cluster.ClusterData{
+	cd := &cluster.Data{
 		FormatVersion: cluster.CurrentCDFormatVersion,
 		Cluster: &cluster.Cluster{
 			UID:        "01",
 			Generation: 1,
-			Spec: &cluster.ClusterSpec{
-				InitMode:     cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+			Spec: &cluster.Spec{
+				InitMode:     &newCluster,
 				FailInterval: &cluster.Duration{Duration: 10 * time.Second},
 			},
-			Status: cluster.ClusterStatus{
+			Status: cluster.Status{
 				CurrentGeneration: 1,
-				Phase:             cluster.ClusterPhaseNormal,
+				Phase:             cluster.Normal,
 				Master:            "01",
 			},
 		},
@@ -110,7 +111,7 @@ func TestProxyListening(t *testing.T) {
 				ChangeTime: time.Time{},
 				Spec: &cluster.DBSpec{
 					KeeperUID: "01",
-					Role:      common.RoleMaster,
+					Role:      common.RolePrimary,
 					Followers: []string{"02"},
 				},
 				Status: cluster.DBStatus{

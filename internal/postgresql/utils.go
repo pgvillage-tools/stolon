@@ -14,9 +14,13 @@
 
 package postgresql
 
+// TODO: implement context properly
+
 import (
 	"bufio"
 	"context"
+
+	// TODO: replace with jackc
 	"database/sql"
 	"errors"
 	"fmt"
@@ -37,13 +41,27 @@ import (
 )
 
 const (
-	// TODO(sgotti) for now we assume wal size is the default 16MiB size
-	WalSegSize = (16 * 1024 * 1024) // 16MiB
+	// TODO: can we autodetect if this is non-default?
+	walSegSize = (16 * 1024 * 1024) // 16MiB
 	globalDB   = "postgres"
+
+	urwx = 0o700
+	urw  = 0o600
+
+	logCmd = "cmd"
+
+	base16    = 16
+	base10    = 10
+	bitSize32 = 32
+	bitSize64 = 64
+
+	historyTimelineStringLength  = 4
+	fileNameTimelineStringLength = 8
+	walNameLength                = 24
 )
 
 var (
-	ValidReplSlotName = regexp.MustCompile("^[a-z0-9_]+$")
+	validReplSlotName = regexp.MustCompile("^[a-z0-9_]+$")
 )
 
 func handledDbClose(db *sql.DB) {
@@ -77,11 +95,11 @@ func handledFileRemove(fh *os.File) {
 	handledFileClose(fh)
 }
 
-func dbExec(ctx context.Context, db *sql.DB, query string, args ...interface{}) (sql.Result, error) {
+func dbExec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Result, error) {
 	return db.ExecContext(ctx, query, args...)
 }
 
-func query(ctx context.Context, db *sql.DB, query string, args ...interface{}) (*sql.Rows, error) {
+func query(ctx context.Context, db *sql.DB, query string, args ...any) (*sql.Rows, error) {
 	return db.QueryContext(ctx, query, args...)
 }
 
@@ -117,7 +135,11 @@ func setPassword(ctx context.Context, connParams ConnParams, username, password 
 		return err
 	}
 
-	query = fmt.Sprintf("alter role %s with encrypted password %s", pq.QuoteIdentifier(username), pq.QuoteLiteral(password))
+	query = fmt.Sprintf(
+		"alter role %s with encrypted password %s",
+		pq.QuoteIdentifier(username),
+		pq.QuoteLiteral(password),
+	)
 	if _, err = tx.ExecContext(ctx, query); err != nil {
 		_ = tx.Rollback()
 		return err
@@ -125,7 +147,9 @@ func setPassword(ctx context.Context, connParams ConnParams, username, password 
 	return tx.Commit()
 }
 
-func createRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
+// TODO: remove _ parameters
+
+func createRole(ctx context.Context, connParams ConnParams, _ []string, username, password string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -143,7 +167,11 @@ func createRole(ctx context.Context, connParams ConnParams, roles []string, user
 		return err
 	}
 
-	query = fmt.Sprintf("create role %s with login replication encrypted password %s", pq.QuoteIdentifier(username), pq.QuoteLiteral(password))
+	query = fmt.Sprintf(
+		"create role %s with login replication encrypted password %s",
+		pq.QuoteIdentifier(username),
+		pq.QuoteLiteral(password),
+	)
 	if _, err = tx.ExecContext(ctx, query); err != nil {
 		_ = tx.Rollback()
 		return err
@@ -151,7 +179,7 @@ func createRole(ctx context.Context, connParams ConnParams, roles []string, user
 	return tx.Commit()
 }
 
-func createPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
+func createPasswordlessRole(ctx context.Context, connParams ConnParams, _ []string, username string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -162,7 +190,7 @@ func createPasswordlessRole(ctx context.Context, connParams ConnParams, roles []
 	return err
 }
 
-func alterRole(ctx context.Context, connParams ConnParams, roles []string, username, password string) error {
+func alterRole(ctx context.Context, connParams ConnParams, _ []string, username, password string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -180,7 +208,11 @@ func alterRole(ctx context.Context, connParams ConnParams, roles []string, usern
 		return err
 	}
 
-	query = fmt.Sprintf("alter role %s with login replication encrypted password %s", pq.QuoteIdentifier(username), pq.QuoteLiteral(password))
+	query = fmt.Sprintf(
+		"alter role %s with login replication encrypted password %s",
+		pq.QuoteIdentifier(username),
+		pq.QuoteLiteral(password),
+	)
 	if _, err = tx.ExecContext(ctx, query); err != nil {
 		_ = tx.Rollback()
 		return err
@@ -188,7 +220,7 @@ func alterRole(ctx context.Context, connParams ConnParams, roles []string, usern
 	return tx.Commit()
 }
 
-func alterPasswordlessRole(ctx context.Context, connParams ConnParams, roles []string, username string) error {
+func alterPasswordlessRole(ctx context.Context, connParams ConnParams, _ []string, username string) error {
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
 		return err
@@ -283,23 +315,25 @@ func getSyncStandbys(ctx context.Context, connParams ConnParams) ([]string, erro
 	return syncStandbys, nil
 }
 
+// PGLsnToInt will return an uint64 representing an absolute byte in the WAL stream
 func PGLsnToInt(lsn string) (uint64, error) {
 	parts := strings.Split(lsn, "/")
 	if len(parts) != 2 {
 		return 0, fmt.Errorf("bad pg_lsn: %s", lsn)
 	}
-	a, err := strconv.ParseUint(parts[0], 16, 32)
+	a, err := strconv.ParseUint(parts[0], base16, bitSize32)
 	if err != nil {
 		return 0, err
 	}
-	b, err := strconv.ParseUint(parts[1], 16, 32)
+	b, err := strconv.ParseUint(parts[1], base16, bitSize32)
 	if err != nil {
 		return 0, err
 	}
-	v := uint64(a)<<32 | b
+	v := uint64(a)<<bitSize32 | b
 	return v, nil
 }
 
+// GetSystemData returns the postgreSQL system data (IDENTIFY_SYSTEM)
 func GetSystemData(ctx context.Context, replConnParams ConnParams) (*SystemData, error) {
 	// Add "replication=1" connection option
 	replConnParams["replication"] = "1"
@@ -327,7 +361,7 @@ func GetSystemData(ctx context.Context, replConnParams ConnParams) (*SystemData,
 		}
 		return &sd, nil
 	}
-	return nil, fmt.Errorf("query returned 0 rows")
+	return nil, errors.New("query returned 0 rows")
 }
 
 func parseTimelinesHistory(contents string) ([]*TimelineHistory, error) {
@@ -342,9 +376,9 @@ func parseTimelinesHistory(contents string) ([]*TimelineHistory, error) {
 
 	for scanner.Scan() {
 		m := regex.FindStringSubmatch(scanner.Text())
-		if len(m) == 4 {
+		if len(m) == historyTimelineStringLength {
 			var tlh TimelineHistory
-			if tlh.TimelineID, err = strconv.ParseUint(m[1], 10, 64); err != nil {
+			if tlh.TimelineID, err = strconv.ParseUint(m[1], base10, bitSize64); err != nil {
 				return nil, fmt.Errorf("cannot parse timelineID in timeline history line %q: %v", scanner.Text(), err)
 			}
 			if tlh.SwitchPoint, err = PGLsnToInt(m[2]); err != nil {
@@ -383,11 +417,12 @@ func getTimelinesHistory(ctx context.Context, timeline uint64, replConnParams Co
 		}
 		return tlsh, nil
 	}
-	return nil, fmt.Errorf("query returned 0 rows")
+	return nil, errors.New("query returned 0 rows")
 }
 
+// IsValidReplSlotName validates if a string can be used as a name for a replication slot
 func IsValidReplSlotName(name string) bool {
-	return ValidReplSlotName.MatchString(name)
+	return validReplSlotName.MatchString(name)
 }
 
 func fileExists(path string) (bool, error) {
@@ -424,9 +459,17 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 	}
 	defer handledDbClose(db)
 
-	// We prefer pg_file_settings since pg_settings returns archive_command = '(disabled)' when archive_mode is off so we'll lose its value
+	// We prefer pg_file_settings since pg_settings returns archive_command = '(disabled)'
+	// when archive_mode is off so we'll lose its value
 	// Check if pg_file_settings exists (pg >= 9.5)
-	rows, err := query(ctx, db, "select 1 from information_schema.tables where table_schema = 'pg_catalog' and table_name = 'pg_file_settings'")
+	rows, err := query(
+		ctx,
+		db,
+		strings.Join([]string{
+			"select 1 from information_schema.tables",
+			"where table_schema = 'pg_catalog' ",
+			"and table_name = 'pg_file_settings'",
+		}, "\n"))
 	if err != nil {
 		return nil, err
 	}
@@ -435,17 +478,25 @@ func getConfigFilePGParameters(ctx context.Context, connParams ConnParams) (comm
 	for rows.Next() {
 		c++
 	}
-	use_pg_file_settings := false
+	usePGFileSettings := false
 	if c > 0 {
-		use_pg_file_settings = true
+		usePGFileSettings = true
 	}
 
-	if use_pg_file_settings {
+	if usePGFileSettings {
 		// NOTE If some pg_parameters that cannot be changed without a restart
 		// are removed from the postgresql.conf file the view will contain some
 		// rows with null name and setting and the error field set to the cause.
 		// So we have to filter out these or the Scan will fail.
-		rows, err = query(ctx, db, "select name, setting from pg_file_settings where name IS NOT NULL and setting IS NOT NULL")
+		rows, err = query(
+			ctx,
+			db,
+			strings.Join([]string{
+				"select name, setting",
+				"from pg_file_settings",
+				"where name IS NOT NULL",
+				"and setting IS NOT NULL",
+			}, "\n"))
 		if err != nil {
 			return nil, err
 		}
@@ -500,7 +551,11 @@ func isRestartRequiredUsingPendingRestart(ctx context.Context, connParams ConnPa
 	return isRestartRequired, nil
 }
 
-func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams ConnParams, changedParams []string) (bool, error) {
+func isRestartRequiredUsingPgSettingsContext(
+	_ context.Context,
+	connParams ConnParams,
+	changedParams []string,
+) (bool, error) {
 	isRestartRequired := false
 	db, err := sql.Open(globalDB, connParams.ConnString())
 	if err != nil {
@@ -528,9 +583,10 @@ func isRestartRequiredUsingPgSettingsContext(ctx context.Context, connParams Con
 	return isRestartRequired, nil
 }
 
+// IsWalFileName checks if a file name is the name of a WAL file
 func IsWalFileName(name string) bool {
 	walChars := "0123456789ABCDEF"
-	if len(name) != 24 {
+	if len(name) != walNameLength {
 		return false
 	}
 	for _, c := range name {
@@ -547,19 +603,21 @@ func IsWalFileName(name string) bool {
 	return true
 }
 
-func XlogPosToWalFileNameNoTimeline(XLogPos uint64) string {
-	id := uint32(XLogPos >> 32)
-	offset := uint32(XLogPos)
+// XlogPosToWalFileNameNoTimeline can be used to convert a WAL location to a WAL file name
+func XlogPosToWalFileNameNoTimeline(xLogPos uint64) string {
+	id := uint32(xLogPos >> bitSize32)
+	offset := uint32(xLogPos)
 	// TODO(sgotti) for now we assume wal size is the default 16M size
-	seg := offset / WalSegSize
+	seg := offset / walSegSize
 	return fmt.Sprintf("%08X%08X", id, seg)
 }
 
+// WalFileNameNoTimeLine returns the absolute byte from a WAL stream that a WAL file belongs to
 func WalFileNameNoTimeLine(name string) (string, error) {
 	if !IsWalFileName(name) {
-		return "", fmt.Errorf("bad wal file name")
+		return "", errors.New("bad wal file name")
 	}
-	return name[8:24], nil
+	return name[fileNameTimelineStringLength:walNameLength], nil
 }
 
 func moveFile(sourcePath, destPath string) error {
@@ -619,20 +677,20 @@ func moveDirRecursive(src string, dest string) (err error) {
 	if entries, err = os.ReadDir(src); err != nil {
 		log.Errorf("could not read contents of folder %s: %e", src, err)
 		return err
-	} else {
-		for _, entry := range entries {
-			srcEntry := filepath.Join(src, entry.Name())
-			dstEntry := filepath.Join(dest, entry.Name())
-			if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
-				return err
-			}
+	}
+	for _, entry := range entries {
+		srcEntry := filepath.Join(src, entry.Name())
+		dstEntry := filepath.Join(dest, entry.Name())
+		if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
+			return err
 		}
 	}
+
 	// Remove this folder, which is now supposedly empty
 	if err := syscall.Rmdir(src); err != nil {
 		log.Errorf("could not remove folder %s: %e", src, err)
 		// If this is a mountpoint or you don't have enough permissions, you might nog be able to. But that is fine.
-		//return err
+		// return err
 	}
 	return nil
 }

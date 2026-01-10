@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package postgresql has all stolon specific postgresql code
 package postgresql
 
 import (
@@ -73,7 +75,7 @@ func pgDataVersion(dataDir string) (*semver.Version, error) {
 func binaryVersion(binPath string) (*semver.Version, error) {
 	name := filepath.Join(binPath, "postgres")
 	cmd := exec.Command(name, "-V")
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw("execing cmd", logCmd, cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, output: %s", err, string(out))
