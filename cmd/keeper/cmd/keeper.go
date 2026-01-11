@@ -75,11 +75,13 @@ const (
 	connParamDbName   = "dbname"
 	connParamSslMode  = "sslmode"
 
-	conTypeHost         = "host"
-	conTypeHostSsl      = "hostssl"
-	conTypeHostNoSsl    = "hostnossl"
-	conTypeHostGssEnc   = "hostgssenc"
-	conTypeHostNoGssEnc = "hostnogssenc"
+	connTypeHost         = "host"
+	connTypeHostSsl      = "hostssl"
+	connTypeHostNoSsl    = "hostnossl"
+	connTypeHostGssEnc   = "hostgssenc"
+	connTypeHostNoGssEnc = "hostnogssenc"
+
+	defaultDatabase = "postgres"
 )
 
 // CmdKeeper exports the main keeper process
@@ -173,14 +175,14 @@ func init() {
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgPort, "pg-port", "5432", "postgresql instance listening port")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgAdvertisePort, "pg-advertise-port", "", "postgresql instance port from outside. Use it to expose port different than local port with a PAT networking config")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgBinPath, "pg-bin-path", "", "absolute path to postgresql binaries. If empty they will be searched in the current PATH")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplConnType, "pg-repl-connection-type", conTypeHost, "postgres replication user connection type. Default is host.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplConnType, "pg-repl-connection-type", connTypeHost, "postgres replication user connection type. Default is host.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplAuthMethod, "pg-repl-auth-method", authMd5, "postgres replication user auth method. Default is authMd5.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplLocalAuthMethod, "pg-repl-local-auth-method", "", "postgres replication user auth method. Default is same as pg-repl-auth-method.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplSslMode, "pg-repl-ssl-mode", "prefer", "postgres replication user ssl-mode. Default is prefer.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplUsername, "pg-repl-username", "", "postgres replication user name. Required. It'll be created on db initialization. Must be the same for all keepers.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplPassword, "pg-repl-password", "", "postgres replication user password. Only one of --pg-repl-password or --pg-repl-passwordfile must be provided. Must be the same for all keepers.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgReplPasswordFile, "pg-repl-passwordfile", "", "postgres replication user password file. Only one of --pg-repl-password or --pg-repl-passwordfile must be provided. Must be the same for all keepers.")
-	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUConnType, "pg-su-connection-type", conTypeHost, "postgres superuser connection type. Default is host.")
+	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUConnType, "pg-su-connection-type", connTypeHost, "postgres superuser connection type. Default is host.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUAuthMethod, "pg-su-auth-method", authMd5, "postgres superuser auth method. Default is authMd5.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSULocalAuthMethod, "pg-su-local-auth-method", "", "postgres superuser auth method. Default is same as pg-su-auth-method.")
 	CmdKeeper.PersistentFlags().StringVar(&cfg.pgSUUsername, "pg-su-username", "", "postgres superuser user name. Used for keeper managed instance access and pg_rewind based synchronization. It'll be created on db initialization. Defaults to the name of the effective user running stolon-keeper. Must be the same for all keepers.")
@@ -340,21 +342,21 @@ func (p *PostgresKeeper) mandatoryPGParameters(db *cluster.DB) common.Parameters
 }
 
 func (p *PostgresKeeper) getSUConnParams(db, followedDB *cluster.DB) pg.ConnParams {
-	cp := pg.ConnParams{
-		connParamUser:    p.pgSUUsername,
-		connParamHost:    followedDB.Status.ListenAddress,
-		connParamPort:    followedDB.Status.Port,
-		connParamAppName: common.StolonName(db.UID),
-		connParamDbName:  "postgres",
+	cp := pg.ConnParams{}.
+		WithUser(p.pgSUUsername).
+		WithHost(followedDB.Status.ListenAddress).
+		WithSPort(followedDB.Status.Port).
+		WithAppName(common.StolonName(db.UID)).
+		WithDbName(defaultDatabase).
 		// This is currently only used for pgRewind, which requires a SU (repluser might not be enough).
 		// Pgrewind is the only feature using SU over remote connection
 		// and with that the only type using SU with sslmode.
 		// Therefore we have skipped extra config option for sslmode for SU,
 		// and reuse config for sslmode for repl user instead.
-		connParamSslMode: p.pgReplSslMode,
-	}
+		WithSSLMode(p.pgReplSslMode)
+
 	if p.pgSUAuthMethod == authMd5 {
-		cp.Set(connParamPassword, p.pgSUPassword)
+		cp = cp.WithPassword(p.pgSUPassword)
 	}
 	return cp
 }
@@ -367,35 +369,33 @@ func (p *PostgresKeeper) getReplConnParams(db, followedDB *cluster.DB) pg.ConnPa
 		WithAppName(common.StolonName(db.UID)).
 		WithSSLMode("prefer")
 	if p.pgReplAuthMethod == authMd5 {
-		cp.Set(connParamPassword, p.pgReplPassword)
+		cp = cp.WithPassword(p.pgReplPassword)
 	}
 	return cp
 }
 
 func (p *PostgresKeeper) getLocalConnParams() pg.ConnParams {
-	cp := pg.ConnParams{
-		connParamUser:   p.pgSUUsername,
-		connParamHost:   common.PgUnixSocketDirectories,
-		connParamPort:   p.pgPort,
-		connParamDbName: "postgres",
+	cp := pg.ConnParams{}.
+		WithUser(p.pgSUUsername).
+		WithHost(common.PgUnixSocketDirectories).
+		WithSPort(p.pgPort).
+		WithDbName(defaultDatabase)
 		// no sslmode defined since it's not needed and supported over unix sockets
-	}
 	if p.pgSUAuthMethod == authMd5 {
-		cp.Set(connParamPassword, p.pgSUPassword)
+		cp = cp.WithPassword(p.pgSUPassword)
 	}
 	return cp
 }
 
 func (p *PostgresKeeper) getLocalReplConnParams() pg.ConnParams {
-	cp := pg.ConnParams{
-		connParamUser:     p.pgReplUsername,
-		connParamPassword: p.pgReplPassword,
-		connParamHost:     common.PgUnixSocketDirectories,
-		connParamPort:     p.pgPort,
+	cp := pg.ConnParams{}.
+		WithUser(p.pgReplUsername).
+		WithHost(common.PgUnixSocketDirectories).
+		WithSPort(p.pgPort)
 		// no sslmode defined since it's not needed and supported over unix sockets
-	}
+
 	if p.pgReplAuthMethod == authMd5 {
-		cp.Set(connParamPassword, p.pgReplPassword)
+		cp = cp.WithPassword(p.pgReplPassword)
 	}
 	return cp
 }
@@ -2137,11 +2137,11 @@ func keeper(c *cobra.Command, _ []string) {
 	validAuthMethods[authIdent] = struct{}{}
 	validAuthMethods[authPeer] = struct{}{}
 	validConnectionTypes := map[string]struct{}{}
-	validConnectionTypes[conTypeHost] = struct{}{}
-	validConnectionTypes[conTypeHostSsl] = struct{}{}
-	validConnectionTypes[conTypeHostNoSsl] = struct{}{}
-	validConnectionTypes[conTypeHostGssEnc] = struct{}{}
-	validConnectionTypes[conTypeHostNoGssEnc] = struct{}{}
+	validConnectionTypes[connTypeHost] = struct{}{}
+	validConnectionTypes[connTypeHostSsl] = struct{}{}
+	validConnectionTypes[connTypeHostNoSsl] = struct{}{}
+	validConnectionTypes[connTypeHostGssEnc] = struct{}{}
+	validConnectionTypes[connTypeHostNoGssEnc] = struct{}{}
 	switch cfg.LogLevel {
 	case "error":
 		slog.SetLevel(zap.ErrorLevel)

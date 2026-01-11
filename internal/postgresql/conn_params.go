@@ -244,6 +244,13 @@ func (cp ConnParams) WithHost(hostName string) ConnParams {
 	return q
 }
 
+// WithDbName returns a clone with the host fields set to the specified hostName
+func (cp ConnParams) WithDbName(dbName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyDbName] = dbName
+	return q
+}
+
 // WithPort returns a clone with the port fields set as specified
 func (cp ConnParams) WithPort(port uint) ConnParams {
 	return cp.WithSPort(fmt.Sprintf("%d", port))
@@ -267,5 +274,12 @@ func (cp ConnParams) WithAppName(appName string) ConnParams {
 func (cp ConnParams) WithSSLMode(sslMode string) ConnParams {
 	q := maps.Clone(cp)
 	q[ConnParamKeySSLMode] = sslMode
+	return q
+}
+
+// WithPassword returns a clone with the password field set as specified
+func (cp ConnParams) WithPassword(password string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyPassword] = password
 	return q
 }
