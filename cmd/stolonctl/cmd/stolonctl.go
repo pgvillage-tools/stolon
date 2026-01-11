@@ -33,11 +33,12 @@ const (
 	maxRetries = 3
 )
 
+// CmdStolonCtl defines a cobra command to execute when running stolonctl
 var CmdStolonCtl = &cobra.Command{
 	Use:     "stolonctl",
 	Short:   "stolon command line client",
 	Version: cmd.Version,
-	PersistentPreRun: func(c *cobra.Command, args []string) {
+	PersistentPreRun: func(c *cobra.Command, _ []string) {
 		if c.Name() != "stolonctl" && c.Name() != "version" {
 			if err := cmd.CheckCommonConfig(&cfg.CommonConfig); err != nil {
 				die("%s", err.Error())
@@ -45,7 +46,7 @@ var CmdStolonCtl = &cobra.Command{
 		}
 	},
 	// just defined to make --version work
-	Run: func(c *cobra.Command, args []string) { _ = c.Help() },
+	Run: func(c *cobra.Command, _ []string) { _ = c.Help() },
 }
 
 type config struct {
@@ -60,8 +61,10 @@ func init() {
 }
 
 var cmdVersion = &cobra.Command{
-	Use:   "version",
-	Run:   versionCommand,
+	Use: "version",
+	Run: func(_ *cobra.Command, _ []string) {
+		stdout("stolonctl version %s", cmd.Version)
+	},
 	Short: "Display the version",
 }
 
@@ -69,10 +72,7 @@ func init() {
 	CmdStolonCtl.AddCommand(cmdVersion)
 }
 
-func versionCommand(c *cobra.Command, args []string) {
-	stdout("stolonctl version %s", cmd.Version)
-}
-
+// Execute is run when stolonctl is executed
 func Execute() {
 	if err := flagutil.SetFlagsFromEnv(CmdStolonCtl.PersistentFlags(), "STOLONCTL"); err != nil {
 		log.Fatal(err)
@@ -82,24 +82,24 @@ func Execute() {
 	}
 }
 
-func stderr(format string, a ...interface{}) {
+func stderr(format string, a ...any) {
 	out := fmt.Sprintf(format, a...)
 	fmt.Fprintln(os.Stderr, strings.TrimSuffix(out, "\n"))
 }
 
-func stdout(format string, a ...interface{}) {
+func stdout(format string, a ...any) {
 	out := fmt.Sprintf(format, a...)
 	if _, err := fmt.Fprintln(os.Stdout, strings.TrimSuffix(out, "\n")); err != nil {
 		log.Fatalf("failed to write to stdout: %v", err)
 	}
 }
 
-func die(format string, a ...interface{}) {
+func die(format string, a ...any) {
 	stderr(format, a...)
 	os.Exit(1)
 }
 
-func getClusterData(e store.Store) (*cluster.ClusterData, *store.KVPair, error) {
+func getClusterData(e store.Store) (*cluster.Data, *store.KVPair, error) {
 	cd, pair, err := e.GetClusterData(context.TODO())
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot get cluster data: %v", err)

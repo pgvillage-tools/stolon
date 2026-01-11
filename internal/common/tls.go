@@ -21,6 +21,7 @@ import (
 	"os"
 )
 
+// NewTLSConfig returns a freshly initialized TLSConfig resource
 func NewTLSConfig(certFile, keyFile, caFile string, insecureSkipVerify bool) (*tls.Config, error) {
 	tlsConfig := tls.Config{}
 

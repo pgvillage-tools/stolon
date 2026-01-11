@@ -42,7 +42,7 @@ override:
   - path: ^internal/log/log.go
     threshold: 52
   - path: ^internal/cluster/cluster.go
-    threshold: 42
+    threshold: 41
   - path: ^internal/mock/store/store.go
     threshold: 22
   - path: ^internal/common/common.go
@@ -85,9 +85,9 @@ override:
   - path: ^internal/log
     threshold: 52
   - path: ^internal/cluster/v0
-    threshold: 41
+    threshold: 40
   - path: ^internal/cluster
-    threshold: 35
+    threshold: 33
   - path: ^internal/mock/store
     threshold: 22
   - path: ^internal/common

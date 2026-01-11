@@ -32,6 +32,7 @@ var cmdInit = &cobra.Command{
 	Short: "Initialize a new cluster",
 }
 
+// InitOptions is a struct which can contain initiation options
 type InitOptions struct {
 	file     string
 	forceYes bool
@@ -46,7 +47,7 @@ func init() {
 	CmdStolonCtl.AddCommand(cmdInit)
 }
 
-func initCluster(cmd *cobra.Command, args []string) {
+func initCluster(_ *cobra.Command, args []string) {
 	if len(args) > 1 {
 		die("too many arguments")
 	}
@@ -106,15 +107,16 @@ func initCluster(cmd *cobra.Command, args []string) {
 		die("cannot get cluster data: %v", err)
 	}
 
-	var cs *cluster.ClusterSpec
+	var cs *cluster.Spec
 	if dataSupplied {
 		if err := json.Unmarshal(data, &cs); err != nil {
 			die("failed to unmarshal cluster spec: %v", err)
 		}
 	} else {
 		// Define a new cluster spec with initMode "new"
-		cs = &cluster.ClusterSpec{}
-		cs.InitMode = cluster.ClusterInitModeP(cluster.ClusterInitModeNew)
+		cs = &cluster.Spec{}
+		newCluster := cluster.New
+		cs.InitMode = &newCluster
 	}
 
 	if err := cs.Validate(); err != nil {

@@ -43,30 +43,32 @@ type updateOptions struct {
 var updateOpts updateOptions
 
 func init() {
-	cmdUpdate.PersistentFlags().BoolVarP(&updateOpts.patch, "patch", "p", false, "patch the current cluster specification instead of replacing it")
-	cmdUpdate.PersistentFlags().StringVarP(&updateOpts.file, "file", "f", "", "file containing a complete cluster specification or a patch to apply to the current cluster specification")
+	cmdUpdate.PersistentFlags().BoolVarP(&updateOpts.patch, "patch", "p", false,
+		"patch the current cluster specification instead of replacing it")
+	cmdUpdate.PersistentFlags().StringVarP(&updateOpts.file, "file", "f", "",
+		"file containing a complete cluster specification or a patch to apply to the current cluster specification")
 
 	CmdStolonCtl.AddCommand(cmdUpdate)
 }
 
-func patchClusterSpec(cs *cluster.ClusterSpec, p []byte) (*cluster.ClusterSpec, error) {
+func patchClusterSpec(cs *cluster.Spec, p []byte) (*cluster.Spec, error) {
 	csj, err := json.Marshal(cs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal cluster spec: %v", err)
 	}
 
-	newcsj, err := strategicpatch.StrategicMergePatch(csj, p, &cluster.ClusterSpec{})
+	newcsj, err := strategicpatch.StrategicMergePatch(csj, p, &cluster.Spec{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge patch cluster spec: %v", err)
 	}
-	var newcs *cluster.ClusterSpec
+	var newcs *cluster.Spec
 	if err := json.Unmarshal(newcsj, &newcs); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal patched cluster spec: %v", err)
 	}
 	return newcs, nil
 }
 
-func update(cmd *cobra.Command, args []string) {
+func update(_ *cobra.Command, args []string) {
 	if len(args) > 1 {
 		die("too many arguments")
 	}
@@ -113,7 +115,7 @@ func update(cmd *cobra.Command, args []string) {
 			die("no cluster spec available")
 		}
 
-		var newcs *cluster.ClusterSpec
+		var newcs *cluster.Spec
 		if updateOpts.patch {
 			newcs, err = patchClusterSpec(cd.Cluster.Spec, data)
 			if err != nil {

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package timer is used as a generic interface for time and timing operations
 package timer
 
 import "time"

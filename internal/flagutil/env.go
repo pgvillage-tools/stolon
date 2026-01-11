@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package flagutil implements all commandline flags
 package flagutil
 
 import (
@@ -29,7 +30,7 @@ import (
 // variables additionally are prefixed by the given string followed by
 // and underscore. For example, if prefix=PREFIX: some-flag => PREFIX_SOME_FLAG
 func SetFlagsFromEnv(fs *flag.FlagSet, prefix string) (err error) {
-	alreadySet := make(map[string]bool)
+	alreadySet := map[string]bool{}
 	fs.Visit(func(f *flag.Flag) {
 		alreadySet[f.Name] = true
 	})

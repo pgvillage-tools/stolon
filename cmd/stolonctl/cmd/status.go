@@ -29,23 +29,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	tabWidth = 8
+)
+
 var cmdStatus = &cobra.Command{
 	Use:   "status",
 	Run:   status,
 	Short: "Display the current cluster status",
 }
 
-type StatusOptions struct {
+var statusOpts struct {
 	Format string
 }
-
-var statusOpts StatusOptions
 
 func init() {
 	cmdStatus.PersistentFlags().StringVarP(&statusOpts.Format, "format", "f", "", "output format")
 	CmdStolonCtl.AddCommand(cmdStatus)
 }
 
+// Status stores that state of all se3ntinels, proxies, keepers and the cluster
 type Status struct {
 	Sentinels []SentinelStatus `json:"sentinels"`
 	Proxies   []ProxyStatus    `json:"proxies"`
@@ -53,16 +56,19 @@ type Status struct {
 	Cluster   ClusterStatus    `json:"cluster"`
 }
 
+// SentinelStatus stores the status of the Sentinel
 type SentinelStatus struct {
 	UID    string `json:"uid"`
 	Leader bool   `json:"leader"`
 }
 
+// ProxyStatus stores the status of the Proxy
 type ProxyStatus struct {
 	UID        string `json:"uid"`
 	Generation int64  `json:"generation"`
 }
 
+// KeeperStatus stores the status of the Keeper
 type KeeperStatus struct {
 	UID                 string `json:"uid"`
 	ListenAddress       string `json:"listen_address"`
@@ -72,13 +78,14 @@ type KeeperStatus struct {
 	PgCurrentGeneration int64  `json:"pg_current_generation"`
 }
 
+// ClusterStatus stores the status of the CLuster
 type ClusterStatus struct {
 	Available       bool   `json:"available"`
 	MasterKeeperUID string `json:"master_keeper_uid"`
 	MasterDBUID     string `json:"master_db_uid"`
 }
 
-func status(cmd *cobra.Command, args []string) {
+func status(_ *cobra.Command, _ []string) {
 	status, generateErr := generateStatus()
 	switch statusOpts.Format {
 	case "json":
@@ -100,7 +107,7 @@ func renderJSON(status Status, generateErr error) {
 	}
 }
 
-func marshalJSON(value interface{}) {
+func marshalJSON(value any) {
 	output, err := json.MarshalIndent(value, "", "\t")
 	if err != nil {
 		die("failed to marshal error: %v", err)
@@ -125,7 +132,7 @@ func renderText(status Status, generateErr error) {
 	}
 
 	tabOut := new(tabwriter.Writer)
-	tabOut.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	tabOut.Init(os.Stdout, 0, tabWidth, 1, '\t', 0)
 
 	stdout("=== Active sentinels ===")
 	stdout("")
@@ -161,7 +168,16 @@ func renderText(status Status, generateErr error) {
 	} else {
 		tabPrint(tabOut, "UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
 		for _, k := range status.Keepers {
-			tabPrint(tabOut, "%s\t%t\t%s\t%t\t%d\t%d\t\n", k.UID, k.Healthy, k.ListenAddress, k.PgHealthy, k.PgWantedGeneration, k.PgCurrentGeneration)
+			tabPrint(
+				tabOut,
+				"%s\t%t\t%s\t%t\t%d\t%d\t\n",
+				k.UID,
+				k.Healthy,
+				k.ListenAddress,
+				k.PgHealthy,
+				k.PgWantedGeneration,
+				k.PgCurrentGeneration,
+			)
 			tabFlush(tabOut)
 		}
 	}
@@ -197,7 +213,7 @@ func renderText(status Status, generateErr error) {
 	stdout("")
 }
 
-func printTree(dbuid string, cd *cluster.ClusterData, level int, prefix string, tail bool) {
+func printTree(dbuid string, cd *cluster.Data, level int, prefix string, tail bool) {
 	// skip not existing db: specified as a follower but not available in the
 	// cluster spec (this should happen only when doing a stolonctl
 	// removekeeper)
@@ -245,7 +261,7 @@ func printTree(dbuid string, cd *cluster.ClusterData, level int, prefix string, 
 func generateStatus() (Status, error) {
 	status := Status{}
 	tabOut := new(tabwriter.Writer)
-	tabOut.Init(os.Stdout, 0, 8, 1, '\t', 0)
+	tabOut.Init(os.Stdout, 0, tabWidth, 1, '\t', 0)
 
 	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
 	if err != nil {
@@ -267,7 +283,7 @@ func generateStatus() (Status, error) {
 		return status, err
 	}
 
-	sentinels := make([]SentinelStatus, 0)
+	sentinels := []SentinelStatus{}
 	sort.Sort(sentinelsInfo)
 	for _, si := range sentinelsInfo {
 		leader := lsid != "" && si.UID == lsid
@@ -281,7 +297,7 @@ func generateStatus() (Status, error) {
 	}
 	proxiesInfoSlice := proxiesInfo.ToSlice()
 
-	proxies := make([]ProxyStatus, 0)
+	proxies := []ProxyStatus{}
 	sort.Sort(proxiesInfoSlice)
 	for _, pi := range proxiesInfoSlice {
 		proxies = append(proxies, ProxyStatus{UID: pi.UID, Generation: pi.Generation})
@@ -293,7 +309,7 @@ func generateStatus() (Status, error) {
 		return status, err
 	}
 
-	keepers := make([]KeeperStatus, 0)
+	keepers := []KeeperStatus{}
 	kssKeys := cd.Keepers.SortedKeys()
 	for _, kuid := range kssKeys {
 		k := cd.Keepers[kuid]
@@ -326,19 +342,19 @@ func generateStatus() (Status, error) {
 	}
 	status.Keepers = keepers
 
-	cluster := ClusterStatus{}
+	clusterStatus := ClusterStatus{}
 	if cd.Cluster == nil || cd.DBs == nil {
-		cluster.Available = false
+		clusterStatus.Available = false
 	} else {
 		master := cd.Cluster.Status.Master
-		cluster.Available = true
+		clusterStatus.Available = true
 
 		if master != "" {
-			cluster.MasterDBUID = cd.DBs[master].UID
-			cluster.MasterKeeperUID = cd.Keepers[cd.DBs[master].Spec.KeeperUID].UID
+			clusterStatus.MasterDBUID = cd.DBs[master].UID
+			clusterStatus.MasterKeeperUID = cd.Keepers[cd.DBs[master].Spec.KeeperUID].UID
 		}
 	}
-	status.Cluster = cluster
+	status.Cluster = clusterStatus
 
 	return status, nil
 }

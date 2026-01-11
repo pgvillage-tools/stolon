@@ -40,6 +40,7 @@ import (
 
 var log = slog.S()
 
+// CmdProxy is the cobra command which defines running stolon-proxy
 var CmdProxy = &cobra.Command{
 	Use:     "stolon-proxy",
 	Run:     proxy,
@@ -204,7 +205,7 @@ func (c *ClusterChecker) sendPollonConfData(confData pollon.ConfData) {
 	}
 }
 
-// SetProxyInfo is funcion which sets the proxy-info
+// SetProxyInfo is function which sets the proxy-info
 func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTimeout time.Duration) error {
 	proxyInfo := &cluster.ProxyInfo{
 		InfoUID:      common.UID(),
@@ -214,10 +215,7 @@ func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTime
 	}
 	log.Debugf("proxyInfo dump: %s", spew.Sdump(proxyInfo))
 
-	if err := c.e.SetProxyInfo(context.TODO(), proxyInfo, 2*proxyTimeout); err != nil {
-		return err
-	}
-	return nil
+	return c.e.SetProxyInfo(context.TODO(), proxyInfo, 2*proxyTimeout)
 }
 
 // Check reads the cluster data and applies the right pollon configuration.

@@ -22,6 +22,7 @@ import (
 )
 
 func TestParseTimelineHistory(t *testing.T) {
+	const someHugeSwitchPoint = 83886224
 	tests := []struct {
 		contents string
 		tlsh     []*TimelineHistory
@@ -37,7 +38,7 @@ func TestParseTimelineHistory(t *testing.T) {
 			tlsh: []*TimelineHistory{
 				{
 					TimelineID:  1,
-					SwitchPoint: 83886224,
+					SwitchPoint: someHugeSwitchPoint,
 					Reason:      "no recovery target specified",
 				},
 			},
@@ -63,7 +64,6 @@ func TestParseTimelineHistory(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func TestValidReplSlotName(t *testing.T) {

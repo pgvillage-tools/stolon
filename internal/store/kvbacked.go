@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -33,13 +34,16 @@ import (
 	"github.com/sorintlab/stolon/internal/common"
 )
 
-// Backend represents a KV Store Backend
-type Backend string
+// BackendType represents a type of KV Store BackendType
+type BackendType string
 
 const (
-	CONSUL Backend = "consul"
-	ETCDV2 Backend = "etcdv2"
-	ETCDV3 Backend = "etcdv3"
+	// CONSUL means that consul is used as backend
+	CONSUL BackendType = "consul"
+	// ETCDV2 means that etcd is used as backend and that the v2 api is used
+	ETCDV2 BackendType = "etcdv2"
+	// ETCDV3 means that etcd is used as backend and that the v3 api is used
+	ETCDV3 BackendType = "etcdv3"
 )
 
 const (
@@ -50,20 +54,22 @@ const (
 )
 
 const (
-	DefaultEtcdEndpoints   = "http://127.0.0.1:2379"
+	// DefaultEtcdEndpoints defines the default endpoints when using etcd
+	DefaultEtcdEndpoints = "http://127.0.0.1:2379"
+	// DefaultConsulEndpoints defines the default endpoints when using consul
 	DefaultConsulEndpoints = "http://127.0.0.1:8500"
 )
 
-const (
-	//TODO(sgotti) fix this in libkv?
-	// consul min ttl is 10s and libkv divides this by 2
-	MinTTL = 20 * time.Second
-)
+// TODO(sgotti) fix this in libkv?
+// consul min ttl is 10s and libkv divides this by 2
+const minTTL = 20 * time.Second
+const dialTimeout = 20 * time.Second
 
-var URLSchemeRegexp = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9+-.]*)://`)
+var urlSchemeRegexp = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9+-.]*)://`)
 
+// Config defines the config to be used for the endpoint
 type Config struct {
-	Backend       Backend
+	Backend       BackendType
 	Endpoints     string
 	Timeout       time.Duration
 	BasePath      string
@@ -80,10 +86,12 @@ type KVPair struct {
 	LastIndex uint64
 }
 
+// WriteOptions defines options to be used when writing to the backend
 type WriteOptions struct {
 	TTL time.Duration
 }
 
+// KVStore is an interface representing a backend (e.a. etcd, k8s en Consul)
 type KVStore interface {
 	// Put a value at the specified key
 	Put(ctx context.Context, key string, value []byte, options *WriteOptions) error
@@ -104,6 +112,7 @@ type KVStore interface {
 	Close() error
 }
 
+// NewKVStore retruns a freshly initialized KVStore
 func NewKVStore(cfg Config) (KVStore, error) {
 	var kvBackend libkvstore.Backend
 	switch cfg.Backend {
@@ -136,7 +145,7 @@ func NewKVStore(cfg Config) (KVStore, error) {
 	var scheme string
 	for _, e := range endpoints {
 		var curscheme, addr string
-		if URLSchemeRegexp.Match([]byte(e)) {
+		if urlSchemeRegexp.Match([]byte(e)) {
 			u, err := url.Parse(e)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse endpoint %q: %v", e, err)
@@ -152,14 +161,14 @@ func NewKVStore(cfg Config) (KVStore, error) {
 			scheme = curscheme
 		}
 		if scheme != curscheme {
-			return nil, fmt.Errorf("all the endpoints must have the same scheme")
+			return nil, errors.New("all the endpoints must have the same scheme")
 		}
 		addrs = append(addrs, addr)
 	}
 
 	var tlsConfig *tls.Config
 	if scheme != "http" && scheme != "https" {
-		return nil, fmt.Errorf("endpoints scheme must be http or https")
+		return nil, errors.New("endpoints scheme must be http or https")
 	}
 	if scheme == "https" {
 		var err error
@@ -185,8 +194,8 @@ func NewKVStore(cfg Config) (KVStore, error) {
 		config := etcdclientv3.Config{
 			Endpoints:            addrs,
 			TLS:                  tlsConfig,
-			DialTimeout:          20 * time.Second,
-			DialKeepAliveTime:    1 * time.Second,
+			DialTimeout:          dialTimeout,
+			DialKeepAliveTime:    time.Second,
 			DialKeepAliveTimeout: cfg.Timeout,
 		}
 
@@ -200,11 +209,13 @@ func NewKVStore(cfg Config) (KVStore, error) {
 	}
 }
 
+// KVBackedStore defines a config store backed by a KV backend
 type KVBackedStore struct {
 	clusterPath string
 	store       KVStore
 }
 
+// NewKVBackedStore returns a freshly initialized KVBackedStore
 func NewKVBackedStore(kvStore KVStore, path string) *KVBackedStore {
 	return &KVBackedStore{
 		clusterPath: path,
@@ -212,7 +223,8 @@ func NewKVBackedStore(kvStore KVStore, path string) *KVBackedStore {
 	}
 }
 
-func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.ClusterData, previous *KVPair) (*KVPair, error) {
+// AtomicPutClusterData is an atomic way to store CLusterData to a kv store
+func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Data, previous *KVPair) (*KVPair, error) {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return nil, err
@@ -230,7 +242,8 @@ func (s *KVBackedStore) AtomicPutClusterData(ctx context.Context, cd *cluster.Cl
 	return s.store.AtomicPut(ctx, path, cdj, prev, nil)
 }
 
-func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.ClusterData) error {
+// PutClusterData stores ClusterData to a kv store
+func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.Data) error {
 	cdj, err := json.Marshal(cd)
 	if err != nil {
 		return err
@@ -239,8 +252,9 @@ func (s *KVBackedStore) PutClusterData(ctx context.Context, cd *cluster.ClusterD
 	return s.store.Put(ctx, path, cdj, nil)
 }
 
-func (s *KVBackedStore) GetClusterData(ctx context.Context) (*cluster.ClusterData, *KVPair, error) {
-	var cd *cluster.ClusterData
+// GetClusterData retrieves ClusterData from a kv store
+func (s *KVBackedStore) GetClusterData(ctx context.Context) (*cluster.Data, *KVPair, error) {
+	var cd *cluster.Data
 	path := filepath.Join(s.clusterPath, clusterDataFile)
 	pair, err := s.store.Get(ctx, path)
 	if err != nil {
@@ -255,17 +269,19 @@ func (s *KVBackedStore) GetClusterData(ctx context.Context) (*cluster.ClusterDat
 	return cd, pair, nil
 }
 
+// SetKeeperInfo stores keeper info to a kv store
 func (s *KVBackedStore) SetKeeperInfo(ctx context.Context, id string, ms *cluster.KeeperInfo, ttl time.Duration) error {
 	msj, err := json.Marshal(ms)
 	if err != nil {
 		return err
 	}
-	if ttl < MinTTL {
-		ttl = MinTTL
+	if ttl < minTTL {
+		ttl = minTTL
 	}
 	return s.store.Put(ctx, filepath.Join(s.clusterPath, keepersInfoDir, id), msj, &WriteOptions{TTL: ttl})
 }
 
+// GetKeepersInfo retrieves all keeper info from a kv store
 func (s *KVBackedStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo, error) {
 	keepers := cluster.KeepersInfo{}
 	pairs, err := s.store.List(ctx, filepath.Join(s.clusterPath, keepersInfoDir))
@@ -286,17 +302,19 @@ func (s *KVBackedStore) GetKeepersInfo(ctx context.Context) (cluster.KeepersInfo
 	return keepers, nil
 }
 
+// SetSentinelInfo stores info on a sentinel to the kv store
 func (s *KVBackedStore) SetSentinelInfo(ctx context.Context, si *cluster.SentinelInfo, ttl time.Duration) error {
 	sij, err := json.Marshal(si)
 	if err != nil {
 		return err
 	}
-	if ttl < MinTTL {
-		ttl = MinTTL
+	if ttl < minTTL {
+		ttl = minTTL
 	}
 	return s.store.Put(ctx, filepath.Join(s.clusterPath, sentinelsInfoDir, si.UID), sij, &WriteOptions{TTL: ttl})
 }
 
+// GetSentinelsInfo retrieves all sentinel info from a kv store
 func (s *KVBackedStore) GetSentinelsInfo(ctx context.Context) (cluster.SentinelsInfo, error) {
 	ssi := cluster.SentinelsInfo{}
 	pairs, err := s.store.List(ctx, filepath.Join(s.clusterPath, sentinelsInfoDir))
@@ -317,17 +335,19 @@ func (s *KVBackedStore) GetSentinelsInfo(ctx context.Context) (cluster.Sentinels
 	return ssi, nil
 }
 
+// SetProxyInfo stores info on a proxy to the kv store
 func (s *KVBackedStore) SetProxyInfo(ctx context.Context, pi *cluster.ProxyInfo, ttl time.Duration) error {
 	pij, err := json.Marshal(pi)
 	if err != nil {
 		return err
 	}
-	if ttl < MinTTL {
-		ttl = MinTTL
+	if ttl < minTTL {
+		ttl = minTTL
 	}
 	return s.store.Put(ctx, filepath.Join(s.clusterPath, proxiesInfoDir, pi.UID), pij, &WriteOptions{TTL: ttl})
 }
 
+// GetProxiesInfo retrieves all proxy info from a kv store
 func (s *KVBackedStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo, error) {
 	psi := cluster.ProxiesInfo{}
 	pairs, err := s.store.List(ctx, filepath.Join(s.clusterPath, proxiesInfoDir))
@@ -348,11 +368,12 @@ func (s *KVBackedStore) GetProxiesInfo(ctx context.Context) (cluster.ProxiesInfo
 	return psi, nil
 }
 
+// NewKVBackedElection starts a campaign for getting elected with a kv backed store
 func NewKVBackedElection(kvStore KVStore, path, candidateUID string, timeout time.Duration) Election {
 	switch kvStore := kvStore.(type) {
 	case *libKVStore:
 		s := kvStore
-		candidate := leadership.NewCandidate(s.store, path, candidateUID, MinTTL)
+		candidate := leadership.NewCandidate(s.store, path, candidateUID, minTTL)
 		return &libkvElection{store: s, path: path, candidate: candidate}
 	case *etcdV3Store:
 		etcdV3Store := kvStore
@@ -360,7 +381,7 @@ func NewKVBackedElection(kvStore KVStore, path, candidateUID string, timeout tim
 			c:              etcdV3Store.c,
 			path:           path,
 			candidateUID:   candidateUID,
-			ttl:            MinTTL,
+			ttl:            minTTL,
 			requestTimeout: timeout,
 		}
 	default:

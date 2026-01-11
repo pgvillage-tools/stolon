@@ -15,7 +15,9 @@
 package postgresql
 
 import (
+	"errors"
 	"fmt"
+	"maps"
 	"net/url"
 	"reflect"
 	"sort"
@@ -25,29 +27,36 @@ import (
 
 // This is based on github.com/lib/pq
 
-type ConnParams map[string]string
+// ConnParams defines key/value pairs for connecting to PostgreSQL
+type ConnParams map[ConnParamKey]string
 
-func (cp ConnParams) Set(k, v string) {
+// Set can add/update a key
+func (cp ConnParams) Set(k ConnParamKey, v string) {
 	cp[k] = v
 }
 
-func (cp ConnParams) Get(k string) (v string) {
+// Get can retrieve a key/value pai
+func (cp ConnParams) Get(k ConnParamKey) (v string) {
 	return cp[k]
 }
 
-func (cp ConnParams) Del(k string) {
+// Del can remove a key
+func (cp ConnParams) Del(k ConnParamKey) {
 	delete(cp, k)
 }
 
-func (cp ConnParams) Isset(k string) bool {
+// Isset returns true if the key is set
+func (cp ConnParams) Isset(k ConnParamKey) bool {
 	_, ok := cp[k]
 	return ok
 }
 
+// Equals checks 2 ConnParams to be the same
 func (cp ConnParams) Equals(cp2 ConnParams) bool {
 	return reflect.DeepEqual(cp, cp2)
 }
 
+// Copy returns a shallow copy
 func (cp ConnParams) Copy() ConnParams {
 	ncp := ConnParams{}
 	for k, v := range cp {
@@ -92,7 +101,7 @@ func (s *scanner) SkipSpaces() (rune, bool) {
 //
 // The parsing code is based on conninfo_parse from libpq's fe-connect.c
 func ParseConnString(name string) (ConnParams, error) {
-	p := make(ConnParams)
+	p := ConnParams{}
 	s := newScanner(name)
 
 	for {
@@ -127,7 +136,7 @@ func ParseConnString(name string) (ConnParams, error) {
 		// Skip any whitespace after the =
 		if r, ok = s.SkipSpaces(); !ok {
 			// If we reach the end here, the last value is just an empty string as per libpq.
-			p.Set(string(keyRunes), "")
+			p.Set(ConnParamKey(ConnParamKey(keyRunes)), "")
 			break
 		}
 
@@ -135,7 +144,7 @@ func ParseConnString(name string) (ConnParams, error) {
 			for !unicode.IsSpace(r) {
 				if r == '\\' {
 					if r, ok = s.Next(); !ok {
-						return nil, fmt.Errorf(`missing character after backslash`)
+						return nil, errors.New(`missing character after backslash`)
 					}
 				}
 				valRunes = append(valRunes, r)
@@ -148,7 +157,7 @@ func ParseConnString(name string) (ConnParams, error) {
 		quote:
 			for {
 				if r, ok = s.Next(); !ok {
-					return nil, fmt.Errorf(`unterminated quoted string literal in connection string`)
+					return nil, errors.New(`unterminated quoted string literal in connection string`)
 				}
 				switch r {
 				case '\'':
@@ -162,7 +171,7 @@ func ParseConnString(name string) (ConnParams, error) {
 			}
 		}
 
-		p.Set(string(keyRunes), string(valRunes))
+		p.Set(ConnParamKey(keyRunes), string(valRunes))
 	}
 
 	return p, nil
@@ -170,13 +179,13 @@ func ParseConnString(name string) (ConnParams, error) {
 
 // URLToConnParams creates the connParams from the url.
 func URLToConnParams(urlStr string) (ConnParams, error) {
-	p := make(ConnParams)
+	p := ConnParams{}
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
 	}
 
-	if u.Scheme != "postgres" {
+	if u.Scheme != "postgres" && u.Scheme != "postgresql" {
 		return nil, fmt.Errorf("invalid connection protocol: %s", u.Scheme)
 	}
 
@@ -201,7 +210,7 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 
 	q := u.Query()
 	for k := range q {
-		p.Set(k, q.Get(k))
+		p.Set(ConnParamKey(k), q.Get(k))
 	}
 
 	return p, nil
@@ -209,14 +218,68 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 
 // ConnString returns a connection string, its entries are sorted so the
 // returned string can be reproducible and comparable
-func (p ConnParams) ConnString() string {
+func (cp ConnParams) ConnString() string {
 	var kvs []string
 	escaper := strings.NewReplacer(` `, `\ `, `'`, `\'`, `\`, `\\`)
-	for k, v := range p {
+	for k, v := range cp {
 		if v != "" {
-			kvs = append(kvs, k+"="+escaper.Replace(v))
+			kvs = append(kvs, fmt.Sprintf("%s=%s", k, escaper.Replace(v)))
 		}
 	}
 	sort.Strings(kvs)
 	return strings.Join(kvs, " ")
+}
+
+// WithUser returns a clone with the user fields set to the specified userName
+func (cp ConnParams) WithUser(userName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyUser] = userName
+	return q
+}
+
+// WithHost returns a clone with the host fields set to the specified hostName
+func (cp ConnParams) WithHost(hostName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyHost] = hostName
+	return q
+}
+
+// WithDbName returns a clone with the host fields set to the specified hostName
+func (cp ConnParams) WithDbName(dbName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyDbName] = dbName
+	return q
+}
+
+// WithPort returns a clone with the port fields set as specified
+func (cp ConnParams) WithPort(port uint) ConnParams {
+	return cp.WithSPort(fmt.Sprintf("%d", port))
+}
+
+// WithSPort returns a clone with the port fields set as specified
+func (cp ConnParams) WithSPort(port string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyPort] = port
+	return q
+}
+
+// WithAppName returns a clone with the port fields set as specified
+func (cp ConnParams) WithAppName(appName string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyAppName] = appName
+	return q
+}
+
+// WithSSLMode returns a clone with the port fields set as specified
+func (cp ConnParams) WithSSLMode(sslMode string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeySSLMode] = sslMode
+	return q
+}
+
+// WithPassword returns a clone with the password field set as specified
+func (cp ConnParams) WithPassword(password string) ConnParams {
+	q := maps.Clone(cp)
+	q[ConnParamKeyPassword] = password
+	return q
 }

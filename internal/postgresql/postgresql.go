@@ -35,6 +35,7 @@ import (
 	"github.com/sorintlab/stolon/internal/common"
 	slog "github.com/sorintlab/stolon/internal/log"
 
+	// TODO: This can probably go
 	_ "github.com/lib/pq"
 	"github.com/mitchellh/copystructure"
 	"go.uber.org/zap"
@@ -52,18 +53,28 @@ const (
 	tmpPostgresConf        = "stolon-temp-postgresql.conf"
 
 	startTimeout = 60 * time.Second
+
+	exitStatusNotRunning          = 3
+	exitStatusInaccessibleDatadir = 4
+
+	argDatadir = "-D"
+	argDbName  = "-d"
+	logExec    = "execing cmd"
 )
 
 var (
-	ErrUnknownState = errors.New("unknown postgres state")
+	// ErrInaccessibleDatadir is raised when pg_ctl returns an unknown state
+	ErrInaccessibleDatadir = errors.New("unknown postgres state")
 )
 
 var log = slog.S()
 
+// PGManager can trieve the timeline history of a PostgreSQL instance
 type PGManager interface {
 	GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error)
 }
 
+// Manager manages a PostgreSQL instance
 type Manager struct {
 	pgBinPath          string
 	dataDir            string
@@ -85,57 +96,79 @@ type Manager struct {
 	requestTimeout     time.Duration
 }
 
+// RecoveryMode is an enum for the type of recover an instance is in
 type RecoveryMode int
 
 const (
+	// RecoveryModeNone is set when an instance is a primary instance
 	RecoveryModeNone RecoveryMode = iota
+	// RecoveryModeStandby is set when an instance is a replica instance
 	RecoveryModeStandby
+	// RecoveryModeRecovery is set during Point in time recovery
 	RecoveryModeRecovery
 )
 
+// RecoveryOptions set recovery options
 type RecoveryOptions struct {
 	RecoveryMode       RecoveryMode
 	RecoveryParameters common.Parameters
 }
 
+// NewRecoveryOptions returns a freshly initialized Recoveryoptions resource
 func NewRecoveryOptions() *RecoveryOptions {
 	return &RecoveryOptions{RecoveryParameters: make(common.Parameters)}
 }
 
-func (r *RecoveryOptions) DeepCopy() *RecoveryOptions {
-	nr, err := copystructure.Copy(r)
-	if err != nil {
+// DeepCopy returns a full copy
+func (r *RecoveryOptions) DeepCopy() (ro *RecoveryOptions) {
+	var ok bool
+	if nr, err := copystructure.Copy(r); err != nil {
 		panic(err)
-	}
-	if !reflect.DeepEqual(r, nr) {
+	} else if !reflect.DeepEqual(r, nr) {
 		panic("not equal")
+	} else if ro, ok = nr.(*RecoveryOptions); !ok {
+		panic("type is different after copy")
 	}
-	return nr.(*RecoveryOptions)
+	return ro
 }
 
+// SystemData stores the system specific data of a PostgreSQL instance
 type SystemData struct {
 	SystemID   string
 	TimelineID uint64
 	XLogPos    uint64
 }
 
+// TimelineHistory stores all info regarding a specific timeline
 type TimelineHistory struct {
 	TimelineID  uint64
 	SwitchPoint uint64
 	Reason      string
 }
 
+// InitConfig stores the config specific to initdb
 type InitConfig struct {
 	Locale        string
 	Encoding      string
 	DataChecksums bool
 }
 
+// TODO: replace with zerolog
+
+// SetLogger sets a module wide logger
 func SetLogger(l *zap.SugaredLogger) {
 	log = l
 }
 
-func NewManager(pgBinPath string, dataDir, walDir string, localConnParams, replConnParams ConnParams, suAuthMethod, suUsername, suPassword, replAuthMethod, replUsername, replPassword string, requestTimeout time.Duration) *Manager {
+// NewManager returns a freshly initialized manager resource
+func NewManager(
+	pgBinPath string, dataDir,
+	walDir string,
+	localConnParams,
+	replConnParams ConnParams,
+	suAuthMethod, suUsername, suPassword, replAuthMethod, replUsername, replPassword string,
+	requestTimeout time.Duration,
+) *Manager {
 	return &Manager{
 		pgBinPath:          pgBinPath,
 		dataDir:            filepath.Join(dataDir, "postgres"),
@@ -156,14 +189,17 @@ func NewManager(pgBinPath string, dataDir, walDir string, localConnParams, replC
 	}
 }
 
+// SetParameters sets PostgreSQL parameters
 func (p *Manager) SetParameters(parameters common.Parameters) {
 	p.parameters = parameters
 }
 
+// CurParameters returns currently set PostgreSQL parameters
 func (p *Manager) CurParameters() common.Parameters {
 	return p.curParameters
 }
 
+// SetRecoveryOptions sets recovery options (when applicable)
 func (p *Manager) SetRecoveryOptions(recoveryOptions *RecoveryOptions) {
 	if recoveryOptions == nil {
 		p.recoveryOptions = NewRecoveryOptions()
@@ -173,40 +209,49 @@ func (p *Manager) SetRecoveryOptions(recoveryOptions *RecoveryOptions) {
 	p.recoveryOptions = recoveryOptions
 }
 
+// CurRecoveryOptions returns recovery options currently set
 func (p *Manager) CurRecoveryOptions() *RecoveryOptions {
 	return p.curRecoveryOptions
 }
 
+// SetHba sets HBA rules
 func (p *Manager) SetHba(hba []string) {
 	p.hba = hba
 }
 
+// CurHba returns HBA rules currently set
 func (p *Manager) CurHba() []string {
 	return p.curHba
 }
 
+// UpdateCurParameters updates the parameters
 func (p *Manager) UpdateCurParameters() {
-	n, err := copystructure.Copy(p.parameters)
-	if err != nil {
+	var ok bool
+	if n, err := copystructure.Copy(p.parameters); err != nil {
 		panic(err)
+	} else if p.curParameters, ok = n.(common.Parameters); !ok {
+		panic("type is different after copy")
 	}
-	p.curParameters = n.(common.Parameters)
 }
 
+// UpdateCurRecoveryOptions updates recovery options to new values
 func (p *Manager) UpdateCurRecoveryOptions() {
 	p.curRecoveryOptions = p.recoveryOptions.DeepCopy()
 }
 
+// UpdateCurHba will update HBA rules
 func (p *Manager) UpdateCurHba() {
-	n, err := copystructure.Copy(p.hba)
-	if err != nil {
+	var ok bool
+	if n, err := copystructure.Copy(p.hba); err != nil {
 		panic(err)
+	} else if p.curHba, ok = n.([]string); !ok {
+		panic("type is different after copy")
 	}
-	p.curHba = n.([]string)
 }
 
+// Init will initialize a PostgreSQL data directory
 func (p *Manager) Init(initConfig *InitConfig) error {
-	// os.CreateTemp already creates files with 0600 permissions
+	// os.CreateTemp already creates files with urw permissions
 	pwfile, err := os.CreateTemp("", "pwfile")
 	if err != nil {
 		return err
@@ -218,11 +263,11 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 	}
 
 	name := filepath.Join(p.pgBinPath, "initdb")
-	cmd := exec.Command(name, "-D", p.dataDir, "-U", p.suUsername)
+	cmd := exec.Command(name, argDatadir, p.dataDir, "-U", p.suUsername)
 	if p.suAuthMethod == "md5" {
 		cmd.Args = append(cmd.Args, "--pwfile", pwfile.Name())
 	}
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw(logExec, logCmd, cmd)
 
 	// initdb supports configuring a separate wal directory via symlinks. Normally this
 	// parameter might be part of the initConfig, but it will also be required whenever we
@@ -257,18 +302,19 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 	return nil
 }
 
+// Restore will run a restore command
 func (p *Manager) Restore(command string) error {
 	var err error
 	var cmd *exec.Cmd
 
 	command = expandRecoveryCommand(command, p.dataDir, p.walDir)
 
-	if err = os.MkdirAll(p.dataDir, 0700); err != nil {
+	if err = os.MkdirAll(p.dataDir, urwx); err != nil {
 		err = fmt.Errorf("cannot create data dir: %v", err)
 		goto out
 	}
 	cmd = exec.Command("/bin/sh", "-c", command)
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw("executing cmd", logCmd, cmd)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -278,6 +324,8 @@ func (p *Manager) Restore(command string) error {
 		goto out
 	}
 	// On every error remove the dataDir, so we don't end with an half initialized database
+
+	// TODO: replace goto with defer
 out:
 	if err != nil {
 		if cleanupErr := p.RemoveAll(); cleanupErr != nil {
@@ -331,7 +379,7 @@ func (p *Manager) moveWal() (err error) {
 
 	var symlinkStat fs.FileInfo
 	if symlinkStat, err = os.Lstat(symlinkPath); errors.Is(err, os.ErrNotExist) {
-		// File or folder already removed
+		log.Debug("file or folder already removed")
 	} else if err != nil {
 		log.Errorf("could not get info on current pg_wal folder/symlink %s: %e", symlinkPath, err)
 		return err
@@ -370,6 +418,7 @@ func (p *Manager) moveWal() (err error) {
 	return nil
 }
 
+// Start will start the PostgreSQL instance
 func (p *Manager) Start() error {
 	if err := p.writeConfs(false); err != nil {
 		return err
@@ -405,9 +454,10 @@ func (p *Manager) start(args ...string) error {
 
 	log.Infow("starting database")
 	name := filepath.Join(p.pgBinPath, "postgres")
-	args = append([]string{"-D", p.dataDir, "-c", "unix_socket_directories=" + common.PgUnixSocketDirectories}, args...)
+	args = append([]string{argDatadir, p.dataDir, "-c",
+		"unix_socket_directories=" + common.PgUnixSocketDirectories}, args...)
 	cmd := exec.Command(name, args...)
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw(logExec, logCmd, cmd)
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -451,7 +501,7 @@ func (p *Manager) start(args ...string) error {
 
 		select {
 		case <-exited:
-			return fmt.Errorf("postgres exited unexpectedly")
+			return errors.New("postgres exited unexpectedly")
 		default:
 		}
 
@@ -459,7 +509,7 @@ func (p *Manager) start(args ...string) error {
 	}
 
 	if !ok {
-		return fmt.Errorf("instance still starting")
+		return errors.New("instance still starting")
 	}
 
 	p.UpdateCurParameters()
@@ -474,11 +524,12 @@ func (p *Manager) start(args ...string) error {
 func (p *Manager) Stop(fast bool) error {
 	log.Infow("stopping database")
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
-	cmd := exec.Command(name, "stop", "-w", "-D", p.dataDir, "-o", "-c unix_socket_directories="+common.PgUnixSocketDirectories)
+	cmd := exec.Command(name, "stop", "-w", argDatadir, p.dataDir, "-o",
+		"-c unix_socket_directories="+common.PgUnixSocketDirectories)
 	if fast {
 		cmd.Args = append(cmd.Args, "-m", "fast")
 	}
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw(logExec, logCmd, cmd)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -489,18 +540,20 @@ func (p *Manager) Stop(fast bool) error {
 	return nil
 }
 
+// IsStarted will return true if PostgreSQL is currently running
 func (p *Manager) IsStarted() (bool, error) {
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
-	cmd := exec.Command(name, "status", "-D", p.dataDir, "-o", "-c unix_socket_directories="+common.PgUnixSocketDirectories)
+	cmd := exec.Command(name, "status", argDatadir, p.dataDir, "-o",
+		"-c unix_socket_directories="+common.PgUnixSocketDirectories)
 	_, err := cmd.CombinedOutput()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			status := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-			if status == 3 {
+			if status == exitStatusNotRunning {
 				return false, nil
 			}
-			if status == 4 {
-				return false, ErrUnknownState
+			if status == exitStatusInaccessibleDatadir {
+				return false, ErrInaccessibleDatadir
 			}
 		}
 		return false, fmt.Errorf("cannot get instance state: %v", err)
@@ -508,6 +561,7 @@ func (p *Manager) IsStarted() (bool, error) {
 	return true, nil
 }
 
+// Reload will trigger a reload in PostgreSQL
 func (p *Manager) Reload() error {
 	log.Infow("reloading database configuration")
 
@@ -516,8 +570,9 @@ func (p *Manager) Reload() error {
 	}
 
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
-	cmd := exec.Command(name, "reload", "-D", p.dataDir, "-o", "-c unix_socket_directories="+common.PgUnixSocketDirectories)
-	log.Debugw("execing cmd", "cmd", cmd)
+	cmd := exec.Command(name, "reload", argDatadir, p.dataDir, "-o",
+		"-c unix_socket_directories="+common.PgUnixSocketDirectories)
+	log.Debugw(logExec, logCmd, cmd)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -540,7 +595,7 @@ func (p *Manager) StopIfStarted(fast bool) error {
 	// if it's started
 	started, err := p.IsStarted()
 	if err != nil {
-		if err == ErrUnknownState {
+		if err == ErrInaccessibleDatadir {
 			// if IsStarted returns an unknown state error then assume that the
 			// instance is stopped
 			return nil
@@ -558,22 +613,21 @@ func (p *Manager) StopIfStarted(fast bool) error {
 		return err
 	}
 	if started {
-		return fmt.Errorf("failed to stop")
+		return errors.New("failed to stop")
 	}
 	return nil
 }
 
+// Restart will stop (if started) and start PostgreSQL
 func (p *Manager) Restart(fast bool) error {
 	log.Infow("restarting database")
 	if err := p.StopIfStarted(fast); err != nil {
 		return err
 	}
-	if err := p.Start(); err != nil {
-		return err
-	}
-	return nil
+	return p.Start()
 }
 
+// WaitReady will wait for PostgreSQL to be available
 func (p *Manager) WaitReady(timeout time.Duration) error {
 	start := time.Now()
 	for timeout == 0 || time.Since(start) < timeout {
@@ -582,9 +636,10 @@ func (p *Manager) WaitReady(timeout time.Duration) error {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	return fmt.Errorf("timeout waiting for db ready")
+	return errors.New("timeout waiting for db ready")
 }
 
+// WaitRecoveryDone will wait for recovery to be done (signal or done file)
 func (p *Manager) WaitRecoveryDone(timeout time.Duration) error {
 	version, err := p.BinaryVersion()
 	if err != nil {
@@ -616,23 +671,26 @@ func (p *Manager) WaitRecoveryDone(timeout time.Duration) error {
 		}
 	}
 
-	return fmt.Errorf("timeout waiting for db recovery")
+	return errors.New("timeout waiting for db recovery")
 }
 
+// PGDataVersion returns the version of the PostgreSQL data directory
 func (p *Manager) PGDataVersion() (*semver.Version, error) {
 	return pgDataVersion(p.dataDir)
 }
 
+// BinaryVersion returns the version of the PostgreSQL binaries
 func (p *Manager) BinaryVersion() (*semver.Version, error) {
 	return binaryVersion(p.pgBinPath)
 }
 
+// Promote will promote PostgreSQL (with pg_ctl)
 func (p *Manager) Promote() error {
 	log.Infow("promoting database")
 
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
-	cmd := exec.Command(name, "promote", "-w", "-D", p.dataDir)
-	log.Debugw("execing cmd", "cmd", cmd)
+	cmd := exec.Command(name, "promote", "-w", argDatadir, p.dataDir)
+	log.Debugw("executing cmd", logCmd, cmd)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -641,13 +699,10 @@ func (p *Manager) Promote() error {
 		return fmt.Errorf("error: %v", err)
 	}
 
-	if err := p.writeConfs(false); err != nil {
-		return err
-	}
-
-	return nil
+	return p.writeConfs(false)
 }
 
+// SetupRoles will connect to PostgreSQL to setup all users as required by stolon
 func (p *Manager) SetupRoles() error {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
@@ -659,7 +714,13 @@ func (p *Manager) SetupRoles() error {
 				return fmt.Errorf("error adding replication role to superuser: %v", err)
 			}
 		} else {
-			if err := alterRole(ctx, p.localConnParams, []string{"replication"}, p.suUsername, p.suPassword); err != nil {
+			if err := alterRole(
+				ctx,
+				p.localConnParams,
+				[]string{"replication"},
+				p.suUsername,
+				p.suPassword,
+			); err != nil {
 				return fmt.Errorf("error adding replication role to superuser: %v", err)
 			}
 		}
@@ -689,12 +750,14 @@ func (p *Manager) SetupRoles() error {
 	return nil
 }
 
+// GetSyncStandbys returns the standby's (from pg_stat_replication)
 func (p *Manager) GetSyncStandbys() ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return getSyncStandbys(ctx, p.localConnParams)
 }
 
+// GetReplicationSlots (from pg_replication_slots)
 func (p *Manager) GetReplicationSlots() ([]string, error) {
 	version, err := p.PGDataVersion()
 	if err != nil {
@@ -706,18 +769,21 @@ func (p *Manager) GetReplicationSlots() ([]string, error) {
 	return getReplicationSlots(ctx, p.localConnParams, version)
 }
 
+// CreateReplicationSlot will create a replication slot
 func (p *Manager) CreateReplicationSlot(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return createReplicationSlot(ctx, p.localConnParams, name)
 }
 
+// DropReplicationSlot will drop a replication slot
 func (p *Manager) DropReplicationSlot(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return dropReplicationSlot(ctx, p.localConnParams, name)
 }
 
+// IsInitialized checks if a datadirectory is already initialized
 func (p *Manager) IsInitialized() (bool, error) {
 	// List of required files or directories relative to postgres data dir
 	// From https://www.postgresql.org/docs/9.4/static/storage-file-layout.html
@@ -765,7 +831,6 @@ func (p *Manager) IsInitialized() (bool, error) {
 			"pg_xact",
 			"pg_wal",
 		}...)
-
 	}
 	for _, f := range requiredFiles {
 		exists, err := fileExists(filepath.Join(p.dataDir, f))
@@ -793,20 +858,19 @@ func (p *Manager) GetRole() (common.Role, error) {
 			return "", fmt.Errorf("error determining if %q file exists: %v", postgresStandbySignal, err)
 		}
 		if os.IsNotExist(err) {
-			return common.RoleMaster, nil
+			return common.RolePrimary, nil
 		}
-		return common.RoleStandby, nil
-	} else {
-		// if recovery.conf file exists then consider it as a standby
-		_, err := os.Stat(filepath.Join(p.dataDir, postgresRecoveryConf))
-		if err != nil && !os.IsNotExist(err) {
-			return "", fmt.Errorf("error determining if %q file exists: %v", postgresRecoveryConf, err)
-		}
-		if os.IsNotExist(err) {
-			return common.RoleMaster, nil
-		}
-		return common.RoleStandby, nil
+		return common.RoleReplica, nil
 	}
+	// if recovery.conf file exists then consider it as a standby
+	_, err = os.Stat(filepath.Join(p.dataDir, postgresRecoveryConf))
+	if err != nil && !os.IsNotExist(err) {
+		return "", fmt.Errorf("error determining if %q file exists: %v", postgresRecoveryConf, err)
+	}
+	if os.IsNotExist(err) {
+		return common.RolePrimary, nil
+	}
+	return common.RoleReplica, nil
 }
 
 func (p *Manager) writeConfs(useTmpPostgresConf bool) error {
@@ -847,7 +911,7 @@ func (p *Manager) writeConf(useTmpPostgresConf, writeRecoveryParams bool) error 
 		confFile = tmpPostgresConf
 	}
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, confFile), 0600,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, confFile), urw,
 		func(f io.Writer) error {
 			if useTmpPostgresConf {
 				// include postgresql.conf if it exists
@@ -890,7 +954,7 @@ func (p *Manager) writeRecoveryConf() error {
 		return nil
 	}
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoveryConf), 0600,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoveryConf), urw,
 		func(f io.Writer) error {
 			if p.recoveryOptions.RecoveryMode == RecoveryModeStandby {
 				if _, err := f.Write([]byte("standby_mode = 'on'\n")); err != nil {
@@ -914,8 +978,8 @@ func (p *Manager) writeStandbySignal() error {
 
 	log.Infof("writing standby signal file")
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresStandbySignal), 0600,
-		func(f io.Writer) error {
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresStandbySignal), urw,
+		func(_ io.Writer) error {
 			return nil
 		})
 }
@@ -928,14 +992,14 @@ func (p *Manager) writeRecoverySignal() error {
 
 	log.Infof("writing recovery signal file")
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoverySignal), 0600,
-		func(f io.Writer) error {
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoverySignal), urw,
+		func(_ io.Writer) error {
 			return nil
 		})
 }
 
 func (p *Manager) writePgHba() error {
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, "pg_hba.conf"), 0600,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, "pg_hba.conf"), urw,
 		func(f io.Writer) error {
 			if p.hba != nil {
 				for _, e := range p.hba {
@@ -961,6 +1025,7 @@ func (p *Manager) createPostgresqlAutoConf() error {
 	return nil
 }
 
+// SyncFromFollowedPGRewind runs pgrewind to get to a shared point in the WAL stream
 func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, password string) error {
 	// Remove postgresql.auto.conf since pg_rewind will error if it's a symlink to /dev/null
 	pgAutoConfPath := filepath.Join(p.dataDir, postgresAutoConf)
@@ -968,7 +1033,7 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 		return fmt.Errorf("error removing postgresql.auto.conf file: %v", err)
 	}
 
-	// os.CreateTemp already creates files with 0600 permissions
+	// os.CreateTemp already creates files with urw permissions
 	pgpass, err := os.CreateTemp("", "pgpass")
 	if err != nil {
 		return err
@@ -990,9 +1055,9 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 
 	log.Infow("running pg_rewind")
 	name := filepath.Join(p.pgBinPath, "pg_rewind")
-	cmd := exec.Command(name, "--debug", "-D", p.dataDir, "--source-server="+followedConnString)
+	cmd := exec.Command(name, "--debug", argDatadir, p.dataDir, "--source-server="+followedConnString)
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSFILE=%s", pgpass.Name()))
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw(logExec, logCmd, cmd)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -1003,10 +1068,11 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 	return nil
 }
 
+// SyncFromFollowed runs pg_basebackup to resync a broken replica
 func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot string) error {
 	fcp := followedConnParams.Copy()
 
-	//  already creates files with 0600 permissions
+	//  already creates files with urw permissions
 	pgpass, err := os.CreateTemp("", "pgpass")
 	if err != nil {
 		return err
@@ -1032,7 +1098,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 
 	log.Infow("running pg_basebackup")
 	name := filepath.Join(p.pgBinPath, "pg_basebackup")
-	args := []string{"-R", "-v", "-P", "-Xs", "-D", p.dataDir, "-d", followedConnString}
+	args := []string{"-R", "-v", "-P", "-Xs", argDatadir, p.dataDir, argDbName, followedConnString}
 	if replSlot != "" {
 		args = append(args, "--slot", replSlot)
 	}
@@ -1042,7 +1108,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 	cmd := exec.Command(name, args...)
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSFILE=%s", pgpass.Name()))
-	log.Debugw("execing cmd", "cmd", cmd)
+	log.Debugw(logExec, logCmd, cmd)
 
 	// Pipe pg_basebackup's stderr to our stderr.
 	// We do this indirectly so that pg_basebackup doesn't think it's connected to a tty.
@@ -1066,12 +1132,10 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 		}
 	}()
 
-	if err := cmd.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return cmd.Wait()
 }
 
+// RemoveAllIfInitialized is a safe way to clean a datadirectory before recreating
 func (p *Manager) RemoveAllIfInitialized() error {
 	initialized, err := p.IsInitialized()
 	if err != nil {
@@ -1086,7 +1150,7 @@ func (p *Manager) RemoveAllIfInitialized() error {
 		}
 	}
 	if started {
-		return fmt.Errorf("cannot remove postregsql database. Instance is active")
+		return errors.New("cannot remove postregsql database. Instance is active")
 	}
 
 	return p.RemoveAll()
@@ -1104,30 +1168,35 @@ func (p *Manager) RemoveAll() error {
 	return os.RemoveAll(p.dataDir)
 }
 
+// GetSystemData will retrieve and return the system data (IDENTIFY_SYSTEM)
 func (p *Manager) GetSystemData() (*SystemData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return GetSystemData(ctx, p.replConnParams)
 }
 
+// GetTimelinesHistory will return a lost of timelinehostory objects
 func (p *Manager) GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return getTimelinesHistory(ctx, timeline, p.replConnParams)
 }
 
+// GetConfigFilePGParameters will return the config file parameters (pg_file_settings or pg_settings)
 func (p *Manager) GetConfigFilePGParameters() (common.Parameters, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return getConfigFilePGParameters(ctx, p.localConnParams)
 }
 
+// Ping triesd to connect to PostgreSQL and returns an error if it can't
 func (p *Manager) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
 	defer cancel()
 	return ping(ctx, p.localConnParams)
 }
 
+// OlderWalFile returns the oldest WAL file in the pg_wal location
 func (p *Manager) OlderWalFile() (string, error) {
 	version, err := p.PGDataVersion()
 	if err != nil {
@@ -1159,7 +1228,7 @@ func (p *Manager) OlderWalFile() (string, error) {
 			}
 			// if the file size is different from the currently supported one
 			// (16Mib) return without checking other possible wal files
-			if fi.Size() != WalSegSize {
+			if fi.Size() != walSegSize {
 				return "", fmt.Errorf("wal file has unsupported size: %d", fi.Size())
 			}
 			return name, nil
@@ -1181,7 +1250,6 @@ func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
 
 	if version.LessThan(V95) {
 		return isRestartRequiredUsingPgSettingsContext(ctx, p.localConnParams, changedParams)
-	} else {
-		return isRestartRequiredUsingPendingRestart(ctx, p.localConnParams)
 	}
+	return isRestartRequiredUsingPendingRestart(ctx, p.localConnParams)
 }

@@ -31,15 +31,17 @@ type ServiceDiscovery interface {
 func NewServiceDiscovery(config *Config) (ServiceDiscovery, error) {
 	switch config.Backend {
 	case "consul":
-		if apiConfig, err := config.ConsulConfig(); err != nil {
+		apiConfig, err := config.ConsulConfig()
+		if err != nil {
 			return nil, err
-		} else if client, err := api.NewClient(apiConfig); err != nil {
-			return nil, err
-		} else {
-			agent := client.Agent()
-			catalog := client.Catalog()
-			return NewConsulServiceDiscovery(agent, catalog), nil
 		}
+		client, err := api.NewClient(apiConfig)
+		if err != nil {
+			return nil, err
+		}
+		agent := client.Agent()
+		catalog := client.Catalog()
+		return NewConsulServiceDiscovery(agent, catalog), nil
 	default:
 		return nil, errors.New("register backend not supported")
 	}
@@ -57,6 +59,7 @@ type ConsulAgent interface {
 	ServiceDeregister(serviceID string) error
 }
 
+// ConsulCatalog defines a catalog as registered in consul
 type ConsulCatalog interface {
 	Service(service, tag string, q *api.QueryOptions) ([]*api.CatalogService, *api.QueryMeta, error)
 }

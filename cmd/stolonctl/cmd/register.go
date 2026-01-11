@@ -24,7 +24,7 @@ import (
 	"github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
 	slog "github.com/sorintlab/stolon/internal/log"
-	"github.com/sorintlab/stolon/internal/store"
+	stolonstore "github.com/sorintlab/stolon/internal/store"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -40,18 +40,74 @@ var Register = &cobra.Command{
 var rCfg register.Config
 var log = slog.S()
 
+const sleepinterval = 10
+
 func init() {
-	Register.PersistentFlags().StringVar(&rCfg.Backend, "register-backend", "consul", "register backend type (consul)")
-	Register.PersistentFlags().StringVar(&rCfg.Endpoints, "register-endpoints", "http://127.0.0.1:8500", "a comma-delimited list of register endpoints (use https scheme for tls communication) defaults: http://127.0.0.1:8500 for consul")
-	Register.PersistentFlags().StringVar(&rCfg.TLSCertFile, "register-cert-file", "", "certificate file for client identification to the register")
-	Register.PersistentFlags().StringVar(&rCfg.TLSKeyFile, "register-key", "", "private key file for client identification to the register")
-	Register.PersistentFlags().BoolVar(&rCfg.TLSInsecureSkipVerify, "register-skip-tls-verify", false, "skip register certificate verification (insecure!!!)")
-	Register.PersistentFlags().StringVar(&rCfg.TLSCAFile, "register-ca-file", "", "verify certificates of HTTPS-enabled register servers using this CA bundle")
-	Register.PersistentFlags().BoolVar(&rCfg.RegisterMaster, "register-master", false, "register master as well for service discovery (use it with caution!!!)")
-	Register.PersistentFlags().StringVar(&rCfg.TagMasterAs, "tag-master-as", "master", "a comma-delimited list of tag to be used when registering master")
-	Register.PersistentFlags().StringVar(&rCfg.TagSlaveAs, "tag-slave-as", "slave", "a comma-delimited list of tag to be used when registering slave")
-	Register.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "enable debug logging")
-	Register.PersistentFlags().IntVar(&rCfg.SleepInterval, "sleep-interval", 10, "number of seconds to sleep before probing for change")
+	Register.PersistentFlags().StringVar(
+		&rCfg.Backend,
+		"register-backend",
+		"consul",
+		"register backend type (consul)",
+	)
+	Register.PersistentFlags().StringVar(
+		&rCfg.Endpoints,
+		"register-endpoints",
+		"http://127.0.0.1:8500",
+		//revive:disable-next-line
+		"a comma-delimited list of register endpoints (use https scheme for tls communication) defaults: http://127.0.0.1:8500 for consul")
+	Register.PersistentFlags().StringVar(
+		&rCfg.TLSCertFile,
+		"register-cert-file",
+		"",
+		"certificate file for client identification to the register",
+	)
+	Register.PersistentFlags().StringVar(
+		&rCfg.TLSKeyFile,
+		"register-key",
+		"",
+		"private key file for client identification to the register",
+	)
+	Register.PersistentFlags().BoolVar(
+		&rCfg.TLSInsecureSkipVerify,
+		"register-skip-tls-verify",
+		false,
+		"skip register certificate verification (insecure!!!)",
+	)
+	Register.PersistentFlags().StringVar(
+		&rCfg.TLSCAFile,
+		"register-ca-file",
+		"",
+		"verify certificates of HTTPS-enabled register servers using this CA bundle",
+	)
+	Register.PersistentFlags().BoolVar(&rCfg.RegisterMaster,
+		"register-master",
+		false,
+		"register master as well for service discovery (use it with caution!!!)",
+	)
+	Register.PersistentFlags().StringVar(
+		&rCfg.TagMasterAs,
+		"tag-master-as",
+		"master",
+		"a comma-delimited list of tag to be used when registering master",
+	)
+	Register.PersistentFlags().StringVar(
+		&rCfg.TagSlaveAs,
+		"tag-slave-as",
+		"slave",
+		"a comma-delimited list of tag to be used when registering slave",
+	)
+	Register.PersistentFlags().BoolVar(
+		&cfg.Debug,
+		"dbug",
+		false,
+		"enable debug logging",
+	)
+	Register.PersistentFlags().IntVar(
+		&rCfg.SleepInterval,
+		"sleep-interval",
+		sleepinterval,
+		"number of seconds to sleep before probing for change",
+	)
 	CmdStolonCtl.AddCommand(Register)
 }
 
@@ -127,7 +183,12 @@ func registerCluster(sigs chan os.Signal, cfg *config, rCfg *register.Config) er
 	}
 }
 
-func checkAndRegisterMasterAndSlaves(clusterName string, store store.Store, discovery register.ServiceDiscovery, registerMaster bool) {
+func checkAndRegisterMasterAndSlaves(
+	clusterName string,
+	store stolonstore.Store,
+	discovery register.ServiceDiscovery,
+	registerMaster bool,
+) {
 	discoveredServices, err := discovery.Services(clusterName)
 	if err != nil {
 		log.Errorf("unable to get info about existing services: %v", err)
@@ -135,12 +196,11 @@ func checkAndRegisterMasterAndSlaves(clusterName string, store store.Store, disc
 	}
 
 	existingServices, err := getExistingServices(clusterName, store, registerMaster)
-	if err == nil {
-		log.Debugf("found services %v", existingServices)
-	} else {
+	if err != nil {
 		log.Errorf("%s skipping", err.Error())
 		return
 	}
+	log.Debugf("found services %v", existingServices)
 
 	diff := existingServices.Diff(discoveredServices)
 
@@ -152,7 +212,11 @@ func checkAndRegisterMasterAndSlaves(clusterName string, store store.Store, disc
 	}
 }
 
-func getExistingServices(clusterName string, store store.Store, includeMaster bool) (register.ServiceInfos, error) {
+func getExistingServices(
+	clusterName string,
+	store stolonstore.Store,
+	includeMaster bool,
+) (register.ServiceInfos, error) {
 	cluster, err := register.NewCluster(clusterName, rCfg, store)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get cluster data: %v", err)
@@ -179,9 +243,20 @@ func registerService(service register.ServiceDiscovery, serviceInfo *register.Se
 		return
 	}
 	if err := service.Register(serviceInfo); err != nil {
-		log.Errorf("unable to register %s with uid %s as %v, reason: %s", serviceInfo.Name, serviceInfo.ID, serviceInfo.Tags, err.Error())
+		log.Errorf(
+			"unable to register %s with uid %s as %v, reason: %s",
+			serviceInfo.Name,
+			serviceInfo.ID,
+			serviceInfo.Tags,
+			err.Error(),
+		)
 	} else {
-		log.Infof("successfully registered %s with uid %s as %v", serviceInfo.Name, serviceInfo.ID, serviceInfo.Tags)
+		log.Infof(
+			"successfully registered %s with uid %s as %v",
+			serviceInfo.Name,
+			serviceInfo.ID,
+			serviceInfo.Tags,
+		)
 	}
 }
 
@@ -190,8 +265,19 @@ func deRegisterService(service register.ServiceDiscovery, serviceInfo *register.
 		return
 	}
 	if err := service.DeRegister(serviceInfo); err != nil {
-		log.Errorf("unable to deregister %s with uid %s as %v, reason: %s", serviceInfo.Name, serviceInfo.ID, serviceInfo.Tags, err.Error())
+		log.Errorf(
+			"unable to deregister %s with uid %s as %v, reason: %s",
+			serviceInfo.Name,
+			serviceInfo.ID,
+			serviceInfo.Tags,
+			err.Error(),
+		)
 	} else {
-		log.Infof("successfully deregistered %s with uid %s as %v", serviceInfo.Name, serviceInfo.ID, serviceInfo.Tags)
+		log.Infof(
+			"successfully deregistered %s with uid %s as %v",
+			serviceInfo.Name,
+			serviceInfo.ID,
+			serviceInfo.Tags,
+		)
 	}
 }

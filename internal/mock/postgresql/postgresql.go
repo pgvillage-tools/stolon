@@ -42,6 +42,6 @@ func (m *MockPGManager) GetTimelinesHistory(timeline uint64) ([]*postgresql.Time
 }
 
 // GetTimelinesHistory indicates an expected call of GetTimelinesHistory
-func (mr *MockPGManagerMockRecorder) GetTimelinesHistory(timeline interface{}) *gomock.Call {
+func (mr *MockPGManagerMockRecorder) GetTimelinesHistory(timeline any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelinesHistory", reflect.TypeOf((*MockPGManager)(nil).GetTimelinesHistory), timeline)
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/store"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 func TestInitStandbyCluster(t *testing.T) {
@@ -46,8 +47,8 @@ func TestInitStandbyCluster(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+	initialClusterSpec := &cluster.Spec{
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -57,7 +58,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -65,7 +66,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -104,13 +105,13 @@ func TestInitStandbyCluster(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+	initialClusterSpec = &cluster.Spec{
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbyLag:      cluster.Uint32P(50 * 1024), // limit lag to 50kiB
+		MaxStandbyLag:      util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
 		PGParameters:       defaultPGParameters,
 		PITRConfig: &cluster.PITRConfig{
 			DataRestoreCommand: fmt.Sprintf("PGPASSFILE=%s pg_basebackup -D %%d -h %s -p %s -U %s", pgpass.Name(), ptk.pgListenAddress, ptk.pgPort, ptk.pgReplUsername),
@@ -126,7 +127,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -134,7 +135,7 @@ func TestInitStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -179,8 +180,8 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+	initialClusterSpec := &cluster.Spec{
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -190,7 +191,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -198,7 +199,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -237,13 +238,13 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+	initialClusterSpec = &cluster.Spec{
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbyLag:      cluster.Uint32P(50 * 1024), // limit lag to 50kiB
+		MaxStandbyLag:      util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
 		PGParameters:       defaultPGParameters,
 		PITRConfig: &cluster.PITRConfig{
 			DataRestoreCommand: fmt.Sprintf("PGPASSFILE=%s pg_basebackup -D %%d -h %s -p %s -U %s", pgpass.Name(), ptk.pgListenAddress, ptk.pgPort, ptk.pgReplUsername),
@@ -259,7 +260,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -267,7 +268,7 @@ func TestPromoteStandbyCluster(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -293,13 +294,13 @@ func TestPromoteStandbyCluster(t *testing.T) {
 	}
 
 	// promote the standby cluster to a primary cluster
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
 	// check that the cluster master has been promoted to a primary
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -328,8 +329,8 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	pStorePath := filepath.Join(common.StorePrefix, primaryClusterName)
 	psm := store.NewKVBackedStore(ptstore.store, pStorePath)
 
-	initialClusterSpec := &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModeNew),
+	initialClusterSpec := &cluster.Spec{
+		InitMode:           &newCluster,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
@@ -343,7 +344,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	pts, err := NewTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	pts, err := newTestSentinel(t, dir, primaryClusterName, ptstore.storeBackend, primaryStoreEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -351,7 +352,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer pts.Stop()
-	ptk, err := NewTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
+	ptk, err := newTestKeeper(t, dir, primaryClusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, ptstore.storeBackend, primaryStoreEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -390,13 +391,13 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	}
 	pgpass.Close()
 
-	initialClusterSpec = &cluster.ClusterSpec{
-		InitMode:           cluster.ClusterInitModeP(cluster.ClusterInitModePITR),
-		Role:               cluster.ClusterRoleP(cluster.ClusterRoleStandby),
+	initialClusterSpec = &cluster.Spec{
+		InitMode:           &pitrCluster,
+		Role:               &replica,
 		SleepInterval:      &cluster.Duration{Duration: 2 * time.Second},
 		FailInterval:       &cluster.Duration{Duration: 5 * time.Second},
 		ConvergenceTimeout: &cluster.Duration{Duration: 30 * time.Second},
-		MaxStandbyLag:      cluster.Uint32P(50 * 1024), // limit lag to 50kiB
+		MaxStandbyLag:      util.ToPtr(uint32(50 * 1024)), // limit lag to 50kiB
 		PGParameters:       defaultPGParameters,
 		PITRConfig: &cluster.PITRConfig{
 			DataRestoreCommand: fmt.Sprintf("PGPASSFILE=%s pg_basebackup -Xs -D %%d -h %s -p %s -U %s", pgpass.Name(), ptk.pgListenAddress, ptk.pgPort, ptk.pgReplUsername),
@@ -415,7 +416,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
-	ts, err := NewTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
+	ts, err := newTestSentinel(t, dir, clusterName, tstore.storeBackend, storeEndpoints, fmt.Sprintf("--initial-cluster-spec=%s", initialClusterSpecFile))
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -423,7 +424,7 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 		t.Fatalf("unexpected err: %v", err)
 	}
 	defer ts.Stop()
-	tk, err := NewTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
+	tk, err := newTestKeeper(t, dir, clusterName, pgSUUsername, pgSUPassword, pgReplUsername, pgReplPassword, tstore.storeBackend, storeEndpoints)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -455,13 +456,13 @@ func TestPromoteStandbyClusterArchiveRecovery(t *testing.T) {
 	}
 
 	// promote the standby cluster to a primary cluster
-	err = StolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
+	err = stolonCtl(t, clusterName, tstore.storeBackend, storeEndpoints, "promote", "-y")
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 
 	// check that the cluster master has been promoted to a primary
-	if err := tk.WaitDBRole(common.RoleMaster, nil, 30*time.Second); err != nil {
+	if err := tk.WaitDBRole(common.RolePrimary, nil, 30*time.Second); err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }

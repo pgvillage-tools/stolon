@@ -73,19 +73,19 @@ func TestClusterData_FindDB(t *testing.T) {
 	}
 	tests := []struct {
 		name        string
-		clusterData ClusterData
+		clusterData Data
 		keeper      *Keeper
 		expectedDB  *DB
 	}{
 		{
 			name:        "should return nil if the clusterData is empty",
-			clusterData: ClusterData{},
+			clusterData: Data{},
 			keeper:      &Keeper{},
 			expectedDB:  nil,
 		},
 		{
 			name: "should return nil if DB is not found for given keeper",
-			clusterData: ClusterData{
+			clusterData: Data{
 				DBs: map[string]*DB{
 					"dbUUID": &db,
 				},
@@ -95,7 +95,7 @@ func TestClusterData_FindDB(t *testing.T) {
 		},
 		{
 			name: "should return the DB if DB is found for given keeper",
-			clusterData: ClusterData{
+			clusterData: Data{
 				DBs: map[string]*DB{
 					"dbUUID": &db,
 				},

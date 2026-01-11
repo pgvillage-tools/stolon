@@ -84,10 +84,10 @@ var _ = Describe("Pgversion", func() {
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			dataDir := filepath.Join(tempDir, "proper_dir")
-			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(dataDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			pgVersionFile := filepath.Join(dataDir, "PG_VERSION")
-			err = os.WriteFile(pgVersionFile, []byte("18"), 0o600)
+			err = os.WriteFile(pgVersionFile, []byte("18"), urw)
 			version, err := pgDataVersion(dataDir)
 			Ω(err).NotTo(HaveOccurred())
 			Ω(version.Equal(V18)).To(BeTrue())
@@ -106,7 +106,7 @@ var _ = Describe("Pgversion", func() {
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			dataDir := filepath.Join(tempDir, "proper_dir")
-			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(dataDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			version, err := pgDataVersion(dataDir)
 			Ω(err).To(HaveOccurred())
@@ -117,10 +117,10 @@ var _ = Describe("Pgversion", func() {
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			dataDir := filepath.Join(tempDir, "proper_dir")
-			err = os.Mkdir(dataDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(dataDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			pgVersionFile := filepath.Join(dataDir, "PG_VERSION")
-			err = os.WriteFile(pgVersionFile, []byte("aabbccd"), 0o600)
+			err = os.WriteFile(pgVersionFile, []byte("aabbccd"), urw)
 			version, err := pgDataVersion(dataDir)
 			Ω(err).To(HaveOccurred())
 			Ω(version).To(BeNil())
@@ -132,13 +132,13 @@ var _ = Describe("Pgversion", func() {
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			binDir := filepath.Join(tempDir, "bindir")
-			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(binDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			pgBinary := filepath.Join(binDir, "postgres")
 			err = os.WriteFile(pgBinary, []byte(
 				`#!/bin/bash
 echo "postgres (PostgreSQL) 18.0 (Debian 18.0-1.pgdg13+3)"`,
-			), 0o700)
+			), urwx)
 			version, err := binaryVersion(binDir)
 			Ω(err).NotTo(HaveOccurred())
 			Ω(version.Equal(V18)).To(BeTrue())
@@ -148,7 +148,7 @@ echo "postgres (PostgreSQL) 18.0 (Debian 18.0-1.pgdg13+3)"`,
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			binDir := filepath.Join(tempDir, "bindir")
-			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(binDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			version, err := binaryVersion(binDir)
 			Ω(err).To(HaveOccurred())
@@ -159,13 +159,13 @@ echo "postgres (PostgreSQL) 18.0 (Debian 18.0-1.pgdg13+3)"`,
 			Ω(err).NotTo(HaveOccurred())
 			defer os.RemoveAll(tempDir) // Clean up after test
 			binDir := filepath.Join(tempDir, "bindir")
-			err = os.Mkdir(binDir, 0o700) // revive:disable-line:add-constant
+			err = os.Mkdir(binDir, urwx) // revive:disable-line:add-constant
 			Ω(err).NotTo(HaveOccurred())
 			pgBinary := filepath.Join(binDir, "postgres")
 			err = os.WriteFile(pgBinary, []byte(
 				`#!/bin/bash
 echo "this is no good"`,
-			), 0o700)
+			), urwx)
 			version, err := binaryVersion(binDir)
 			Ω(err).To(HaveOccurred())
 			Ω(version).To(BeNil())

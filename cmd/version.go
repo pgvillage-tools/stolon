@@ -14,4 +14,5 @@
 
 package cmd
 
+// Version is a placeholder for the actual version, to be seeded when building the binary
 var Version = "No version defined at build time"
