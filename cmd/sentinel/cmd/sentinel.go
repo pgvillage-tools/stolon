@@ -56,11 +56,16 @@ const (
 
 const (
 	logDB             = "db"
+	logRecDB          = "receivedDB"
 	logKeeper         = "keeper"
 	logDbSysID        = "dbSystemdID"
 	logMasterDB       = "masterDB"
+	logMasterSystemID = "masterSystemID"
 	logPrevSyncStdbys = "prevSynchronousStandbys"
 	logSyncStdbys     = "SynchronousStandbys"
+	logSyncStdbyDb    = "synchronousStandbyDB"
+	logRequiredWal    = "requiredWAL"
+	logOldMasterWal   = "olderMasterWAL"
 )
 
 // CmdSentinel is a variable which contains the cobra command
@@ -325,7 +330,7 @@ func (s *Sentinel) updateKeepersStatus(
 		if dbs.UID != db.UID {
 			log.Warnw(
 				"received db state for unexpected db uid",
-				"receivedDB",
+				logRecDB,
 				dbs.UID,
 				logDB,
 				db.UID,
@@ -628,7 +633,7 @@ func (s *Sentinel) dbValidity(cd *cluster.Data, dbUID string) dbValidity {
 				db.Spec.KeeperUID,
 				logDbSysID,
 				db.Status.SystemID,
-				"masterSystemID",
+				logMasterSystemID,
 				masterDB.Status.SystemID,
 			)
 			return dbValidityInvalid
@@ -699,9 +704,9 @@ func (s *Sentinel) dbCanSync(cd *cluster.Data, dbUID string) bool {
 		db.UID,
 		logKeeper,
 		db.Spec.KeeperUID,
-		"requiredWAL",
+		logRequiredWal,
 		required,
-		"olderMasterWAL",
+		logOldMasterWal,
 		older,
 	)
 	// compare the required wal file with the older wal file name ignoring the timelineID
@@ -715,9 +720,9 @@ func (s *Sentinel) dbCanSync(cd *cluster.Data, dbUID string) bool {
 		db.UID,
 		logKeeper,
 		db.Spec.KeeperUID,
-		"requiredWAL",
+		logRequiredWal,
 		required,
-		"olderMasterWAL",
+		logOldMasterWal,
 		older,
 	)
 	return false
@@ -1607,7 +1612,7 @@ func (s *Sentinel) updateCluster(cd *cluster.Data, pis cluster.ProxiesInfo) (*cl
 								"adding new synchronous standby in good state trying to reach MaxSynchronousStandbys",
 								logMasterDB,
 								masterDB.UID,
-								"synchronousStandbyDB",
+								logSyncStdbyDb,
 								bestStandby.UID,
 								logKeeper,
 								bestStandby.Spec.KeeperUID)
@@ -1634,7 +1639,7 @@ func (s *Sentinel) updateCluster(cd *cluster.Data, pis cluster.ProxiesInfo) (*cl
 									"adding previous synchronous standby to reach MinSynchronousStandbys",
 									logMasterDB,
 									masterDB.UID,
-									"synchronousStandbyDB",
+									logSyncStdbyDb,
 									db.UID,
 									logKeeper,
 									db.Spec.KeeperUID)
@@ -1676,7 +1681,7 @@ func (s *Sentinel) updateCluster(cd *cluster.Data, pis cluster.ProxiesInfo) (*cl
 											"adding previous synchronous standby",
 											logMasterDB,
 											masterDB.UID,
-											"synchronousStandbyDB",
+											logSyncStdbyDb,
 											db.UID,
 											logKeeper,
 											db.Spec.KeeperUID)
