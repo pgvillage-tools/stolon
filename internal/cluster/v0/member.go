@@ -44,12 +44,18 @@ func (k *KeeperInfo) Copy() *KeeperInfo {
 type PostgresTimelinesHistory []*PostgresTimelineHistory
 
 // Copy returns a shallow copy
-func (tlsh PostgresTimelinesHistory) Copy() PostgresTimelinesHistory {
+func (tlsh *PostgresTimelinesHistory) Copy() PostgresTimelinesHistory {
 	if tlsh == nil {
 		return nil
 	}
-	ntlsh := make(PostgresTimelinesHistory, len(tlsh))
-	copy(ntlsh, tlsh)
+	var ntlsh PostgresTimelinesHistory
+	for _, ptlh := range *tlsh {
+		ntlsh = append(ntlsh, &PostgresTimelineHistory{
+			TimelineID:  ptlh.TimelineID,
+			SwitchPoint: ptlh.SwitchPoint,
+			Reason:      ptlh.Reason,
+		})
+	}
 	return ntlsh
 }
 
@@ -93,9 +99,11 @@ func (p *PostgresState) Copy() *PostgresState {
 // SentinelsInfo stores all info on sentinels
 type SentinelsInfo []*SentinelInfo
 
+/*
 func (s SentinelsInfo) Len() int           { return len(s) }
 func (s SentinelsInfo) Less(i, j int) bool { return s[i].ID < s[j].ID }
 func (s SentinelsInfo) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+*/
 
 // SentinelInfo stores all info on a sentinel
 type SentinelInfo struct {
@@ -107,9 +115,11 @@ type SentinelInfo struct {
 // ProxiesInfo stores all info on proxies
 type ProxiesInfo []*ProxyInfo
 
+/*
 func (p ProxiesInfo) Len() int           { return len(p) }
 func (p ProxiesInfo) Less(i, j int) bool { return p[i].ID < p[j].ID }
 func (p ProxiesInfo) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+*/
 
 // ProxyInfo stores all info on a proxy
 type ProxyInfo struct {

@@ -24,7 +24,7 @@ threshold:
   # (optional; default 0)
   # Minimum overall project coverage percentage required.
   #total: 80
-  total: 13
+  total: 22
 
 # Holds regexp rules which will override thresholds for matched files or packages
 # using their paths.
@@ -41,6 +41,10 @@ override:
 
   - path: ^internal/log/log.go
     threshold: 52
+  - path: ^internal/cluster/clusterdata.go
+    threshold: 69
+  - path: ^internal/cluster/keeper.go
+    threshold: 69
   - path: ^internal/cluster/cluster.go
     threshold: 41
   - path: ^internal/mock/store/store.go
@@ -51,10 +55,6 @@ override:
     threshold: 12
   - path: ^internal/cluster/member.go
     threshold: 10
-  - path: ^internal/cluster/v0/clusterview.go
-    threshold: 0
-  - path: ^internal/cluster/v0/member.go
-    threshold: 0
   - path: ^internal/common/tls.go
     threshold: 0
   - path: ^internal/flagutil/env.go
@@ -80,25 +80,23 @@ override:
   - path: scripts/gen_commands_doc.go
     threshold: 0
 
-  - path: ^internal/util
+  - path: ^internal/util$
     threshold: 58
-  - path: ^internal/log
+  - path: ^internal/log$
     threshold: 52
-  - path: ^internal/cluster/v0
-    threshold: 40
-  - path: ^internal/cluster
+  - path: ^internal/cluster$
     threshold: 33
-  - path: ^internal/mock/store
+  - path: ^internal/mock/store$
     threshold: 22
-  - path: ^internal/common
+  - path: ^internal/common$
     threshold: 15
-  - path: ^internal/postgresql
+  - path: ^internal/postgresql$
     threshold: 5
-  - path: ^internal/flagutil
+  - path: ^internal/flagutil$
     threshold: 0
-  - path: ^internal/store
+  - path: ^internal/store$
     threshold: 0
-  - path: ^scripts
+  - path: ^scripts$
     threshold: 0
 
 # Holds regexp rules which will exclude matched files or packages
