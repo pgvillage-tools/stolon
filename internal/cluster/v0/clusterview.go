@@ -27,10 +27,10 @@ const (
 	CurrentCDFormatVersion uint64 = 0
 )
 
-// KeepersState holds the state of all kepers of this cluster
+// KeepersState holds the state of all keepers of this cluster
 type KeepersState map[string]*KeeperState
 
-// SortedKeys returns a sorted list oof all keys of a KeepersState
+// SortedKeys returns a sorted list of all keys of a KeepersState
 func (kss KeepersState) SortedKeys() []string {
 	keys := []string{}
 	for k := range kss {
@@ -40,8 +40,11 @@ func (kss KeepersState) SortedKeys() []string {
 	return keys
 }
 
-// Copy will return a copy of a KeppersState
+// Copy will return a copy of a KeepersState
 func (kss KeepersState) Copy() KeepersState {
+	if kss == nil {
+		return nil
+	}
 	nkss := KeepersState{}
 	for k, v := range kss {
 		nkss[k] = v.Copy()
@@ -133,6 +136,18 @@ func (ks *KeeperState) CleanError() {
 // KeepersRole is a map of KepperRole instances
 type KeepersRole map[string]*KeeperRole
 
+// GetFollowersIDs returns a sorted list of followersIDs
+func (ksr KeepersRole) GetFollowersIDs(id string) []string {
+	followersIDs := []string{}
+	for keeperID, kr := range ksr {
+		if kr.Follow == id {
+			followersIDs = append(followersIDs, keeperID)
+		}
+	}
+	sort.Strings(followersIDs)
+	return followersIDs
+}
+
 // NewKeepersRole returns a new KeepersRole
 func NewKeepersRole() KeepersRole {
 	return KeepersRole{}
@@ -140,6 +155,9 @@ func NewKeepersRole() KeepersRole {
 
 // Copy returns a copy of a KeepersRole
 func (ksr KeepersRole) Copy() KeepersRole {
+	if ksr == nil {
+		return nil
+	}
 	nksr := KeepersRole{}
 	for k, v := range ksr {
 		nksr[k] = v.Copy()
@@ -232,14 +250,7 @@ func (cv *ClusterView) Copy() *ClusterView {
 
 // GetFollowersIDs returns a sorted list of followersIDs
 func (cv *ClusterView) GetFollowersIDs(id string) []string {
-	followersIDs := []string{}
-	for keeperID, kr := range cv.KeepersRole {
-		if kr.Follow == id {
-			followersIDs = append(followersIDs, keeperID)
-		}
-	}
-	sort.Strings(followersIDs)
-	return followersIDs
+	return cv.KeepersRole.GetFollowersIDs(id)
 }
 
 // ClusterData defines a struct containing the KeepersState and the ClusterView since they need to be in sync
