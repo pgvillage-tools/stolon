@@ -23,9 +23,9 @@ var (
 	testSettings = PGParameters{"min_wal_keep": "1G"}
 )
 
-func randomInt() int        { return rand.Int() }
+// func randomInt() int        { return rand.Int() }
 func randomInt64() int64    { return rand.Int63() }
-func randomUInt16() *uint16 { var i = uint16(rand.Uint32() % 1048576); return &i }
+func randomUInt16() *uint16 { var i = uint16(rand.Uint32() % 65536); return &i }
 func randomUInt32() *uint32 { var i = rand.Uint32(); return &i }
 func randomUInt64() uint64  { return rand.Uint64() }
 func randomString() string  { return fmt.Sprintf("%x", rand.Int63()) }
@@ -34,7 +34,7 @@ func randomIP() string {
 	return fmt.Sprintf("%d.%d.%d.%d", rand.Uint32()%256, rand.Uint32()%256,
 		rand.Uint32()%256, rand.Uint32()%256)
 }
-func randomPort() string { return fmt.Sprintf("%d", rand.Uint32()) }
+func randomPort() string { return fmt.Sprintf("%d", rand.Uint32()%65536) }
 
 const maxNano uint64 = 1000 * 1000 * 1000 * 3600
 
@@ -117,13 +117,13 @@ func randomKeepers(num uint) Keepers {
 	ks := Keepers{}
 	for i := 0; i < int(num); i++ {
 		k := randomKeeper()
-		ks[k.UID] = &k
+		ks[k.UID] = k
 	}
 	return ks
 }
 
-func randomKeeper() Keeper {
-	return Keeper{
+func randomKeeper() *Keeper {
+	return &Keeper{
 		UID:        randomString(),
 		Generation: randomInt64(),
 		ChangeTime: time.Now(),

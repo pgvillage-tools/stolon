@@ -51,6 +51,7 @@ func TestUID(t *testing.T) {
 		if slices.Contains(uids, uid) {
 			t.Errorf("Expected every new uid to be unique, but %s is duplicate after %d rounds", uid, len(uids))
 		}
+		uids = append(uids, uid)
 	}
 }
 
@@ -61,5 +62,6 @@ func TestUUID(t *testing.T) {
 		if slices.Contains(uuids, uuid) {
 			t.Errorf("Expected every new uuid to be unique, but %s is duplicate after %d rounds", uuid, len(uuids))
 		}
+		uuids = append(uuids, uuid)
 	}
 }

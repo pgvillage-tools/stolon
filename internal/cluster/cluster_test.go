@@ -118,7 +118,7 @@ var _ = Describe("Cluster", func() {
 		})
 	})
 	When("Validating a Spec", func() {
-		It("should return no error when all is default", func() {
+		It("should return no error when fields are unset", func() {
 			var spec Spec
 			Ω(spec.Validate()).To(HaveOccurred())
 		})
@@ -129,7 +129,6 @@ var _ = Describe("Cluster", func() {
 				invalidInitMode         = InitMode("invalid")
 				initModeNew             = New
 				initModeExistingCluster = ExistingCluster
-				initModeInvalid         = InitMode("invalid")
 				initModePITR            = PITR
 				roleReplica             = Replica
 				roleInvalid             = Role("invalid")
@@ -166,7 +165,7 @@ var _ = Describe("Cluster", func() {
 				{InitMode: &initModePITR,
 					PITRConfig: &PITRConfig{RecoveryTargetSettings: &RecoveryTargetSettings{}},
 					Role:       &roleReplica},
-				{InitMode: &initModeInvalid},
+				{InitMode: &invalidInitMode},
 				{DefaultSUReplAccessMode: &suram},
 				{Role: &roleReplica, StandbyConfig: nil},
 				{Role: &roleInvalid},

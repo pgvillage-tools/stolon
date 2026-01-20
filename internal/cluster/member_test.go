@@ -55,7 +55,14 @@ var _ = Describe("Member", func() {
 		})
 	})
 	When("sorting a SentinelsInfo", func() {
-		ssi := randomSentinelsInfo(5)
+		var ssi SentinelsInfo
+		BeforeEach(func() {
+			ssi = randomSentinelsInfo(5)
+			sort.Sort(ssi)
+			if len(ssi) > 1 {
+				ssi[0], ssi[1] = ssi[1], ssi[0]
+			}
+		})
 		It("should not be sorted when generated at random", func() {
 			var keys []string
 			for _, si := range ssi {
@@ -72,8 +79,15 @@ var _ = Describe("Member", func() {
 			Ω(slices.IsSorted(keys)).To(BeTrue())
 		})
 	})
-	When("sorting a SentinelsInfo", func() {
-		psi := randomProxiesInfo(5).ToSlice()
+	When("sorting a ProxiesInfoSlice", func() {
+		var psi ProxiesInfoSlice
+		BeforeEach(func() {
+			psi = randomProxiesInfo(5).ToSlice()
+			sort.Sort(psi)
+			if len(psi) > 1 {
+				psi[0], psi[1] = psi[1], psi[0]
+			}
+		})
 		It("should not be sorted when generated at random", func() {
 			var keys []string
 			for _, si := range psi {

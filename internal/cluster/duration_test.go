@@ -29,15 +29,14 @@ var _ = Describe("Duration", func() {
 			for _, tt := range tests {
 				dur := &Duration{}
 				err := json.Unmarshal([]byte(tt.in), &dur)
-				if tt.err == nil {
+				if tt.err != nil {
+					Ω(err).To(HaveOccurred())
+					Ω(err.Error()).To(Equal(tt.err.Error()))
+				} else {
 					Ω(err).NotTo(HaveOccurred())
-				}
-				if err != nil && tt.err != nil {
-					Ω(dur).NotTo(BeNil())
 					Ω(dur.Duration).To(Equal(tt.d))
 				}
 			}
-			Ω(nil).To(BeNil())
 		})
 	})
 })

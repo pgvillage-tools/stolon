@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("Keeper", func() {
-	When("Copying a Data", func() {
+	When("Copying a KeepersInfo", func() {
 		var (
 			orgKIs, newKIs KeepersInfo
 		)
@@ -97,7 +97,7 @@ var _ = Describe("Keeper", func() {
 	})
 	// Keepers.SortedKeys
 	When("Requesting keys of a Keepers object", func() {
-		It("should returnn sorted keys list", func() {
+		It("should return sorted keys list", func() {
 			k := randomKeepers(10)
 			var keys []string
 			for key := range k {
@@ -106,7 +106,7 @@ var _ = Describe("Keeper", func() {
 			Ω(slices.IsSorted(keys)).NotTo(BeTrue())
 			sortedKeys := k.SortedKeys()
 			Ω(slices.IsSorted(sortedKeys)).To(BeTrue())
-			Ω(slices.IsSorted(sortedKeys)).NotTo(Equal(keys))
+			Ω(sortedKeys).NotTo(Equal(keys))
 			slices.Sort(keys)
 			Ω(slices.IsSorted(keys)).To(BeTrue())
 			Ω(sortedKeys).To(Equal(keys))
