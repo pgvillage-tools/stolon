@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package util
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("k8s", func() {
@@ -89,7 +91,6 @@ users:
 			Expect(err).NotTo(HaveOccurred())
 			err = kubeconfigFile.Close()
 			Expect(err).NotTo(HaveOccurred())
-
 
 			kubeconfigPath := kubeconfigFile.Name()
 			context := "context2"

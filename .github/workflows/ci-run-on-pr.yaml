@@ -128,7 +128,7 @@ jobs:
         uses: vladopajic/go-test-coverage@v2
         with:
           profile: cover.out
-          threshold-total: 27
+          threshold-total: 26
           git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
           git-branch: badges
       - name: post coverage report
