@@ -15,15 +15,16 @@
 package util
 
 import (
+	"errors"
 	"os"
 	"os/user"
-
-	"errors"
 )
+
+var currentUserFunc = user.Current
 
 // GetUser returns the linux username running stolon
 func GetUser() (string, error) {
-	u, err := user.Current()
+	u, err := currentUserFunc()
 	if err == nil {
 		return u.Username, nil
 	}

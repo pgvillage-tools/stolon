@@ -74,7 +74,7 @@ func (k KeepersInfo) DeepCopy() (dc KeepersInfo) {
 	if k == nil {
 		return nil
 	}
-	nkis := KeepersInfo{}
+	nkis := make(KeepersInfo, len(k))
 	for k, v := range k {
 		nkis[k] = v.DeepCopy()
 	}
