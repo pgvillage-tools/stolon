@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"os"
 )
 
@@ -32,7 +33,7 @@ func NewTLSConfig(certFile, keyFile, caFile string, insecureSkipVerify bool) (*t
 			return nil, err
 		}
 		roots := x509.NewCertPool()
-
+		certsLoaded := 0
 		for {
 			var block *pem.Block
 			block, pemBytes = pem.Decode(pemBytes)
@@ -44,11 +45,14 @@ func NewTLSConfig(certFile, keyFile, caFile string, insecureSkipVerify bool) (*t
 				return nil, err
 			}
 			roots.AddCert(cert)
+			certsLoaded++
+		}
+		if certsLoaded == 0 {
+			return nil, fmt.Errorf("no valid certificates found in CA file %q", caFile)
 		}
 
 		tlsConfig.RootCAs = roots
 	}
-
 	// Populate keypair
 	// both must be defined
 	if certFile != "" && keyFile != "" {
