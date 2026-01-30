@@ -17,6 +17,7 @@ package postgresql
 import (
 	"bufio"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -24,7 +25,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,46 +33,9 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
-	slog "github.com/sorintlab/stolon/internal/log"
 
-	// TODO: This can probably go
-	_ "github.com/lib/pq"
 	"github.com/mitchellh/copystructure"
-	"go.uber.org/zap"
 )
-
-//go:generate mockgen -destination=../mock/postgresql/postgresql.go -package=mocks -source=$GOFILE
-
-const (
-	postgresConf           = "postgresql.conf"
-	postgresRecoveryConf   = "recovery.conf"
-	postgresStandbySignal  = "standby.signal"
-	postgresRecoverySignal = "recovery.signal"
-	postgresRecoveryDone   = "recovery.done"
-	postgresAutoConf       = "postgresql.auto.conf"
-	tmpPostgresConf        = "stolon-temp-postgresql.conf"
-
-	startTimeout = 60 * time.Second
-
-	exitStatusNotRunning          = 3
-	exitStatusInaccessibleDatadir = 4
-
-	argDatadir = "-D"
-	argDbName  = "-d"
-	logExec    = "execing cmd"
-)
-
-var (
-	// ErrInaccessibleDatadir is raised when pg_ctl returns an unknown state
-	ErrInaccessibleDatadir = errors.New("unknown postgres state")
-)
-
-var log = slog.S()
-
-// PGManager can trieve the timeline history of a PostgreSQL instance
-type PGManager interface {
-	GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error)
-}
 
 // Manager manages a PostgreSQL instance
 type Manager struct {
@@ -94,70 +57,6 @@ type Manager struct {
 	replUsername       string
 	replPassword       string
 	requestTimeout     time.Duration
-}
-
-// RecoveryMode is an enum for the type of recover an instance is in
-type RecoveryMode int
-
-const (
-	// RecoveryModeNone is set when an instance is a primary instance
-	RecoveryModeNone RecoveryMode = iota
-	// RecoveryModeStandby is set when an instance is a replica instance
-	RecoveryModeStandby
-	// RecoveryModeRecovery is set during Point in time recovery
-	RecoveryModeRecovery
-)
-
-// RecoveryOptions set recovery options
-type RecoveryOptions struct {
-	RecoveryMode       RecoveryMode
-	RecoveryParameters common.Parameters
-}
-
-// NewRecoveryOptions returns a freshly initialized Recoveryoptions resource
-func NewRecoveryOptions() *RecoveryOptions {
-	return &RecoveryOptions{RecoveryParameters: make(common.Parameters)}
-}
-
-// DeepCopy returns a full copy
-func (r *RecoveryOptions) DeepCopy() (ro *RecoveryOptions) {
-	var ok bool
-	if nr, err := copystructure.Copy(r); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(r, nr) {
-		panic("not equal")
-	} else if ro, ok = nr.(*RecoveryOptions); !ok {
-		panic("type is different after copy")
-	}
-	return ro
-}
-
-// SystemData stores the system specific data of a PostgreSQL instance
-type SystemData struct {
-	SystemID   string
-	TimelineID uint64
-	XLogPos    uint64
-}
-
-// TimelineHistory stores all info regarding a specific timeline
-type TimelineHistory struct {
-	TimelineID  uint64
-	SwitchPoint uint64
-	Reason      string
-}
-
-// InitConfig stores the config specific to initdb
-type InitConfig struct {
-	Locale        string
-	Encoding      string
-	DataChecksums bool
-}
-
-// TODO: replace with zerolog
-
-// SetLogger sets a module wide logger
-func SetLogger(l *zap.SugaredLogger) {
-	log = l
 }
 
 // NewManager returns a freshly initialized manager resource
@@ -927,7 +826,7 @@ func (p *Manager) writeConf(useTmpPostgresConf, writeRecoveryParams bool) error 
 			}
 			for k, v := range p.parameters {
 				// Single quotes needs to be doubled
-				ev := strings.Replace(v, `'`, `''`, -1)
+				ev := strings.Replace(v, "'", "''", -1)
 				if _, err := f.Write([]byte(fmt.Sprintf("%s = '%s'\n", k, ev))); err != nil {
 					return err
 				}
@@ -1252,4 +1151,19 @@ func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
 		return isRestartRequiredUsingPgSettingsContext(ctx, p.localConnParams, changedParams)
 	}
 	return isRestartRequiredUsingPendingRestart(ctx, p.localConnParams)
+}
+
+// GetSystemdID is function that fetches the systemID and returns it as a string
+func (p *Manager) GetSystemdID() (string, error) {
+	pgControl, err := os.Open(filepath.Join(p.dataDir, "global", "pg_control"))
+	if err != nil {
+		return "", err
+	}
+	var systemID uint64
+	err = binary.Read(pgControl, binary.LittleEndian, &systemID)
+	if err != nil {
+		return "", err
+	}
+	const baseTen = 10
+	return strconv.FormatUint(systemID, baseTen), nil
 }

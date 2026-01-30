@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package postgresql has all stolon specific postgresql code
 package postgresql
-
-// TODO: implement context properly
 
 import (
 	"bufio"
@@ -26,19 +25,288 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/url"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
+	"unicode"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
+	slog "github.com/sorintlab/stolon/internal/log"
 
-	"os"
-
+	// TODO: This can probably go
 	"github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
+
+const (
+	postgresConf           = "postgresql.conf"
+	postgresRecoveryConf   = "recovery.conf"
+	postgresStandbySignal  = "standby.signal"
+	postgresRecoverySignal = "recovery.signal"
+	postgresRecoveryDone   = "recovery.done"
+	postgresAutoConf       = "postgresql.auto.conf"
+	tmpPostgresConf        = "stolon-temp-postgresql.conf"
+
+	startTimeout                  = 60 * time.Second
+	exitStatusNotRunning          = 3
+	exitStatusInaccessibleDatadir = 4
+
+	argDatadir = "-D"
+	argDbName  = "-d"
+	logExec    = "execing cmd"
+)
+
+var (
+	// ErrInaccessibleDatadir is raised when pg_ctl returns an unknown state
+	ErrInaccessibleDatadir = errors.New("unknown postgres state")
+)
+
+var log = slog.S()
+
+// TODO: replace with zerolog
+
+// SetLogger sets a module wide logger
+func SetLogger(l *zap.SugaredLogger) {
+	log = l
+}
+
+// TODO: implement all other options as well
+
+// ConnParamKey is an enum for PostgreSQL connection parameters
+type ConnParamKey string
+
+const (
+	// ConnParamKeyHost defines the key for the hostname
+	ConnParamKeyHost ConnParamKey = "host"
+	// ConnParamKeyPort defines the key for the port
+	ConnParamKeyPort ConnParamKey = "port"
+	// ConnParamKeyUser defines the key for the username
+	ConnParamKeyUser ConnParamKey = "user"
+	// ConnParamKeyPassword defines the key for the password
+	ConnParamKeyPassword ConnParamKey = "password"
+	// ConnParamKeyDbName defines the key for the database name
+	ConnParamKeyDbName ConnParamKey = "dbname"
+	// ConnParamKeyAppName defines the key for the application name
+	ConnParamKeyAppName ConnParamKey = "application_name"
+	// ConnParamKeySSLMode defines the key for the ssl mode
+	ConnParamKeySSLMode ConnParamKey = "sslmode"
+)
+
+// scanner implements a tokenizer for libpq-style option strings.
+type scanner struct {
+	s []rune
+	i int
+}
+
+// newScanner returns a new scanner initialized with the option string s.
+func newScanner(s string) *scanner {
+	return &scanner{[]rune(s), 0}
+}
+
+// Next returns the next rune.
+// It returns 0, false if the end of the text has been reached.
+func (s *scanner) Next() (rune, bool) {
+	if s.i >= len(s.s) {
+		return 0, false
+	}
+	r := s.s[s.i]
+	s.i++
+	return r, true
+}
+
+// SkipSpaces returns the next non-whitespace rune.
+// It returns 0, false if the end of the text has been reached.
+func (s *scanner) SkipSpaces() (rune, bool) {
+	r, ok := s.Next()
+	for unicode.IsSpace(r) && ok {
+		r, ok = s.Next()
+	}
+	return r, ok
+}
+
+// ParseConnString parses the options from name and adds them to the values.
+//
+// The parsing code is based on conninfo_parse from libpq's fe-connect.c
+func ParseConnString(name string) (ConnParams, error) {
+	p := ConnParams{}
+	s := newScanner(name)
+
+	for {
+		var (
+			keyRunes, valRunes []rune
+			r                  rune
+			ok                 bool
+		)
+
+		if r, ok = s.SkipSpaces(); !ok {
+			break
+		}
+
+		// Scan the key
+		for !unicode.IsSpace(r) && r != '=' {
+			keyRunes = append(keyRunes, r)
+			if r, ok = s.Next(); !ok {
+				break
+			}
+		}
+
+		// Skip any whitespace if we're not at the = yet
+		if r != '=' {
+			r, ok = s.SkipSpaces()
+		}
+
+		// The current character should be =
+		if r != '=' || !ok {
+			return nil, fmt.Errorf(`missing "=" after %q in connection info string"`, string(keyRunes))
+		}
+
+		// Skip any whitespace after the =
+		if r, ok = s.SkipSpaces(); !ok {
+			// If we reach the end here, the last value is just an empty string as per libpq.
+			p.Set(ConnParamKey(ConnParamKey(keyRunes)), "")
+			break
+		}
+
+		if r != '\'' {
+			for !unicode.IsSpace(r) {
+				if r == '\\' {
+					if r, ok = s.Next(); !ok {
+						return nil, errors.New(`missing character after backslash`)
+					}
+				}
+				valRunes = append(valRunes, r)
+
+				if r, ok = s.Next(); !ok {
+					break
+				}
+			}
+		} else {
+		quote:
+			for {
+				if r, ok = s.Next(); !ok {
+					return nil, errors.New(`unterminated quoted string literal in connection string`)
+				}
+				switch r {
+				case '\'':
+					break quote
+				case '\\':
+					r, _ = s.Next()
+					fallthrough
+				default:
+					valRunes = append(valRunes, r)
+				}
+			}
+		}
+
+		p.Set(ConnParamKey(keyRunes), string(valRunes))
+	}
+
+	return p, nil
+}
+
+// URLToConnParams creates the connParams from the url.
+func URLToConnParams(urlStr string) (ConnParams, error) {
+	p := ConnParams{}
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	if u.Scheme != "postgres" && u.Scheme != "postgresql" {
+		return nil, fmt.Errorf("invalid connection protocol: %s", u.Scheme)
+	}
+
+	if u.User != nil {
+		v := u.User.Username()
+		p.Set("user", v)
+		v, _ = u.User.Password()
+		p.Set("password", v)
+	}
+
+	i := strings.Index(u.Host, ":")
+	if i < 0 {
+		p.Set("host", u.Host)
+	} else {
+		p.Set("host", u.Host[:i])
+		p.Set("port", u.Host[i+1:])
+	}
+
+	if u.Path != "" {
+		p.Set("dbname", u.Path[1:])
+	}
+
+	q := u.Query()
+	for k := range q {
+		p.Set(ConnParamKey(k), q.Get(k))
+	}
+
+	return p, nil
+}
+
+var (
+	// V95 represents PostgreSQL 9.5
+	V95 = semver.MustParse("9.5")
+	// V96 represents PostgreSQL 9.6
+	V96 = semver.MustParse("9.6")
+	// V10 represents PostgreSQL 10
+	V10 = semver.MustParse("10")
+	// V12 represents PostgreSQL 12
+	V12 = semver.MustParse("12")
+	// V13 represents PostgreSQL 13
+	V13 = semver.MustParse("13")
+	// V18 represents PostgreSQL 18
+	V18 = semver.MustParse("18")
+)
+
+func parseBinaryVersion(v string) (*semver.Version, error) {
+	// extract version (removing beta*, rc* etc...)
+
+	regex := regexp.MustCompile(`.* \(PostgreSQL\) ([0-9\.]+).*`)
+	m := regex.FindStringSubmatch(v)
+	if len(m) != 2 {
+		return nil, fmt.Errorf("failed to parse postgres binary version: %q", v)
+	}
+	return semver.NewVersion(m[1])
+}
+
+func parseVersion(v string) (*semver.Version, error) {
+	return semver.NewVersion(v)
+}
+
+func pgDataVersion(dataDir string) (*semver.Version, error) {
+	fh, err := os.Open(filepath.Join(dataDir, "PG_VERSION"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read PG_VERSION: %v", err)
+	}
+	defer handledFileClose(fh)
+
+	scanner := bufio.NewScanner(fh)
+	scanner.Split(bufio.ScanLines)
+
+	scanner.Scan()
+
+	version := scanner.Text()
+	return parseVersion(version)
+}
+
+func binaryVersion(binPath string) (*semver.Version, error) {
+	name := filepath.Join(binPath, "postgres")
+	cmd := exec.Command(name, "-V")
+	log.Debugw("execing cmd", logCmd, cmd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("error: %v, output: %s", err, string(out))
+	}
+	return parseBinaryVersion(string(out))
+}
 
 const (
 	// TODO: can we autodetect if this is non-default?
@@ -78,7 +346,7 @@ func handledRowsClose(rows *sql.Rows) {
 
 func handledFileClose(fh *os.File) {
 	if err := fh.Close(); err != nil {
-		log.Fatalf("Failed to close %s: %v", fh.Name, err)
+		log.Fatalf("Failed to close %s: %v", fh.Name(), err)
 	}
 }
 
