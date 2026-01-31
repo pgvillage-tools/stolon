@@ -26,10 +26,10 @@ import (
 	"strings"
 	"time"
 
-	etcdclientv3 "github.com/coreos/etcd/clientv3"
-	"github.com/docker/leadership"
-	"github.com/docker/libkv"
-	libkvstore "github.com/docker/libkv/store"
+	"github.com/kvtools/consul"
+	"github.com/kvtools/etcdv2"
+	"github.com/kvtools/etcdv3"
+	"github.com/kvtools/valkeyrie"
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 )
@@ -39,12 +39,22 @@ type BackendType string
 
 const (
 	// CONSUL means that consul is used as backend
-	CONSUL BackendType = "consul"
+	CONSUL BackendType = consul.StoreName
 	// ETCDV2 means that etcd is used as backend and that the v2 api is used
-	ETCDV2 BackendType = "etcdv2"
+	ETCDV2 BackendType = etcdv2.StoreName
 	// ETCDV3 means that etcd is used as backend and that the v3 api is used
-	ETCDV3 BackendType = "etcdv3"
+	ETCDV3 BackendType = etcdv3.StoreName
 )
+
+var storeTypes = []string{
+	consul.StoreName,
+	etcdv2.StoreName,
+	etcdv3.StoreName,
+}
+
+func (bt BackendType) string() string {
+	return string(bt)
+}
 
 const (
 	keepersInfoDir   = "/keepers/info/"
@@ -113,18 +123,7 @@ type KVStore interface {
 }
 
 // NewKVStore retruns a freshly initialized KVStore
-func NewKVStore(cfg Config) (KVStore, error) {
-	var kvBackend libkvstore.Backend
-	switch cfg.Backend {
-	case CONSUL:
-		kvBackend = libkvstore.CONSUL
-	case ETCDV2:
-		kvBackend = libkvstore.ETCD
-	case ETCDV3:
-	default:
-		return nil, fmt.Errorf("Unknown store backend: %q", cfg.Backend)
-	}
-
+func NewKVStore(ctx context.Context, cfg Config) (KVStore, error) {
 	endpointsStr := cfg.Endpoints
 	if endpointsStr == "" {
 		switch cfg.Backend {
@@ -132,6 +131,12 @@ func NewKVStore(cfg Config) (KVStore, error) {
 			endpointsStr = DefaultConsulEndpoints
 		case ETCDV2, ETCDV3:
 			endpointsStr = DefaultEtcdEndpoints
+		default:
+			return nil, fmt.Errorf(
+				"unexpected store '%s', should be any of %v",
+				cfg.Backend,
+				strings.Join(storeTypes, ","),
+			)
 		}
 	}
 	endpoints := strings.Split(endpointsStr, ",")
@@ -178,35 +183,35 @@ func NewKVStore(cfg Config) (KVStore, error) {
 		}
 	}
 
+	var config valkeyrie.Config
 	switch cfg.Backend {
-	case CONSUL, ETCDV2:
-		config := &libkvstore.Config{
+	case CONSUL:
+		config = &consul.Config{
+			TLS:               tlsConfig,
+			ConnectionTimeout: cfg.Timeout,
+		}
+	case ETCDV2:
+		config = &etcdv2.Config{
 			TLS:               tlsConfig,
 			ConnectionTimeout: cfg.Timeout,
 		}
 
-		store, err := libkv.NewStore(kvBackend, addrs, config)
-		if err != nil {
-			return nil, err
-		}
-		return &libKVStore{store: store}, nil
 	case ETCDV3:
-		config := etcdclientv3.Config{
-			Endpoints:            addrs,
-			TLS:                  tlsConfig,
-			DialTimeout:          dialTimeout,
-			DialKeepAliveTime:    time.Second,
-			DialKeepAliveTimeout: cfg.Timeout,
+		config = etcdv3.Config{
+			TLS:               tlsConfig,
+			ConnectionTimeout: dialTimeout,
+			SyncPeriod:        cfg.Timeout,
 		}
 
-		c, err := etcdclientv3.New(config)
-		if err != nil {
-			return nil, err
-		}
-		return &etcdV3Store{c: c, requestTimeout: cfg.Timeout}, nil
 	default:
 		return nil, fmt.Errorf("Unknown store backend: %q", cfg.Backend)
 	}
+
+	store, err := valkeyrie.NewStore(ctx, cfg.Backend.string(), addrs, config)
+	if err != nil {
+		return nil, err
+	}
+	return &libKVStore{store: store}, nil
 }
 
 // KVBackedStore defines a config store backed by a KV backend
@@ -373,7 +378,7 @@ func NewKVBackedElection(kvStore KVStore, path, candidateUID string, timeout tim
 	switch kvStore := kvStore.(type) {
 	case *libKVStore:
 		s := kvStore
-		candidate := leadership.NewCandidate(s.store, path, candidateUID, minTTL)
+		candidate := NewCandidate(s.store, path, candidateUID, minTTL)
 		return &libkvElection{store: s, path: path, candidate: candidate}
 	case *etcdV3Store:
 		etcdV3Store := kvStore

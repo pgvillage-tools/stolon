@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -225,20 +226,22 @@ func IsColorLoggerEnable(cmd *cobra.Command, cfg *CommonConfig) bool {
 }
 
 // NewKVStore returns a new KVStore function object
-func NewKVStore(cfg *CommonConfig) (store.KVStore, error) {
-	return store.NewKVStore(store.Config{
-		Backend:       store.BackendType(cfg.StoreBackend),
-		Endpoints:     cfg.StoreEndpoints,
-		Timeout:       cfg.StoreTimeout,
-		CertFile:      cfg.StoreCertFile,
-		KeyFile:       cfg.StoreKeyFile,
-		CAFile:        cfg.StoreCAFile,
-		SkipTLSVerify: cfg.StoreSkipTLSVerify,
-	})
+func NewKVStore(ctx context.Context, cfg *CommonConfig) (store.KVStore, error) {
+	return store.NewKVStore(
+		ctx,
+		store.Config{
+			Backend:       store.BackendType(cfg.StoreBackend),
+			Endpoints:     cfg.StoreEndpoints,
+			Timeout:       cfg.StoreTimeout,
+			CertFile:      cfg.StoreCertFile,
+			KeyFile:       cfg.StoreKeyFile,
+			CAFile:        cfg.StoreCAFile,
+			SkipTLSVerify: cfg.StoreSkipTLSVerify,
+		})
 }
 
 // NewStore is function that returns a new store object
-func NewStore(cfg *CommonConfig) (store.Store, error) {
+func NewStore(ctx context.Context, cfg *CommonConfig) (store.Store, error) {
 	var s store.Store
 
 	switch cfg.StoreBackend {
@@ -249,7 +252,7 @@ func NewStore(cfg *CommonConfig) (store.Store, error) {
 	case "etcdv3":
 		storePath := filepath.Join(cfg.StorePrefix, cfg.ClusterName)
 
-		kvstore, err := NewKVStore(cfg)
+		kvstore, err := NewKVStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create kv store: %v", err)
 		}
@@ -269,7 +272,7 @@ func NewStore(cfg *CommonConfig) (store.Store, error) {
 }
 
 // NewElection is  function that returns a new election object
-func NewElection(cfg *CommonConfig, uid string) (store.Election, error) {
+func NewElection(ctx context.Context, cfg *CommonConfig, uid string) (store.Election, error) {
 	var election store.Election
 
 	switch cfg.StoreBackend {
@@ -280,7 +283,7 @@ func NewElection(cfg *CommonConfig, uid string) (store.Election, error) {
 	case "etcdv3":
 		storePath := filepath.Join(cfg.StorePrefix, cfg.ClusterName)
 
-		kvstore, err := NewKVStore(cfg)
+		kvstore, err := NewKVStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create kv store: %v", err)
 		}

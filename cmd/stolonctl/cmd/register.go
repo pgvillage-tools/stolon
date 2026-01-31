@@ -122,7 +122,8 @@ func checkConfig(cfg *config, rCfg *register.Config) error {
 }
 
 func runRegister(c *cobra.Command, _ []string) {
-	ctx := context.Background()
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	logging.SetStaticLevel(cfg.LogLevel)
 	if cfg.Debug {
 		logging.SetStaticLevel("debug")
@@ -144,7 +145,7 @@ func runRegister(c *cobra.Command, _ []string) {
 }
 
 func registerCluster(ctx context.Context, sigs chan os.Signal, cfg *config, rCfg *register.Config) error {
-	s, err := cmd.NewStore(&cfg.CommonConfig)
+	s, err := cmd.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return err
 	}

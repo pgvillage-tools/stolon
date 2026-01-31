@@ -51,6 +51,8 @@ override:
     threshold: 0
   - path: ^internal/flagutil/env.go
     threshold: 0
+  - path: ^internal/store/election.go
+    threshold: 0
   - path: ^internal/store/etcdv3.go
     threshold: 0
   - path: ^internal/store/k8s.go
@@ -58,7 +60,7 @@ override:
   - path: ^internal/store/kvbacked.go
     threshold: 0
   - path: ^internal/store/libkv.go
-    threshold: 4
+    threshold: 0
   - path: scripts/gen_commands_doc.go
     threshold: 0
 

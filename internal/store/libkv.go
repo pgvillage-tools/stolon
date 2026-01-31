@@ -19,16 +19,8 @@ package store
 import (
 	"context"
 
-	"github.com/docker/leadership"
-	libkvstore "github.com/docker/libkv/store"
-	"github.com/docker/libkv/store/consul"
-	"github.com/docker/libkv/store/etcd"
+	libkvstore "github.com/kvtools/valkeyrie/store"
 )
-
-func init() {
-	etcd.Register()
-	consul.Register()
-}
 
 func fromLibKVStoreErr(err error) error {
 	switch err {
@@ -44,25 +36,25 @@ type libKVStore struct {
 	store libkvstore.Store
 }
 
-func (s *libKVStore) Put(_ context.Context, key string, value []byte, options *WriteOptions) error {
+func (s *libKVStore) Put(ctx context.Context, key string, value []byte, options *WriteOptions) error {
 	var libkvOptions *libkvstore.WriteOptions
 	if options != nil {
 		libkvOptions = &libkvstore.WriteOptions{TTL: options.TTL}
 	}
-	err := s.store.Put(key, value, libkvOptions)
+	err := s.store.Put(ctx, key, value, libkvOptions)
 	return fromLibKVStoreErr(err)
 }
 
-func (s *libKVStore) Get(_ context.Context, key string) (*KVPair, error) {
-	pair, err := s.store.Get(key)
+func (s *libKVStore) Get(ctx context.Context, key string) (*KVPair, error) {
+	pair, err := s.store.Get(ctx, key, &libkvstore.ReadOptions{})
 	if err != nil {
 		return nil, fromLibKVStoreErr(err)
 	}
 	return &KVPair{Key: pair.Key, Value: pair.Value, LastIndex: pair.LastIndex}, nil
 }
 
-func (s *libKVStore) List(_ context.Context, directory string) ([]*KVPair, error) {
-	pairs, err := s.store.List(directory)
+func (s *libKVStore) List(ctx context.Context, directory string) ([]*KVPair, error) {
+	pairs, err := s.store.List(ctx, directory, &libkvstore.ReadOptions{})
 	if err != nil {
 		return nil, fromLibKVStoreErr(err)
 	}
@@ -74,7 +66,7 @@ func (s *libKVStore) List(_ context.Context, directory string) ([]*KVPair, error
 }
 
 func (s *libKVStore) AtomicPut(
-	_ context.Context,
+	ctx context.Context,
 	key string,
 	value []byte,
 	previous *KVPair,
@@ -88,30 +80,31 @@ func (s *libKVStore) AtomicPut(
 	if options != nil {
 		libkvOptions = &libkvstore.WriteOptions{TTL: options.TTL}
 	}
-	_, pair, err := s.store.AtomicPut(key, value, libkvPrevious, libkvOptions)
+	_, pair, err := s.store.AtomicPut(ctx, key, value, libkvPrevious, libkvOptions)
 	if err != nil {
 		return nil, fromLibKVStoreErr(err)
 	}
 	return &KVPair{Key: pair.Key, Value: pair.Value, LastIndex: pair.LastIndex}, nil
 }
 
-func (s *libKVStore) Delete(_ context.Context, key string) error {
-	return fromLibKVStoreErr(s.store.Delete(key))
+func (s *libKVStore) Delete(ctx context.Context, key string) error {
+	return fromLibKVStoreErr(s.store.Delete(ctx, key))
 }
 
 func (s *libKVStore) Close() error {
-	s.store.Close()
+	// TODO: implement zerolog
+	_ = s.store.Close()
 	return nil
 }
 
 type libkvElection struct {
 	store     *libKVStore
 	path      string
-	candidate *leadership.Candidate
+	candidate *Candidate
 }
 
-func (e *libkvElection) RunForElection() (<-chan bool, <-chan error) {
-	return e.candidate.RunForElection()
+func (e *libkvElection) RunForElection(ctx context.Context) (<-chan bool, <-chan error) {
+	return e.candidate.RunForElection(ctx)
 }
 
 func (e *libkvElection) Stop() {

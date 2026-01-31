@@ -20,8 +20,8 @@ import (
 	"log"
 	"time"
 
-	etcdclientv3 "github.com/coreos/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
+	etcdclientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 )
 
@@ -156,7 +156,7 @@ type etcdv3Election struct {
 	cancel context.CancelFunc
 }
 
-func (e *etcdv3Election) RunForElection() (<-chan bool, <-chan error) {
+func (e *etcdv3Election) RunForElection(_ context.Context) (<-chan bool, <-chan error) {
 	if e.running {
 		panic("already running")
 	}

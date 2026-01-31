@@ -37,6 +37,8 @@ func init() {
 }
 
 func failKeeper(_ *cobra.Command, args []string) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	if len(args) > 1 {
 		die("too many arguments")
 	}
@@ -47,7 +49,7 @@ func failKeeper(_ *cobra.Command, args []string) {
 
 	keeperID := args[0]
 
-	store, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	store, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
 	}

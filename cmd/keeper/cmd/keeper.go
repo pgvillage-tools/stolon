@@ -577,8 +577,10 @@ type PostgresKeeper struct {
 
 // NewPostgresKeeper is function which makes a new postgreskeeper
 func NewPostgresKeeper(ctx context.Context, cfg *config, end chan error) (*PostgresKeeper, error) {
-	_, logger := logging.GetLogComponent(ctx, logging.KeeperComponent)
-	e, err := cmd.NewStore(&cfg.CommonConfig)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	ctx, logger := logging.GetLogComponent(ctx, logging.KeeperComponent)
+	e, err := cmd.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}

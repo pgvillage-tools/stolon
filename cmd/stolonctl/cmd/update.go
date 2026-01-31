@@ -69,6 +69,8 @@ func patchClusterSpec(cs *cluster.Spec, p []byte) (*cluster.Spec, error) {
 }
 
 func update(_ *cobra.Command, args []string) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	if len(args) > 1 {
 		die("too many arguments")
 	}
@@ -97,7 +99,7 @@ func update(_ *cobra.Command, args []string) {
 		}
 	}
 
-	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	e, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
 	}

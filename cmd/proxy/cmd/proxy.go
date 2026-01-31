@@ -125,8 +125,8 @@ type ClusterChecker struct {
 }
 
 // NewClusterChecker is a function which creates a new clusterchecker
-func NewClusterChecker(uid string, cfg config) (*ClusterChecker, error) {
-	e, err := cmd.NewStore(&cfg.CommonConfig)
+func NewClusterChecker(ctx context.Context, uid string, cfg config) (*ClusterChecker, error) {
+	e, err := cmd.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}
@@ -414,7 +414,9 @@ func Execute() {
 }
 
 func proxy(c *cobra.Command, _ []string) {
-	ctx, logger := logging.GetLogComponent(context.Background(), logging.ProxyComponent)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	ctx, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
+	defer cancelFunc()
 	logging.SetStaticLevel(cfg.LogLevel)
 	if cfg.debug {
 		logging.SetStaticLevel("debug")
@@ -424,7 +426,7 @@ func proxy(c *cobra.Command, _ []string) {
 	}
 
 	if err := cmd.CheckCommonConfig(&cfg.CommonConfig); err != nil {
-		logger.Fatal().Msgf(err.Error())
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 
 	cmd.SetMetrics(&cfg.CommonConfig, "proxy")
@@ -452,7 +454,7 @@ func proxy(c *cobra.Command, _ []string) {
 		}()
 	}
 
-	clusterChecker, err := NewClusterChecker(uid, cfg)
+	clusterChecker, err := NewClusterChecker(ctx, uid, cfg)
 	if err != nil {
 		logger.Fatal().Msgf("cannot create cluster checker: %v", err)
 	}
