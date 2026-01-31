@@ -1,4 +1,4 @@
-// Copyright 2016 Sorint.lab
+// Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,9 @@
 
 package postgresql
 
-import (
-	"encoding/binary"
-	"os"
-	"path/filepath"
-	"strconv"
-)
+//go:generate mockgen -destination=../mock/postgresql/postgresql.go -package=mocks -source=$GOFILE
 
-// GetSystemdID is function that fetches the systemID and returns it as a string
-func (p *Manager) GetSystemdID() (string, error) {
-	pgControl, err := os.Open(filepath.Join(p.dataDir, "global", "pg_control"))
-	if err != nil {
-		return "", err
-	}
-	var systemID uint64
-	err = binary.Read(pgControl, binary.LittleEndian, &systemID)
-	if err != nil {
-		return "", err
-	}
-	const baseTen = 10
-	return strconv.FormatUint(systemID, baseTen), nil
+// PGManager can retrieve the timeline history of a PostgreSQL instance
+type PGManager interface {
+	GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error)
 }

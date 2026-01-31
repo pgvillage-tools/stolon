@@ -43,15 +43,13 @@ override:
     threshold: 52
   - path: ^internal/mock/store/store.go
     threshold: 22
-  - path: ^internal/postgresql/utils.go
-    threshold: 12
+  - path: ^internal/postgresql/main.go
+    threshold: 25
+  - path: ^internal/postgresql/manager.go
+    threshold: 0
+  - path: ^internal/postgresql/recovery_options.go
+    threshold: 0
   - path: ^internal/flagutil/env.go
-    threshold: 0
-  - path: ^internal/postgresql/connstring.go
-    threshold: 0
-  - path: ^internal/postgresql/control.go
-    threshold: 0
-  - path: ^internal/postgresql/postgresql.go
     threshold: 0
   - path: ^internal/store/etcdv3.go
     threshold: 0
@@ -69,7 +67,7 @@ override:
   - path: ^internal/mock/store$
     threshold: 22
   - path: ^internal/postgresql$
-    threshold: 5
+    threshold: 14
   - path: ^internal/flagutil$
     threshold: 0
   - path: ^internal/store$
