@@ -42,7 +42,6 @@ import (
 
 	// TODO: This can probably go
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -231,12 +230,11 @@ func URLToConnParams(urlStr string) (ConnParams, error) {
 		p.Set("password", v)
 	}
 
-	i := strings.Index(u.Host, ":")
-	if i < 0 {
-		p.Set("host", u.Host)
-	} else {
-		p.Set("host", u.Host[:i])
-		p.Set("port", u.Host[i+1:])
+	if host := u.Hostname(); host != "" {
+		p.Set("host", host)
+	}
+	if port := u.Port(); port != "" {
+		p.Set("port", port)
 	}
 
 	if u.Path != "" {

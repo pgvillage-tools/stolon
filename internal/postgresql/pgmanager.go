@@ -16,7 +16,7 @@ package postgresql
 
 //go:generate mockgen -destination=../mock/postgresql/postgresql.go -package=mocks -source=$GOFILE
 
-// PGManager can trieve the timeline history of a PostgreSQL instance
+// PGManager can retrieve the timeline history of a PostgreSQL instance
 type PGManager interface {
 	GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error)
 }

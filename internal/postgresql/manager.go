@@ -1153,14 +1153,16 @@ func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
 	return isRestartRequiredUsingPendingRestart(ctx, p.localConnParams)
 }
 
-// GetSystemdID is function that fetches the systemID and returns it as a string
-func (p *Manager) GetSystemdID() (string, error) {
-	pgControl, err := os.Open(filepath.Join(p.dataDir, "global", "pg_control"))
+// GetSystemID is function that fetches the systemID and returns it as a string
+func (p *Manager) GetSystemID() (string, error) {
+	pgControlFile := filepath.Join(p.dataDir, "global", "pg_control")
+	pgControl, err := os.Open(pgControlFile)
 	if err != nil {
 		return "", err
 	}
+	defer handledFileClose(pgControl)
 	var systemID uint64
-	err = binary.Read(pgControl, binary.LittleEndian, &systemID)
+	err = binary.Read(pgControl, binary.NativeEndian, &systemID)
 	if err != nil {
 		return "", err
 	}

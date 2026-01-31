@@ -1472,7 +1472,7 @@ func (p *PostgresKeeper) postgresKeeperSM(pctx context.Context) {
 			if !initialized {
 				log.Infow("database cluster not initialized")
 			} else {
-				systemID, err = pgm.GetSystemdID()
+				systemID, err = pgm.GetSystemID()
 				if err != nil {
 					log.Errorw("error retrieving systemd ID", zap.Error(err))
 					return
