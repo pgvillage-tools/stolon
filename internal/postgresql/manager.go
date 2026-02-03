@@ -33,6 +33,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/sorintlab/stolon/internal/common"
+	"github.com/sorintlab/stolon/internal/logging"
 
 	"github.com/mitchellh/copystructure"
 )
@@ -149,7 +150,8 @@ func (p *Manager) UpdateCurHba() {
 }
 
 // Init will initialize a PostgreSQL data directory
-func (p *Manager) Init(initConfig *InitConfig) error {
+func (p *Manager) Init(ctx context.Context, initConfig *InitConfig) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	// os.CreateTemp already creates files with urw permissions
 	pwfile, err := os.CreateTemp("", "pwfile")
 	if err != nil {
@@ -166,7 +168,7 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 	if p.suAuthMethod == "md5" {
 		cmd.Args = append(cmd.Args, "--pwfile", pwfile.Name())
 	}
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 
 	// initdb supports configuring a separate wal directory via symlinks. Normally this
 	// parameter might be part of the initConfig, but it will also be required whenever we
@@ -193,8 +195,8 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 	}
 	// remove the dataDir, so we don't end with an half initialized database
 	if err != nil {
-		if cleanupErr := p.RemoveAll(); cleanupErr != nil {
-			log.Errorf("failed to cleanup database: %v", cleanupErr)
+		if cleanupErr := p.RemoveAll(ctx); cleanupErr != nil {
+			logger.Error().AnErr("err", cleanupErr).Msg("failed to cleanup database")
 		}
 		return err
 	}
@@ -202,7 +204,8 @@ func (p *Manager) Init(initConfig *InitConfig) error {
 }
 
 // Restore will run a restore command
-func (p *Manager) Restore(command string) error {
+func (p *Manager) Restore(ctx context.Context, command string) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	var err error
 	var cmd *exec.Cmd
 
@@ -213,7 +216,7 @@ func (p *Manager) Restore(command string) error {
 		goto out
 	}
 	cmd = exec.Command("/bin/sh", "-c", command)
-	log.Debugw("executing cmd", logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg("executing cmd")
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -227,8 +230,8 @@ func (p *Manager) Restore(command string) error {
 	// TODO: replace goto with defer
 out:
 	if err != nil {
-		if cleanupErr := p.RemoveAll(); cleanupErr != nil {
-			log.Errorf("failed to cleanup database: %v", cleanupErr)
+		if cleanupErr := p.RemoveAll(ctx); cleanupErr != nil {
+			logger.Error().AnErr("err", cleanupErr).Msg("failed to cleanup database")
 		}
 		return err
 	}
@@ -237,22 +240,23 @@ out:
 
 // StartTmpMerged starts postgres with a conf file different than
 // postgresql.conf, including it at the start of the conf if it exists
-func (p *Manager) StartTmpMerged() error {
-	if err := p.writeConfs(true); err != nil {
+func (p *Manager) StartTmpMerged(ctx context.Context) error {
+	if err := p.writeConfs(ctx, true); err != nil {
 		return err
 	}
 	tmpPostgresConfPath := filepath.Join(p.dataDir, tmpPostgresConf)
 
-	return p.start("-c", fmt.Sprintf("config_file=%s", tmpPostgresConfPath))
+	return p.start(ctx, "-c", fmt.Sprintf("config_file=%s", tmpPostgresConfPath))
 }
 
-func (p *Manager) moveWal() (err error) {
+func (p *Manager) moveWal(ctx context.Context) (err error) {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	var curPath string
 	var desiredPath string
 	var tmpPath string
 	symlinkPath := filepath.Join(p.dataDir, "pg_wal")
 	if curPath, err = filepath.EvalSymlinks(symlinkPath); err != nil {
-		log.Errorf("could not evaluate symlink %s: %e", symlinkPath, err)
+		logger.Error().Str("path", symlinkPath).AnErr("err", err).Msg("could not evaluate symlink")
 		return err
 	}
 	if p.walDir == "" {
@@ -266,66 +270,96 @@ func (p *Manager) moveWal() (err error) {
 		return nil
 	}
 	if p.walDir == "" {
-		log.Infof("moving WAL from %s to %s first and then to %s", curPath, tmpPath, desiredPath)
+		logger.Info().
+			Str("src", curPath).
+			Str("temp path", tmpPath).
+			Str("dest", desiredPath).
+			Msg("moving WAL from src to temp path first and then to dest")
 	} else {
-		log.Infof("moving WAL from %s to new location %s", curPath, desiredPath)
+		logger.Info().
+			Str("src", curPath).
+			Str("dest", desiredPath).
+			Msg("moving WAL from src to dest")
 	}
 	// We use tmpPath here first and (if needed) mv tmpPath to desiredPath when all is copied.
 	// This allows stolon-keeper to re-read symlink dest and continue should stolon-keeper be restarted while copying.
-	if err = moveDirRecursive(curPath, tmpPath); err != nil {
+	if err = moveDirRecursive(ctx, curPath, tmpPath); err != nil {
 		return err
 	}
 
 	var symlinkStat fs.FileInfo
 	if symlinkStat, err = os.Lstat(symlinkPath); errors.Is(err, os.ErrNotExist) {
-		log.Debug("file or folder already removed")
+		logger.Debug().Msg("file or folder already removed")
 	} else if err != nil {
-		log.Errorf("could not get info on current pg_wal folder/symlink %s: %e", symlinkPath, err)
+		logger.Error().
+			Str("path", symlinkPath).
+			AnErr("err", err).
+			Msg("could not get info on current pg_wal folder/symlink path")
 		return err
 	} else if symlinkStat.Mode()&os.ModeSymlink != 0 {
 		if err = os.Remove(symlinkPath); err != nil {
-			log.Errorf("could not remove current pg_wal symlink %s: %e", symlinkPath, err)
+			logger.Error().
+				Str("path", symlinkPath).
+				AnErr("err", err).
+				Msg("could not remove current pg_wal symlink path")
 			return err
 		}
 	} else if symlinkStat.IsDir() {
 		if err = syscall.Rmdir(symlinkPath); err != nil {
-			log.Errorf("could not remove current folder %s: %e", symlinkPath, err)
+			logger.Error().
+				Str("path", symlinkPath).
+				AnErr("err", err).
+				Msg("could not remove current folder")
 			return err
 		}
 	} else {
 		err = fmt.Errorf("location %s is no symlink and no dir, so please check and resolve by hand", symlinkPath)
-		log.Error(err)
+		logger.Error().AnErr("err", err).Msg("")
 		return err
 	}
 	if p.walDir == "" {
 		// So we were moving WAL files back into PGDATA. Let's rename the tmpDir now holding all WAL files and use that
 		// as PGDATA/pg_wal
 		if err = os.Rename(tmpPath, desiredPath); err != nil {
-			log.Errorf("cannot move %s to %s: %e", tmpPath, desiredPath, err)
+			logger.Error().
+				Str("temp path", tmpPath).
+				Str("dest", desiredPath).
+				AnErr("err", err).
+				Msg("cannot move temp path to dest")
 			return err
 		}
 	} else {
-		log.Infof("symlinking %s to %s", symlinkPath, desiredPath)
+		logger.Info().
+			Str("src", symlinkPath).
+			Str("dest", desiredPath).
+			Msg("symlinking src to dest")
 		if err = os.Symlink(desiredPath, symlinkPath); err != nil {
 			// We were copying WAL files from PGDATA (or another location) to a location outside of PGDATA and
 			// pointing the symlink in the right direction failed.
-			log.Errorf("could not create symlink %s to %s: %e", symlinkPath, desiredPath, err)
+			logger.Error().
+				Str("symlink", symlinkPath).
+				Str("dest", desiredPath).
+				AnErr("err", err).
+				Msg("could not create symlink to dest")
 			return err
 		}
 	}
-	log.Infof("moving pg_wal from %s to %s is succesful", curPath, desiredPath)
+	logger.Info().
+		Str("src", curPath).
+		Str("dest", desiredPath).
+		Msg("moving pg_wal is successful")
 	return nil
 }
 
 // Start will start the PostgreSQL instance
-func (p *Manager) Start() error {
-	if err := p.writeConfs(false); err != nil {
+func (p *Manager) Start(ctx context.Context) error {
+	if err := p.writeConfs(ctx, false); err != nil {
 		return err
 	}
-	if err := p.moveWal(); err != nil {
+	if err := p.moveWal(ctx); err != nil {
 		return err
 	}
-	return p.start()
+	return p.start(ctx)
 }
 
 // start starts the instance. A success means that the instance has been
@@ -333,7 +367,7 @@ func (p *Manager) Start() error {
 // connections (i.e. it's waiting for some missing wals etc...).
 // Note that also on error an instance may still be active and, if needed,
 // should be manually stopped calling Stop.
-func (p *Manager) start(args ...string) error {
+func (p *Manager) start(ctx context.Context, args ...string) error {
 	// pg_ctl for postgres < 10 with -w will exit after the timeout and return 0
 	// also if the instance isn't ready to accept connections, while for
 	// postgres >= 10 it will return a non 0 exit code making it impossible to
@@ -347,16 +381,17 @@ func (p *Manager) start(args ...string) error {
 	// the instance parent is the keeper instead of the defined system reaper
 	// (since pg_ctl forks and then exits leaving the postmaster orphaned).
 
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	if err := p.createPostgresqlAutoConf(); err != nil {
 		return err
 	}
 
-	log.Infow("starting database")
+	logger.Info().Msg("starting database")
 	name := filepath.Join(p.pgBinPath, "postgres")
 	args = append([]string{argDatadir, p.dataDir, "-c",
 		"unix_socket_directories=" + common.PgUnixSocketDirectories}, args...)
 	cmd := exec.Command(name, args...)
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -383,7 +418,7 @@ func (p *Manager) start(args ...string) error {
 		fh, err := os.Open(fileName)
 		defer func() {
 			if err := fh.Close(); err != nil {
-				log.Debugf("failed to close %s: %v", fileName, err)
+				logger.Debug().Msgf("failed to close %s: %v", fileName, err)
 			}
 		}()
 		if err == nil {
@@ -420,15 +455,16 @@ func (p *Manager) start(args ...string) error {
 
 // Stop tries to stop an instance. An error will be returned if the instance isn't started, stop fails or
 // times out (60 second).
-func (p *Manager) Stop(fast bool) error {
-	log.Infow("stopping database")
+func (p *Manager) Stop(ctx context.Context, fast bool) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	logger.Info().Msg("stopping database")
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
 	cmd := exec.Command(name, "stop", "-w", argDatadir, p.dataDir, "-o",
 		"-c unix_socket_directories="+common.PgUnixSocketDirectories)
 	if fast {
 		cmd.Args = append(cmd.Args, "-m", "fast")
 	}
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -461,17 +497,18 @@ func (p *Manager) IsStarted() (bool, error) {
 }
 
 // Reload will trigger a reload in PostgreSQL
-func (p *Manager) Reload() error {
-	log.Infow("reloading database configuration")
+func (p *Manager) Reload(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	logger.Info().Msg("reloading database configuration")
 
-	if err := p.writeConfs(false); err != nil {
+	if err := p.writeConfs(ctx, false); err != nil {
 		return err
 	}
 
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
 	cmd := exec.Command(name, "reload", argDatadir, p.dataDir, "-o",
 		"-c unix_socket_directories="+common.PgUnixSocketDirectories)
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -489,7 +526,7 @@ func (p *Manager) Reload() error {
 
 // StopIfStarted checks if the instance is started, then calls stop and
 // then check if the instance is really stopped
-func (p *Manager) StopIfStarted(fast bool) error {
+func (p *Manager) StopIfStarted(ctx context.Context, fast bool) error {
 	// Stop will return an error if the instance isn't started, so first check
 	// if it's started
 	started, err := p.IsStarted()
@@ -504,7 +541,7 @@ func (p *Manager) StopIfStarted(fast bool) error {
 	if !started {
 		return nil
 	}
-	if err = p.Stop(fast); err != nil {
+	if err = p.Stop(ctx, fast); err != nil {
 		return err
 	}
 	started, err = p.IsStarted()
@@ -518,19 +555,20 @@ func (p *Manager) StopIfStarted(fast bool) error {
 }
 
 // Restart will stop (if started) and start PostgreSQL
-func (p *Manager) Restart(fast bool) error {
-	log.Infow("restarting database")
-	if err := p.StopIfStarted(fast); err != nil {
+func (p *Manager) Restart(ctx context.Context, fast bool) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	logger.Info().Msg("restarting database")
+	if err := p.StopIfStarted(ctx, fast); err != nil {
 		return err
 	}
-	return p.Start()
+	return p.Start(ctx)
 }
 
 // WaitReady will wait for PostgreSQL to be available
-func (p *Manager) WaitReady(timeout time.Duration) error {
+func (p *Manager) WaitReady(ctx context.Context, timeout time.Duration) error {
 	start := time.Now()
 	for timeout == 0 || time.Since(start) < timeout {
-		if err := p.Ping(); err == nil {
+		if err := p.Ping(ctx); err == nil {
 			return nil
 		}
 		time.Sleep(200 * time.Millisecond)
@@ -584,12 +622,13 @@ func (p *Manager) BinaryVersion() (*semver.Version, error) {
 }
 
 // Promote will promote PostgreSQL (with pg_ctl)
-func (p *Manager) Promote() error {
-	log.Infow("promoting database")
+func (p *Manager) Promote(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	logger.Info().Msg("promoting database")
 
 	name := filepath.Join(p.pgBinPath, "pg_ctl")
 	cmd := exec.Command(name, "promote", "-w", argDatadir, p.dataDir)
-	log.Debugw("executing cmd", logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg("executing cmd")
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -598,16 +637,17 @@ func (p *Manager) Promote() error {
 		return fmt.Errorf("error: %v", err)
 	}
 
-	return p.writeConfs(false)
+	return p.writeConfs(ctx, false)
 }
 
 // SetupRoles will connect to PostgreSQL to setup all users as required by stolon
-func (p *Manager) SetupRoles() error {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) SetupRoles(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 
 	if p.suUsername == p.replUsername {
-		log.Infow("adding replication role to superuser")
+		logger.Info().Msg("adding replication role to superuser")
 		if p.suAuthMethod == "trust" {
 			if err := alterPasswordlessRole(ctx, p.localConnParams, []string{"replication"}, p.suUsername); err != nil {
 				return fmt.Errorf("error adding replication role to superuser: %v", err)
@@ -623,18 +663,18 @@ func (p *Manager) SetupRoles() error {
 				return fmt.Errorf("error adding replication role to superuser: %v", err)
 			}
 		}
-		log.Infow("replication role added to superuser")
+		logger.Info().Msg("replication role added to superuser")
 	} else {
 		// Configure superuser role password if auth method is not trust
 		if p.suAuthMethod != "trust" && p.suPassword != "" {
-			log.Infow("setting superuser password")
+			logger.Info().Msg("setting superuser password")
 			if err := setPassword(ctx, p.localConnParams, p.suUsername, p.suPassword); err != nil {
 				return fmt.Errorf("error setting superuser password: %v", err)
 			}
-			log.Infow("superuser password set")
+			logger.Info().Msg("superuser password set")
 		}
 		roles := []string{"login", "replication"}
-		log.Infow("creating replication role")
+		logger.Info().Msg("creating replication role")
 		if p.replAuthMethod != "trust" {
 			if err := createRole(ctx, p.localConnParams, roles, p.replUsername, p.replPassword); err != nil {
 				return fmt.Errorf("error creating replication role: %v", err)
@@ -644,40 +684,40 @@ func (p *Manager) SetupRoles() error {
 				return fmt.Errorf("error creating replication role: %v", err)
 			}
 		}
-		log.Infow("replication role created", "role", p.replUsername)
+		logger.Info().Str("role", p.replUsername).Msg("replication role created")
 	}
 	return nil
 }
 
 // GetSyncStandbys returns the standby's (from pg_stat_replication)
-func (p *Manager) GetSyncStandbys() ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) GetSyncStandbys(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return getSyncStandbys(ctx, p.localConnParams)
 }
 
 // GetReplicationSlots (from pg_replication_slots)
-func (p *Manager) GetReplicationSlots() ([]string, error) {
+func (p *Manager) GetReplicationSlots(ctx context.Context) ([]string, error) {
 	version, err := p.PGDataVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return getReplicationSlots(ctx, p.localConnParams, version)
 }
 
 // CreateReplicationSlot will create a replication slot
-func (p *Manager) CreateReplicationSlot(name string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) CreateReplicationSlot(ctx context.Context, name string) error {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return createReplicationSlot(ctx, p.localConnParams, name)
 }
 
 // DropReplicationSlot will drop a replication slot
-func (p *Manager) DropReplicationSlot(name string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) DropReplicationSlot(ctx context.Context, name string) error {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return dropReplicationSlot(ctx, p.localConnParams, name)
 }
@@ -772,7 +812,7 @@ func (p *Manager) GetRole() (common.Role, error) {
 	return common.RoleReplica, nil
 }
 
-func (p *Manager) writeConfs(useTmpPostgresConf bool) error {
+func (p *Manager) writeConfs(ctx context.Context, useTmpPostgresConf bool) error {
 	version, err := p.BinaryVersion()
 	if err != nil {
 		return fmt.Errorf("error fetching pg version: %v", err)
@@ -794,10 +834,10 @@ func (p *Manager) writeConfs(useTmpPostgresConf bool) error {
 			return fmt.Errorf("error writing %s file: %v", postgresRecoveryConf, err)
 		}
 	} else {
-		if err := p.writeStandbySignal(); err != nil {
+		if err := p.writeStandbySignal(ctx); err != nil {
 			return fmt.Errorf("error writing %s file: %v", postgresStandbySignal, err)
 		}
-		if err := p.writeRecoverySignal(); err != nil {
+		if err := p.writeRecoverySignal(ctx); err != nil {
 			return fmt.Errorf("error writing %s file: %v", postgresRecoverySignal, err)
 		}
 	}
@@ -869,13 +909,14 @@ func (p *Manager) writeRecoveryConf() error {
 		})
 }
 
-func (p *Manager) writeStandbySignal() error {
+func (p *Manager) writeStandbySignal(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	// write standby.signal only if recoveryMode is standby
 	if p.recoveryOptions.RecoveryMode != RecoveryModeStandby {
 		return nil
 	}
 
-	log.Infof("writing standby signal file")
+	logger.Info().Msg("writing standby signal file")
 
 	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresStandbySignal), urw,
 		func(_ io.Writer) error {
@@ -883,13 +924,14 @@ func (p *Manager) writeStandbySignal() error {
 		})
 }
 
-func (p *Manager) writeRecoverySignal() error {
+func (p *Manager) writeRecoverySignal(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	// write standby.signal only if recoveryMode is recovery
 	if p.recoveryOptions.RecoveryMode != RecoveryModeRecovery {
 		return nil
 	}
 
-	log.Infof("writing recovery signal file")
+	logger.Info().Msg("writing recovery signal file")
 
 	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoverySignal), urw,
 		func(_ io.Writer) error {
@@ -925,7 +967,8 @@ func (p *Manager) createPostgresqlAutoConf() error {
 }
 
 // SyncFromFollowedPGRewind runs pgrewind to get to a shared point in the WAL stream
-func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, password string) error {
+func (p *Manager) SyncFromFollowedPGRewind(ctx context.Context, followedConnParams ConnParams, password string) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	// Remove postgresql.auto.conf since pg_rewind will error if it's a symlink to /dev/null
 	pgAutoConfPath := filepath.Join(p.dataDir, postgresAutoConf)
 	if err := os.Remove(pgAutoConfPath); err != nil && !os.IsNotExist(err) {
@@ -952,11 +995,11 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 	followedConnParams.Set("options", "-c synchronous_commit=off")
 	followedConnString := followedConnParams.ConnString()
 
-	log.Infow("running pg_rewind")
+	logger.Info().Msg("running pg_rewind")
 	name := filepath.Join(p.pgBinPath, "pg_rewind")
 	cmd := exec.Command(name, "--debug", argDatadir, p.dataDir, "--source-server="+followedConnString)
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSFILE=%s", pgpass.Name()))
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 
 	// Pipe command's std[err|out] to parent.
 	cmd.Stdout = os.Stdout
@@ -968,7 +1011,8 @@ func (p *Manager) SyncFromFollowedPGRewind(followedConnParams ConnParams, passwo
 }
 
 // SyncFromFollowed runs pg_basebackup to resync a broken replica
-func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot string) error {
+func (p *Manager) SyncFromFollowed(ctx context.Context, followedConnParams ConnParams, replSlot string) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	fcp := followedConnParams.Copy()
 
 	//  already creates files with urw permissions
@@ -995,7 +1039,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 	fcp.Set("options", "-c synchronous_commit=off")
 	followedConnString := fcp.ConnString()
 
-	log.Infow("running pg_basebackup")
+	logger.Info().Msg("running pg_basebackup")
 	name := filepath.Join(p.pgBinPath, "pg_basebackup")
 	args := []string{"-R", "-v", "-P", "-Xs", argDatadir, p.dataDir, argDbName, followedConnString}
 	if replSlot != "" {
@@ -1007,7 +1051,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 	cmd := exec.Command(name, args...)
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSFILE=%s", pgpass.Name()))
-	log.Debugw(logExec, logCmd, cmd)
+	logger.Debug().Str(logCmd, cmd.String()).Msg(logExec)
 
 	// Pipe pg_basebackup's stderr to our stderr.
 	// We do this indirectly so that pg_basebackup doesn't think it's connected to a tty.
@@ -1027,7 +1071,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 
 	go func() {
 		if _, err := io.Copy(os.Stderr, stderr); err != nil {
-			log.Errorf("pg_basebackup failed to copy stderr: %v", err)
+			logger.Error().AnErr("err", err).Msg("pg_basebackup failed to copy stderr")
 		}
 	}()
 
@@ -1035,7 +1079,7 @@ func (p *Manager) SyncFromFollowed(followedConnParams ConnParams, replSlot strin
 }
 
 // RemoveAllIfInitialized is a safe way to clean a datadirectory before recreating
-func (p *Manager) RemoveAllIfInitialized() error {
+func (p *Manager) RemoveAllIfInitialized(ctx context.Context) error {
 	initialized, err := p.IsInitialized()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve instance state: %v", err)
@@ -1052,15 +1096,16 @@ func (p *Manager) RemoveAllIfInitialized() error {
 		return errors.New("cannot remove postregsql database. Instance is active")
 	}
 
-	return p.RemoveAll()
+	return p.RemoveAll(ctx)
 }
 
 // RemoveAll entirely cleans up the data directory, including any wal directory if that
 // exists outside of the data directory.
-func (p *Manager) RemoveAll() error {
+func (p *Manager) RemoveAll(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	if p.walDir != "" {
 		if err := os.RemoveAll(p.walDir); err != nil {
-			log.Fatalf("failed to remove tree %s: %v", p.walDir, err)
+			logger.Fatal().Str("path", p.walDir).AnErr("err", err).Msg("failed to remove tree")
 		}
 	}
 
@@ -1068,29 +1113,29 @@ func (p *Manager) RemoveAll() error {
 }
 
 // GetSystemData will retrieve and return the system data (IDENTIFY_SYSTEM)
-func (p *Manager) GetSystemData() (*SystemData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) GetSystemData(ctx context.Context) (*SystemData, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return GetSystemData(ctx, p.replConnParams)
 }
 
 // GetTimelinesHistory will return a lost of timelinehostory objects
-func (p *Manager) GetTimelinesHistory(timeline uint64) ([]*TimelineHistory, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) GetTimelinesHistory(ctx context.Context, timeline uint64) ([]*TimelineHistory, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return getTimelinesHistory(ctx, timeline, p.replConnParams)
 }
 
 // GetConfigFilePGParameters will return the config file parameters (pg_file_settings or pg_settings)
-func (p *Manager) GetConfigFilePGParameters() (common.Parameters, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) GetConfigFilePGParameters(ctx context.Context) (common.Parameters, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return getConfigFilePGParameters(ctx, p.localConnParams)
 }
 
 // Ping triesd to connect to PostgreSQL and returns an error if it can't
-func (p *Manager) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+func (p *Manager) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 	return ping(ctx, p.localConnParams)
 }
@@ -1138,13 +1183,13 @@ func (p *Manager) OlderWalFile() (string, error) {
 }
 
 // IsRestartRequired returns if a postgres restart is necessary
-func (p *Manager) IsRestartRequired(changedParams []string) (bool, error) {
+func (p *Manager) IsRestartRequired(ctx context.Context, changedParams []string) (bool, error) {
 	version, err := p.BinaryVersion()
 	if err != nil {
 		return false, fmt.Errorf("error fetching pg version: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.requestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, p.requestTimeout)
 	defer cancel()
 
 	if version.LessThan(V95) {

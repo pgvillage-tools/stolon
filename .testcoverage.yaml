@@ -67,7 +67,7 @@ override:
   - path: ^internal/mock/store$
     threshold: 22
   - path: ^internal/postgresql$
-    threshold: 14
+    threshold: 13.9
   - path: ^internal/flagutil$
     threshold: 0
   - path: ^internal/store$

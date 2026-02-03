@@ -25,6 +25,7 @@ import (
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/internal/cluster"
+	"github.com/sorintlab/stolon/internal/logging"
 	ststore "github.com/sorintlab/stolon/internal/store"
 
 	"github.com/spf13/cobra"
@@ -160,6 +161,7 @@ func writeClusterdata(reader io.Reader, s ststore.Store) error {
 }
 
 func runWriteClusterdata(_ *cobra.Command, _ []string) {
+	_, logger := logging.GetLogComponent(context.Background(), logging.CmdComponent)
 	var reader io.Reader
 	if writeClusterdataOpts.file == "" || writeClusterdataOpts.file == "-" {
 		reader = os.Stdin
@@ -169,7 +171,7 @@ func runWriteClusterdata(_ *cobra.Command, _ []string) {
 			die("cannot read file: %v", err)
 		}
 		if err := file.Close(); err != nil {
-			log.Fatalf("closing file failed: %v", err)
+			logger.Fatal().AnErr("err", err).Msg("closing file failed")
 		}
 		reader = file
 	}
