@@ -18,12 +18,14 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/flagutil"
+	"github.com/sorintlab/stolon/internal/logging"
 	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/spf13/cobra"
@@ -74,11 +76,12 @@ func init() {
 
 // Execute is run when stolonctl is executed
 func Execute() {
+	_, logger := logging.GetLogComponent(context.Background(), logging.CmdComponent)
 	if err := flagutil.SetFlagsFromEnv(CmdStolonCtl.PersistentFlags(), "STOLONCTL"); err != nil {
-		log.Fatal(err)
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 	if err := CmdStolonCtl.Execute(); err != nil {
-		log.Fatal(err)
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 }
 

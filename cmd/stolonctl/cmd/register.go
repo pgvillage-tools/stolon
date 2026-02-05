@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -23,10 +24,9 @@ import (
 
 	"github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
-	slog "github.com/sorintlab/stolon/internal/log"
+	"github.com/sorintlab/stolon/internal/logging"
 	stolonstore "github.com/sorintlab/stolon/internal/store"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 // Register command to register stolon master and slave for service discovery
@@ -38,7 +38,6 @@ var Register = &cobra.Command{
 }
 
 var rCfg register.Config
-var log = slog.S()
 
 const sleepinterval = 10
 
@@ -123,23 +122,13 @@ func checkConfig(cfg *config, rCfg *register.Config) error {
 }
 
 func runRegister(c *cobra.Command, _ []string) {
-	switch cfg.LogLevel {
-	case "error":
-		slog.SetLevel(zap.ErrorLevel)
-	case "warn":
-		slog.SetLevel(zap.WarnLevel)
-	case "info":
-		slog.SetLevel(zap.InfoLevel)
-	case "debug":
-		slog.SetLevel(zap.DebugLevel)
-	default:
-		die("invalid log level: %v", cfg.LogLevel)
-	}
+	ctx := context.Background()
+	logging.SetStaticLevel(cfg.LogLevel)
 	if cfg.Debug {
-		slog.SetDebug()
+		logging.SetStaticLevel("debug")
 	}
 	if cmd.IsColorLoggerEnable(c, &cfg.CommonConfig) {
-		log = slog.SColor()
+		logging.EnableColor()
 	}
 
 	if err := checkConfig(&cfg, &rCfg); err != nil {
@@ -149,12 +138,12 @@ func runRegister(c *cobra.Command, _ []string) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	if err := registerCluster(sigs, &cfg, &rCfg); err != nil {
+	if err := registerCluster(ctx, sigs, &cfg, &rCfg); err != nil {
 		die("%s", err.Error())
 	}
 }
 
-func registerCluster(sigs chan os.Signal, cfg *config, rCfg *register.Config) error {
+func registerCluster(ctx context.Context, sigs chan os.Signal, cfg *config, rCfg *register.Config) error {
 	s, err := cmd.NewStore(&cfg.CommonConfig)
 	if err != nil {
 		return err
@@ -174,7 +163,7 @@ func registerCluster(sigs chan os.Signal, cfg *config, rCfg *register.Config) er
 			return nil
 		case <-timerCh:
 			go func() {
-				checkAndRegisterMasterAndSlaves(cfg.ClusterName, s, service, rCfg.RegisterMaster)
+				checkAndRegisterMasterAndSlaves(ctx, cfg.ClusterName, s, service, rCfg.RegisterMaster)
 				endCh <- struct{}{}
 			}()
 		case <-endCh:
@@ -184,39 +173,43 @@ func registerCluster(sigs chan os.Signal, cfg *config, rCfg *register.Config) er
 }
 
 func checkAndRegisterMasterAndSlaves(
+	ctx context.Context,
 	clusterName string,
 	store stolonstore.Store,
 	discovery register.ServiceDiscovery,
 	registerMaster bool,
 ) {
+	_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
 	discoveredServices, err := discovery.Services(clusterName)
 	if err != nil {
-		log.Errorf("unable to get info about existing services: %v", err)
+		logger.Error().AnErr("err", err).Msg("unable to get info about existing services")
 		return
 	}
 
-	existingServices, err := getExistingServices(clusterName, store, registerMaster)
+	existingServices, err := getExistingServices(ctx, clusterName, store, registerMaster)
 	if err != nil {
-		log.Errorf("%s skipping", err.Error())
+		logger.Error().AnErr("err", err).Msg("skipping")
 		return
 	}
-	log.Debugf("found services %v", existingServices)
+	logger.Debug().Any("services", existingServices).Msg("found services")
 
 	diff := existingServices.Diff(discoveredServices)
 
 	for _, removed := range diff.Removed {
-		deRegisterService(discovery, &removed)
+		deRegisterService(ctx, discovery, &removed)
 	}
 	for _, added := range diff.Added {
-		registerService(discovery, &added)
+		registerService(ctx, discovery, &added)
 	}
 }
 
 func getExistingServices(
+	ctx context.Context,
 	clusterName string,
 	store stolonstore.Store,
 	includeMaster bool,
 ) (register.ServiceInfos, error) {
+	_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
 	cluster, err := register.NewCluster(clusterName, rCfg, store)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get cluster data: %v", err)
@@ -230,7 +223,7 @@ func getExistingServices(
 
 	for uid, info := range infos {
 		if !includeMaster && info.IsMaster {
-			log.Infof("skipping registering master")
+			logger.Info().Msg("skipping registering master")
 			continue
 		}
 		result[uid] = info
@@ -238,46 +231,44 @@ func getExistingServices(
 	return result, nil
 }
 
-func registerService(service register.ServiceDiscovery, serviceInfo *register.ServiceInfo) {
+func registerService(ctx context.Context, service register.ServiceDiscovery, serviceInfo *register.ServiceInfo) {
+	_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
 	if serviceInfo == nil {
 		return
 	}
 	if err := service.Register(serviceInfo); err != nil {
-		log.Errorf(
-			"unable to register %s with uid %s as %v, reason: %s",
-			serviceInfo.Name,
-			serviceInfo.ID,
-			serviceInfo.Tags,
-			err.Error(),
-		)
+		logger.Error().
+			Str("service", serviceInfo.Name).
+			Str("id", serviceInfo.ID).
+			Any("tags", serviceInfo.Tags).
+			AnErr("err", err).
+			Msg("unable to register %s with uid %s as %v, reason: %s")
 	} else {
-		log.Infof(
-			"successfully registered %s with uid %s as %v",
-			serviceInfo.Name,
-			serviceInfo.ID,
-			serviceInfo.Tags,
-		)
+		logger.Info().
+			Str("service", serviceInfo.Name).
+			Str("id", serviceInfo.ID).
+			Any("tags", serviceInfo.Tags).
+			Msg("successfully registered")
 	}
 }
 
-func deRegisterService(service register.ServiceDiscovery, serviceInfo *register.ServiceInfo) {
+func deRegisterService(ctx context.Context, service register.ServiceDiscovery, serviceInfo *register.ServiceInfo) {
+	_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
 	if serviceInfo == nil {
 		return
 	}
 	if err := service.DeRegister(serviceInfo); err != nil {
-		log.Errorf(
-			"unable to deregister %s with uid %s as %v, reason: %s",
-			serviceInfo.Name,
-			serviceInfo.ID,
-			serviceInfo.Tags,
-			err.Error(),
-		)
+		logger.Error().
+			Str("service", serviceInfo.Name).
+			Str("id", serviceInfo.ID).
+			Any("tags", serviceInfo.Tags).
+			AnErr("err", err).
+			Msg("")
 	} else {
-		log.Infof(
-			"successfully deregistered %s with uid %s as %v",
-			serviceInfo.Name,
-			serviceInfo.ID,
-			serviceInfo.Tags,
-		)
+		logger.Info().
+			Str("service", serviceInfo.Name).
+			Str("id", serviceInfo.ID).
+			Any("tags", serviceInfo.Tags).
+			Msg("successfully deregistered service")
 	}
 }

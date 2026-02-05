@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -82,6 +83,14 @@ func TestParseSynchronousStandbyNames(t *testing.T) {
 }
 
 func TestGenerateHBA(t *testing.T) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	const (
+		db1 = "db1"
+		db2 = "db2"
+		db3 = "db3"
+	)
+
 	// minimal clusterdata with only the fields used by generateHBA
 	cd := &cluster.Data{
 		Cluster: &cluster.Cluster{
@@ -90,8 +99,8 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		Keepers: cluster.Keepers{},
 		DBs: cluster.DBs{
-			"db1": &cluster.DB{
-				UID: "db1",
+			db1: &cluster.DB{
+				UID: db1,
 				Spec: &cluster.DBSpec{
 					Role: common.RolePrimary,
 				},
@@ -99,26 +108,26 @@ func TestGenerateHBA(t *testing.T) {
 					ListenAddress: "192.168.0.1",
 				},
 			},
-			"db2": &cluster.DB{
-				UID: "db2",
+			db2: &cluster.DB{
+				UID: db2,
 				Spec: &cluster.DBSpec{
 					Role: common.RoleReplica,
 					FollowConfig: &cluster.FollowConfig{
 						Type:  cluster.FollowTypeInternal,
-						DBUID: "db1",
+						DBUID: db1,
 					},
 				},
 				Status: cluster.DBStatus{
 					ListenAddress: "192.168.0.2",
 				},
 			},
-			"db3": &cluster.DB{
-				UID: "db3",
+			db3: &cluster.DB{
+				UID: db3,
 				Spec: &cluster.DBSpec{
 					Role: common.RoleReplica,
 					FollowConfig: &cluster.FollowConfig{
 						Type:  cluster.FollowTypeInternal,
-						DBUID: "db1",
+						DBUID: db1,
 					},
 				},
 				Status: cluster.DBStatus{
@@ -129,6 +138,10 @@ func TestGenerateHBA(t *testing.T) {
 		Proxy: &cluster.Proxy{},
 	}
 
+	const (
+		defaultLine1 = "local postgres superuser md5"
+		defaultLine2 = "local replication repluser md5"
+	)
 	tests := []struct {
 		DefaultSUReplAccessMode cluster.SUReplAccessMode
 		dbUID                   string
@@ -137,10 +150,10 @@ func TestGenerateHBA(t *testing.T) {
 	}{
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessAll,
-			dbUID:                   "db1",
+			dbUID:                   db1,
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all superuser 0.0.0.0/0 md5",
 				"host all superuser ::0/0 md5",
 				"host replication repluser 0.0.0.0/0 md5",
@@ -151,10 +164,10 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessAll,
-			dbUID:                   "db2",
+			dbUID:                   db2,
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all superuser 0.0.0.0/0 md5",
 				"host all superuser ::0/0 md5",
 				"host replication repluser 0.0.0.0/0 md5",
@@ -165,13 +178,13 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessAll,
-			dbUID:                   "db1",
+			dbUID:                   db1,
 			pgHBA: []string{
 				"host all all 192.168.0.0/24 md5",
 			},
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all superuser 0.0.0.0/0 md5",
 				"host all superuser ::0/0 md5",
 				"host replication repluser 0.0.0.0/0 md5",
@@ -181,13 +194,13 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessAll,
-			dbUID:                   "db2",
+			dbUID:                   db2,
 			pgHBA: []string{
 				"host all all 192.168.0.0/24 md5",
 			},
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all superuser 0.0.0.0/0 md5",
 				"host all superuser ::0/0 md5",
 				"host replication repluser 0.0.0.0/0 md5",
@@ -197,10 +210,10 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessStrict,
-			dbUID:                   "db1",
+			dbUID:                   db1,
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all superuser 192.168.0.2/32 md5",
 				"host replication repluser 192.168.0.2/32 md5",
 				"host all superuser 192.168.0.3/32 md5",
@@ -211,10 +224,10 @@ func TestGenerateHBA(t *testing.T) {
 		},
 		{
 			DefaultSUReplAccessMode: cluster.SUReplAccessStrict,
-			dbUID:                   "db2",
+			dbUID:                   db2,
 			out: []string{
-				"local postgres superuser md5",
-				"local replication repluser md5",
+				defaultLine1,
+				defaultLine2,
 				"host all all 0.0.0.0/0 md5",
 				"host all all ::0/0 md5",
 			},
@@ -238,7 +251,7 @@ func TestGenerateHBA(t *testing.T) {
 		db := cd.DBs[tt.dbUID]
 		db.Spec.PGHBA = tt.pgHBA
 
-		out := p.generateHBA(cd, db, false)
+		out := p.generateHBA(ctx, cd, db, false)
 
 		if !reflect.DeepEqual(out, tt.out) {
 			var b bytes.Buffer
@@ -256,12 +269,14 @@ func TestGenerateHBA(t *testing.T) {
 }
 
 func TestGetTimeLinesHistory(t *testing.T) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	t.Run("should return empty if timelineID is not greater than 1", func(t *testing.T) {
 		pgState := &cluster.PostgresState{
 			TimelineID: 1,
 		}
 
-		ctlsh, err := getTimeLinesHistory(pgState, nil, 3)
+		ctlsh, err := getTimeLinesHistory(ctx, pgState, nil, 3)
 
 		if err != nil {
 			t.Errorf("err should be nil, but got %v", err)
@@ -284,7 +299,7 @@ func TestGetTimeLinesHistory(t *testing.T) {
 		pgm.EXPECT().GetTimelinesHistory(timelineID).Return(
 			[]*pg.TimelineHistory{},
 			errors.New("failed to get timeline history"))
-		ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
+		ctlsh, err := getTimeLinesHistory(ctx, pgState, pgm, 3)
 
 		if err == nil {
 			t.Errorf("err should be not be nil")
@@ -322,7 +337,7 @@ func TestGetTimeLinesHistory(t *testing.T) {
 				},
 			}
 			pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
-			ctlsh, err := getTimeLinesHistory(pgState, pgm, 3)
+			ctlsh, err := getTimeLinesHistory(ctx, pgState, pgm, 3)
 
 			if err != nil {
 				t.Errorf("err should be not be nil")
@@ -387,7 +402,7 @@ func TestGetTimeLinesHistory(t *testing.T) {
 				},
 			}
 			pgm.EXPECT().GetTimelinesHistory(timelineID).Return(timelineHistories, nil)
-			ctlsh, err := getTimeLinesHistory(pgState, pgm, 2)
+			ctlsh, err := getTimeLinesHistory(ctx, pgState, pgm, 2)
 
 			if err != nil {
 				t.Errorf("err should be not be nil")

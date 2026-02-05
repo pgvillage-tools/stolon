@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -69,6 +70,7 @@ func TestCheckConfig(t *testing.T) {
 }
 
 func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
+	ctx := context.Background()
 	t.Run("should deregister all the discovered services", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -93,7 +95,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		mockServiceDiscovery.EXPECT().DeRegister(&anotherServiceInfo)
 		mockServiceDiscovery.EXPECT().DeRegister(&serviceInfo)
 
-		checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+		checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 	})
 
 	t.Run("should register all the existing services", func(t *testing.T) {
@@ -138,7 +140,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 		mockServiceDiscovery.EXPECT().Register(&serviceInfo)
 		mockServiceDiscovery.EXPECT().Register(&anotherServiceInfo)
 
-		checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+		checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 	})
 
 	t.Run("should register existing services and deregister the discovered service which are no longer available",
@@ -176,7 +178,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().DeRegister(&yetAnotherServiceInfo)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 		})
 
 	t.Run("master registration is not allowed", func(t *testing.T) {
@@ -211,7 +213,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().DeRegister(&masterServiceInfo)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 		})
 
 		t.Run("should deregister if discovered service is master", func(t *testing.T) {
@@ -239,7 +241,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().DeRegister(&masterService)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 		})
 
 		t.Run("should not register if existing service is master", func(t *testing.T) {
@@ -264,7 +266,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			}
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, false)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, false)
 		})
 	})
 
@@ -300,7 +302,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().Register(&masterServiceInfo)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, true)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, true)
 		})
 
 		t.Run("should deregister if non existing is master", func(t *testing.T) {
@@ -323,7 +325,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().DeRegister(&masterService)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, true)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, true)
 		})
 
 		t.Run("should register if existing service is master", func(t *testing.T) {
@@ -351,7 +353,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 			mockStore.EXPECT().GetClusterData(gomock.Any()).Return(&clusterData, &store.KVPair{}, nil)
 			mockServiceDiscovery.EXPECT().Register(&masterService)
 
-			checkAndRegisterMasterAndSlaves(clusterName, mockStore, mockServiceDiscovery, true)
+			checkAndRegisterMasterAndSlaves(ctx, clusterName, mockStore, mockServiceDiscovery, true)
 		})
 	})
 }

@@ -37,12 +37,12 @@ import (
 	"unicode"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/rs/zerolog"
 	"github.com/sorintlab/stolon/internal/common"
-	slog "github.com/sorintlab/stolon/internal/log"
+	"github.com/sorintlab/stolon/internal/logging"
 
 	// TODO: This can probably go
 	"github.com/lib/pq"
-	"go.uber.org/zap"
 )
 
 const (
@@ -66,15 +66,13 @@ const (
 var (
 	// ErrInaccessibleDatadir is raised when pg_ctl returns an unknown state
 	ErrInaccessibleDatadir = errors.New("unknown postgres state")
+
+	utlCtx    context.Context
+	utlLogger *zerolog.Logger
 )
 
-var log = slog.S()
-
-// TODO: replace with zerolog
-
-// SetLogger sets a module wide logger
-func SetLogger(l *zap.SugaredLogger) {
-	log = l
+func init() {
+	utlCtx, utlLogger = logging.GetLogComponent(context.Background(), logging.PgUtilsComponent)
 }
 
 // TODO: implement all other options as well
@@ -298,7 +296,7 @@ func pgDataVersion(dataDir string) (*semver.Version, error) {
 func binaryVersion(binPath string) (*semver.Version, error) {
 	name := filepath.Join(binPath, "postgres")
 	cmd := exec.Command(name, "-V")
-	log.Debugw("execing cmd", logCmd, cmd)
+	utlLogger.Debug().Str(logCmd, cmd.String()).Msg("execing cmd")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, output: %s", err, string(out))
@@ -332,31 +330,31 @@ var (
 
 func handledDbClose(db *sql.DB) {
 	if err := db.Close(); err != nil {
-		log.Fatalf("Failed to close db connection: %v", err)
+		utlLogger.Fatal().AnErr("err", err).Msg("Failed to close db connection")
 	}
 }
 
 func handledRowsClose(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
-		log.Fatalf("Failed to close cursor: %v", err)
+		utlLogger.Fatal().AnErr("err", err).Msg("Failed to close cursor")
 	}
 }
 
 func handledFileClose(fh *os.File) {
 	if err := fh.Close(); err != nil {
-		log.Fatalf("Failed to close %s: %v", fh.Name(), err)
+		utlLogger.Fatal().Str("file", fh.Name()).AnErr("err", err).Msg("Failed to close")
 	}
 }
 
 func handledDBClose(fh *sql.DB) {
 	if err := fh.Close(); err != nil {
-		log.Fatalf("Failed to close database: %v", err)
+		utlLogger.Fatal().AnErr("err", err).Msg("Failed to close database")
 	}
 }
 
 func handledFileRemove(fh *os.File) {
 	if err := os.Remove(fh.Name()); err != nil {
-		log.Fatalf("Failed to remove %s: %v", fh.Name(), err)
+		utlLogger.Fatal().Str("path", fh.Name()).AnErr("err", err).Msg("Failed to remove")
 	}
 	handledFileClose(fh)
 }
@@ -920,11 +918,12 @@ func moveFile(sourcePath, destPath string) error {
 	return nil
 }
 
-func moveDirRecursive(src string, dest string) (err error) {
+func moveDirRecursive(ctx context.Context, src string, dest string) (err error) {
+	_, logger := logging.GetLogComponent(ctx, logging.PgComponent)
 	var stat fs.FileInfo
-	log.Infof("Moving %s to %s", src, dest)
+	logger.Info().Str("src", src).Str("dest", dest).Msg("Moving")
 	if stat, err = os.Stat(src); err != nil {
-		log.Errorf("could not get stat of %s: %e", src, err)
+		logger.Error().Str("path", src).AnErr("err", err).Msg("could not get stat of file")
 		return err
 	} else if !stat.IsDir() {
 		return moveFile(src, dest)
@@ -935,26 +934,26 @@ func moveDirRecursive(src string, dest string) (err error) {
 			return err
 		}
 	} else if err != nil {
-		log.Errorf("could not get stat of %s: %e", dest, err)
+		logger.Error().Str("path", dest).AnErr("err", err).Msg("could not get stat of file")
 		return err
 	}
 	// Copy all files and folders in this folder
 	var entries []fs.DirEntry
 	if entries, err = os.ReadDir(src); err != nil {
-		log.Errorf("could not read contents of folder %s: %e", src, err)
+		logger.Error().Str("path", src).AnErr("err", err).Msg("could not read contents of folder")
 		return err
 	}
 	for _, entry := range entries {
 		srcEntry := filepath.Join(src, entry.Name())
 		dstEntry := filepath.Join(dest, entry.Name())
-		if err := moveDirRecursive(srcEntry, dstEntry); err != nil {
+		if err := moveDirRecursive(ctx, srcEntry, dstEntry); err != nil {
 			return err
 		}
 	}
 
 	// Remove this folder, which is now supposedly empty
 	if err := syscall.Rmdir(src); err != nil {
-		log.Errorf("could not remove folder %s: %e", src, err)
+		logger.Error().Str("path", src).AnErr("err", err).Msg("could not remove folder")
 		// If this is a mountpoint or you don't have enough permissions, you might nog be able to. But that is fine.
 		// return err
 	}

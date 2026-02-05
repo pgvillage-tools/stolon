@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -39,6 +40,28 @@ var newCluster = cluster.New
 var now = time.Now()
 
 func TestUpdateCluster(t *testing.T) {
+	const (
+		p1 = "param01"
+		v1 = "value01"
+		p2 = "param02"
+		v2 = "value02"
+
+		k1 = "keeper1"
+		k2 = "keeper2"
+		k3 = "keeper3"
+
+		c1 = "cluster1"
+
+		d1 = "db1"
+		d2 = "db2"
+		d3 = "db3"
+
+		g1 = 1
+		g2 = 2
+		g3 = 3
+		g4 = 4
+	)
+	ctx := context.Background()
 	tests := []struct {
 		cd    *cluster.Data
 		outcd *cluster.Data
@@ -49,8 +72,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -61,12 +84,12 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
 				},
@@ -76,8 +99,8 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -88,12 +111,12 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
 				},
@@ -107,8 +130,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -119,18 +142,18 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -143,8 +166,8 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -155,19 +178,19 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -176,19 +199,19 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper1",
+							KeeperUID:              k1,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
 							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders * 2,
 							SynchronousReplication: false,
 							UsePgrewind:            true,
 							// revive:disable-next-line
-							PGParameters:                cluster.PGParameters{"param01": "value01", "param02": "value02"},
+							PGParameters:                cluster.PGParameters{p1: v1, p2: v2},
 							InitMode:                    cluster.NewDB,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
@@ -205,8 +228,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -216,26 +239,26 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -248,8 +271,8 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -259,27 +282,27 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -288,20 +311,20 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper1",
+							KeeperUID:              k1,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
 							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication: false,
 							UsePgrewind:            true,
 							PGParameters: cluster.PGParameters{
-								"param01": "value01",
-								"param02": "value02",
+								p1: v1,
+								p2: v2,
 							},
 							InitMode:                    cluster.NewDB,
 							Role:                        common.RolePrimary,
@@ -319,8 +342,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -330,22 +353,22 @@ func TestUpdateCluster(t *testing.T) {
 						MergePgParameters:    util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -354,12 +377,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							InitMode:                    cluster.NewDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
@@ -376,8 +399,8 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -387,21 +410,21 @@ func TestUpdateCluster(t *testing.T) {
 						MergePgParameters:    util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -419,8 +442,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -428,22 +451,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -452,33 +475,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -488,29 +511,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -518,22 +541,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -542,33 +565,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -578,21 +601,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -602,8 +625,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -611,22 +634,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -635,32 +658,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -669,29 +692,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -699,22 +722,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -723,12 +746,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -740,15 +763,15 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -760,12 +783,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -777,8 +800,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -786,22 +809,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -810,32 +833,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -847,12 +870,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 2,
+							CurrentGeneration: g2,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -861,8 +884,8 @@ func TestUpdateCluster(t *testing.T) {
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -870,22 +893,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -894,32 +917,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 3,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g3,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							Role:                        common.RolePrimary,
 							SynchronousReplication:      false,
-							Followers:                   []string{"db3"},
+							Followers:                   []string{d3},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 2,
+							CurrentGeneration: g2,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper1",
+							KeeperUID:              k1,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -929,7 +952,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db2",
+								DBUID: d2,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -941,20 +964,21 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db2",
+						MasterDBUID:    d2,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 		},
-		// #7 One master and one standby, master db not healthy, standby not converged (old clusterview): no standby elected as new master, clusterview not changed.
+		// #7 One master and one standby, master db not healthy, standby not converged
+		// (old clusterview): no standby elected as new master, clusterview not changed.
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -962,22 +986,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -986,32 +1010,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1020,7 +1044,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1032,17 +1056,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1050,22 +1074,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1074,32 +1098,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1108,7 +1132,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1120,9 +1144,9 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -1132,8 +1156,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1141,22 +1165,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1165,18 +1189,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
@@ -1185,12 +1209,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurrentGeneration: 0,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1199,29 +1223,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1229,22 +1253,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1253,12 +1277,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -1273,12 +1297,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurrentGeneration: 0,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -1290,12 +1314,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -1309,8 +1333,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1318,30 +1342,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1350,33 +1374,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1386,29 +1410,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1416,30 +1440,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1448,33 +1472,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1484,21 +1508,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -1510,8 +1534,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1519,30 +1543,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1551,32 +1575,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1585,7 +1609,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1597,17 +1621,17 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1615,30 +1639,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1647,32 +1671,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1681,7 +1705,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1691,12 +1715,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurrentGeneration: 0,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1706,7 +1730,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1718,21 +1742,21 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 		},
 		// #11 From previous test.
-		// new standby db "db3" converged, old standby db removed since exceeds MaxStandbysPerSender.
+		// new standby db d3 converged, old standby db removed since exceeds MaxStandbysPerSender.
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1740,30 +1764,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1772,32 +1796,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 2,
+							CurrentGeneration: g2,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1806,7 +1830,7 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
@@ -1816,12 +1840,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurrentGeneration: 0,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1831,29 +1855,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1861,30 +1885,30 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1893,32 +1917,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 3,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g3,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db3"},
+							Followers:                   []string{d3},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 2,
+							CurrentGeneration: g2,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -1928,21 +1952,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -1953,8 +1977,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -1962,22 +1986,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -1986,33 +2010,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2022,29 +2046,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2052,22 +2076,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2076,33 +2100,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2112,21 +2136,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -2137,8 +2161,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2146,22 +2170,22 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2170,40 +2194,40 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:   &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:          &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2211,14 +2235,14 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2227,12 +2251,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2245,14 +2269,14 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -2263,8 +2287,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2275,25 +2299,25 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2302,12 +2326,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2316,21 +2340,21 @@ func TestUpdateCluster(t *testing.T) {
 							UsePgrewind:                 false,
 							PGParameters:                nil,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2342,29 +2366,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2375,25 +2399,25 @@ func TestUpdateCluster(t *testing.T) {
 						AdditionalWalSenders:   util.ToPtr(uint16(cluster.DefaultAdditionalWalSenders) * 2),
 						SynchronousReplication: util.ToPtr(true),
 						UsePgrewind:            util.ToPtr(true),
-						PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2402,12 +2426,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper1",
+							KeeperUID:              k1,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
 							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders * 2,
@@ -2415,12 +2439,12 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication: true,
 							UsePgrewind:            true,
 							PGParameters: cluster.PGParameters{
-								"param01": "value01",
-								"param02": "value02",
+								p1: v1,
+								p2: v2,
 							},
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
@@ -2429,38 +2453,38 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout * 2},
 							MaxStandbys:            cluster.DefaultMaxStandbys * 2,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders * 2,
 							InitMode:               cluster.NoDB,
 							SynchronousReplication: false,
 							UsePgrewind:            true,
-							PGParameters:           cluster.PGParameters{"param01": "value01", "param02": "value02"},
+							PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 							Role:                   common.RoleReplica,
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -2471,8 +2495,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2481,22 +2505,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2505,32 +2529,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2539,29 +2563,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2570,22 +2594,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2594,12 +2618,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2611,15 +2635,15 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2631,12 +2655,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -2652,8 +2676,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2662,22 +2686,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2686,32 +2710,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2720,29 +2744,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2751,22 +2775,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2775,12 +2799,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2792,15 +2816,15 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -2812,12 +2836,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -2832,8 +2856,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2842,22 +2866,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2866,33 +2890,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -2901,29 +2925,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -2932,22 +2956,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -2956,50 +2980,50 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db2"},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db1"},
+							SynchronousStandbys:         []string{d1},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -3014,8 +3038,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3024,22 +3048,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3048,33 +3072,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             true,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3083,29 +3107,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3114,22 +3138,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3138,33 +3162,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             true,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3173,21 +3197,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -3201,8 +3225,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3211,30 +3235,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3243,34 +3267,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             true,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3280,22 +3304,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3305,29 +3329,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3336,30 +3360,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3368,34 +3392,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             true,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3405,22 +3429,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3430,21 +3454,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -3457,8 +3481,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3467,30 +3491,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3499,34 +3523,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3536,22 +3560,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3561,29 +3585,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3592,30 +3616,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3624,34 +3648,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3661,22 +3685,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3686,21 +3710,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -3711,8 +3735,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3721,30 +3745,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3753,35 +3777,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db2"},
+							SynchronousStandbys:    []string{d2},
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3791,22 +3815,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3816,29 +3840,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3847,30 +3871,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -3879,35 +3903,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db2"},
+							SynchronousStandbys:    []string{d2},
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3917,22 +3941,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -3942,21 +3966,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -3969,8 +3993,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -3979,30 +4003,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4011,35 +4035,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db2"},
+							SynchronousStandbys:    []string{d2},
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4049,22 +4073,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4074,29 +4098,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4105,30 +4129,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4137,35 +4161,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 3,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g3,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db2"},
+							SynchronousStandbys:    []string{d2},
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4175,22 +4199,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4200,21 +4224,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -4225,8 +4249,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4235,30 +4259,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4267,35 +4291,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db2", "db3"},
-							CurSynchronousStandbys: []string{"db3"},
+							SynchronousStandbys:    []string{d2, d3},
+							CurSynchronousStandbys: []string{d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4305,22 +4329,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4330,29 +4354,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4361,30 +4385,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4393,35 +4417,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 3,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g3,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                true,
 							CurrentGeneration:      2,
-							SynchronousStandbys:    []string{"db3"},
-							CurSynchronousStandbys: []string{"db3"},
+							SynchronousStandbys:    []string{d3},
+							CurSynchronousStandbys: []string{d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4431,22 +4455,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4456,21 +4480,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -4483,8 +4507,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4493,30 +4517,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4525,34 +4549,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 3,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g3,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   2,
-							SynchronousStandbys: []string{"db2", "db3"},
+							SynchronousStandbys: []string{d2, d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4562,22 +4586,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4587,29 +4611,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4618,30 +4642,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db3",
+						Master:            d3,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4650,12 +4674,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 4,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g4,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -4663,21 +4687,21 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db3"},
+							SynchronousStandbys:         []string{d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   2,
-							SynchronousStandbys: []string{"db2", "db3"},
+							SynchronousStandbys: []string{d2, d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4687,22 +4711,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 2,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper3",
+							KeeperUID:                   k3,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -4710,17 +4734,17 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db1"},
+							SynchronousStandbys:         []string{d1},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -4735,8 +4759,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4745,30 +4769,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4777,34 +4801,34 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2", "db3"},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							Followers:                   []string{d2, d3},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2", "db3"},
+							SynchronousStandbys: []string{d2, d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4814,22 +4838,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 1,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper3",
+							KeeperUID:              k3,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4839,29 +4863,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4870,30 +4894,30 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db3",
+						Master:            d3,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper3": &cluster.Keeper{
-						UID:  "keeper3",
+					k3: &cluster.Keeper{
+						UID:  k3,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -4902,12 +4926,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -4915,21 +4939,21 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db2", "db3"},
+							SynchronousStandbys:         []string{d2, d3},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2", "db3"},
+							SynchronousStandbys: []string{d2, d3},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -4939,22 +4963,22 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db3": &cluster.DB{
-						UID:        "db3",
-						Generation: 2,
+					d3: &cluster.DB{
+						UID:        d3,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper3",
+							KeeperUID:                   k3,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -4962,17 +4986,17 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db1", "db2"},
+							SynchronousStandbys:         []string{d1, d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -4987,8 +5011,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -4997,22 +5021,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:                 true,
@@ -5022,19 +5046,19 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
 						},
@@ -5045,12 +5069,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5060,29 +5084,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5091,22 +5115,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:                 true,
@@ -5116,19 +5140,19 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
 						},
@@ -5139,12 +5163,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5154,21 +5178,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -5181,8 +5205,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5191,22 +5215,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5216,35 +5240,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                false,
 							CurrentGeneration:      1,
-							SynchronousStandbys:    []string{"db2"},
-							CurSynchronousStandbys: []string{"db2"},
+							SynchronousStandbys:    []string{d2},
+							CurSynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5254,29 +5278,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5285,22 +5309,22 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5310,35 +5334,35 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:                false,
 							CurrentGeneration:      1,
-							SynchronousStandbys:    []string{"db2"},
-							CurSynchronousStandbys: []string{"db2"},
+							SynchronousStandbys:    []string{d2},
+							CurSynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5348,21 +5372,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -5376,8 +5400,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5387,22 +5411,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5411,32 +5435,32 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      false,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5445,29 +5469,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5477,22 +5501,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5501,12 +5525,12 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -5518,15 +5542,15 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
@@ -5538,12 +5562,12 @@ func TestUpdateCluster(t *testing.T) {
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -5558,8 +5582,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5569,22 +5593,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5593,33 +5617,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5628,29 +5652,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5660,22 +5684,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db2",
+						Master:            d2,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5684,50 +5708,50 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db2"},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             false,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 2,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper2",
+							KeeperUID:                   k2,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
 							Followers:                   []string{},
-							SynchronousStandbys:         []string{"db1"},
+							SynchronousStandbys:         []string{d1},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 2,
+					Generation: g2,
 					Spec: cluster.ProxySpec{
 						MasterDBUID:    "",
 						EnabledProxies: []string{},
@@ -5742,8 +5766,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5753,22 +5777,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5777,33 +5801,33 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
-							SynchronousStandbys:         []string{"db2"},
+							Followers:                   []string{d2},
+							SynchronousStandbys:         []string{d2},
 							ExternalSynchronousStandbys: []string{},
 						},
 						Status: cluster.DBStatus{
 							Healthy:             true,
 							CurrentGeneration:   1,
-							SynchronousStandbys: []string{"db2"},
+							SynchronousStandbys: []string{d2},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5812,29 +5836,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5844,22 +5868,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
@@ -5868,18 +5892,18 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{},
 						},
@@ -5889,12 +5913,12 @@ func TestUpdateCluster(t *testing.T) {
 							SynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -5903,21 +5927,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           false,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -5931,8 +5955,8 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			cd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -5942,22 +5966,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:                 true,
@@ -5967,19 +5991,19 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 1,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{"stolonfakestandby"},
 						},
@@ -5990,12 +6014,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -6005,29 +6029,29 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
 			},
 			outcd: &cluster.Data{
 				Cluster: &cluster.Cluster{
-					UID:        "cluster1",
-					Generation: 1,
+					UID:        c1,
+					Generation: g1,
 					Spec: &cluster.Spec{
 						ConvergenceTimeout:     &cluster.Duration{Duration: cluster.DefaultConvergenceTimeout},
 						InitTimeout:            &cluster.Duration{Duration: cluster.DefaultInitTimeout},
@@ -6037,22 +6061,22 @@ func TestUpdateCluster(t *testing.T) {
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
 					Status: cluster.Status{
-						CurrentGeneration: 1,
+						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
-						Master:            "db1",
+						Master:            d1,
 					},
 				},
 				Keepers: cluster.Keepers{
-					"keeper1": &cluster.Keeper{
-						UID:  "keeper1",
+					k1: &cluster.Keeper{
+						UID:  k1,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:         true,
 							LastHealthyTime: now,
 						},
 					},
-					"keeper2": &cluster.Keeper{
-						UID:  "keeper2",
+					k2: &cluster.Keeper{
+						UID:  k2,
 						Spec: &cluster.KeeperSpec{},
 						Status: cluster.KeeperStatus{
 							Healthy:                 true,
@@ -6062,19 +6086,19 @@ func TestUpdateCluster(t *testing.T) {
 					},
 				},
 				DBs: cluster.DBs{
-					"db1": &cluster.DB{
-						UID:        "db1",
-						Generation: 2,
+					d1: &cluster.DB{
+						UID:        d1,
+						Generation: g2,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:                   "keeper1",
+							KeeperUID:                   k1,
 							RequestTimeout:              cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:                 cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:        cluster.DefaultAdditionalWalSenders,
 							InitMode:                    cluster.NoDB,
 							SynchronousReplication:      true,
 							Role:                        common.RolePrimary,
-							Followers:                   []string{"db2"},
+							Followers:                   []string{d2},
 							SynchronousStandbys:         []string{},
 							ExternalSynchronousStandbys: []string{},
 						},
@@ -6085,12 +6109,12 @@ func TestUpdateCluster(t *testing.T) {
 							CurSynchronousStandbys: []string{},
 						},
 					},
-					"db2": &cluster.DB{
-						UID:        "db2",
-						Generation: 1,
+					d2: &cluster.DB{
+						UID:        d2,
+						Generation: g1,
 						ChangeTime: time.Time{},
 						Spec: &cluster.DBSpec{
-							KeeperUID:              "keeper2",
+							KeeperUID:              k2,
 							RequestTimeout:         cluster.Duration{Duration: cluster.DefaultRequestTimeout},
 							MaxStandbys:            cluster.DefaultMaxStandbys,
 							AdditionalWalSenders:   cluster.DefaultAdditionalWalSenders,
@@ -6100,21 +6124,21 @@ func TestUpdateCluster(t *testing.T) {
 							Followers:              []string{},
 							FollowConfig: &cluster.FollowConfig{
 								Type:  cluster.FollowTypeInternal,
-								DBUID: "db1",
+								DBUID: d1,
 							},
 							SynchronousStandbys:         nil,
 							ExternalSynchronousStandbys: nil,
 						},
 						Status: cluster.DBStatus{
 							Healthy:           true,
-							CurrentGeneration: 1,
+							CurrentGeneration: g1,
 						},
 					},
 				},
 				Proxy: &cluster.Proxy{
-					Generation: 1,
+					Generation: g1,
 					Spec: cluster.ProxySpec{
-						MasterDBUID:    "db1",
+						MasterDBUID:    d1,
 						EnabledProxies: []string{},
 					},
 				},
@@ -6123,7 +6147,8 @@ func TestUpdateCluster(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: map[string]*DBConvergenceInfo{}}
+		s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn,
+			dbConvergenceInfos: map[string]*DBConvergenceInfo{}}
 
 		// reset curUID func value to latest db uid
 		curUID = 0
@@ -6134,7 +6159,8 @@ func TestUpdateCluster(t *testing.T) {
 			}
 		}
 
-		// Populate db convergence timers, these are populated with a negative timer to make them result like not converged.
+		// Populate db convergence timers, these are populated with a negative
+		// timer to make them result like not converged.
 		for _, db := range tt.cd.DBs {
 			s.dbConvergenceInfos[db.UID] = &DBConvergenceInfo{Generation: 0, Timer: int64(-1000 * time.Hour)}
 		}
@@ -6142,7 +6168,7 @@ func TestUpdateCluster(t *testing.T) {
 		fmt.Printf("test #%d\n", i)
 		t.Logf("test #%d", i)
 
-		outcd, err := s.updateCluster(tt.cd, cluster.ProxiesInfo{})
+		outcd, err := s.updateCluster(ctx, tt.cd, cluster.ProxiesInfo{})
 		if tt.err != nil {
 			if err == nil {
 				t.Errorf("got no error, wanted error: %v", tt.err)
@@ -6161,10 +6187,19 @@ func TestUpdateCluster(t *testing.T) {
 }
 
 func TestActiveProxiesInfos(t *testing.T) {
-	proxyInfo1 := cluster.ProxyInfo{UID: "proxy1", InfoUID: "infoUID1", ProxyTimeout: cluster.DefaultProxyTimeout}
-	proxyInfo2 := cluster.ProxyInfo{UID: "proxy2", InfoUID: "infoUID2", ProxyTimeout: cluster.DefaultProxyTimeout}
-	proxyInfoWithDifferentInfoUID := cluster.ProxyInfo{UID: "proxy2", InfoUID: "differentInfoUID"}
-	var secToNanoSecondMultiplier int64 = 1000000000
+	const (
+		pr1 = "proxy01"
+		pr2 = "proxy02"
+	)
+	proxyInfo1 := cluster.ProxyInfo{UID: pr1, InfoUID: "infoUID1", ProxyTimeout: cluster.DefaultProxyTimeout}
+	proxyInfo2 := cluster.ProxyInfo{UID: pr2, InfoUID: "infoUID2", ProxyTimeout: cluster.DefaultProxyTimeout}
+	proxyInfoWithDifferentInfoUID := cluster.ProxyInfo{UID: pr2, InfoUID: "differentInfoUID"}
+	var (
+		secToNanoSecondMultiplier int64 = 1000000000
+
+		td15ns = 15 * secToNanoSecondMultiplier
+		td45ns = 45 * secToNanoSecondMultiplier
+	)
 	tests := []struct {
 		name                       string
 		proxyInfoHistories         ProxyInfoHistories
@@ -6180,59 +6215,76 @@ func TestActiveProxiesInfos(t *testing.T) {
 			expectedProxyInfoHistories: nil,
 		},
 		{
-			name:                       "should append to histories when called with proxyInfos",
-			proxyInfoHistories:         make(ProxyInfoHistories),
-			proxiesInfos:               cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfo2},
-			expectedActiveProxies:      cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfo2},
-			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
+			name:                  "should append to histories when called with proxyInfos",
+			proxyInfoHistories:    make(ProxyInfoHistories),
+			proxiesInfos:          cluster.ProxiesInfo{pr1: &proxyInfo1, pr2: &proxyInfo2},
+			expectedActiveProxies: cluster.ProxiesInfo{pr1: &proxyInfo1, pr2: &proxyInfo2},
+			expectedProxyInfoHistories: ProxyInfoHistories{
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2},
+			},
 		},
 		{
 			name: "should update to histories if infoUID is different",
 			proxyInfoHistories: ProxyInfoHistories{
-				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
-				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
 			},
-			proxiesInfos:               cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfoWithDifferentInfoUID},
-			expectedActiveProxies:      cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfoWithDifferentInfoUID},
-			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfoWithDifferentInfoUID}},
+			proxiesInfos:          cluster.ProxiesInfo{pr1: &proxyInfo1, pr2: &proxyInfoWithDifferentInfoUID},
+			expectedActiveProxies: cluster.ProxiesInfo{pr1: &proxyInfo1, pr2: &proxyInfoWithDifferentInfoUID},
+			expectedProxyInfoHistories: ProxyInfoHistories{
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfoWithDifferentInfoUID},
+			},
 		},
 		{
 			name: "should remove from active proxies if is not updated for twice the DefaultProxyTimeout",
 			proxyInfoHistories: ProxyInfoHistories{
-				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now() - (3 * 15 * secToNanoSecondMultiplier)},
-				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now() - (1 * 15 * secToNanoSecondMultiplier)},
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now() - (td45ns)},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now() - (td15ns)},
 			},
-			proxiesInfos:               cluster.ProxiesInfo{"proxy1": &proxyInfo1, "proxy2": &proxyInfo2},
-			expectedActiveProxies:      cluster.ProxiesInfo{"proxy2": &proxyInfo2},
-			expectedProxyInfoHistories: ProxyInfoHistories{"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1}, "proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
+			proxiesInfos:          cluster.ProxiesInfo{pr1: &proxyInfo1, pr2: &proxyInfo2},
+			expectedActiveProxies: cluster.ProxiesInfo{pr2: &proxyInfo2},
+			expectedProxyInfoHistories: ProxyInfoHistories{
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2},
+			},
 		},
 		{
 			name: "should remove proxy from sentinel's local history if the proxy is removed in store",
 			proxyInfoHistories: ProxyInfoHistories{
-				"proxy1": &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
-				"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
+				pr1: &ProxyInfoHistory{ProxyInfo: &proxyInfo1, Timer: timer.Now()},
+				pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2, Timer: timer.Now()},
 			},
-			proxiesInfos:               cluster.ProxiesInfo{"proxy2": &proxyInfo2},
-			expectedActiveProxies:      cluster.ProxiesInfo{"proxy2": &proxyInfo2},
-			expectedProxyInfoHistories: ProxyInfoHistories{"proxy2": &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
+			proxiesInfos:               cluster.ProxiesInfo{pr2: &proxyInfo2},
+			expectedActiveProxies:      cluster.ProxiesInfo{pr2: &proxyInfo2},
+			expectedProxyInfoHistories: ProxyInfoHistories{pr2: &ProxyInfoHistory{ProxyInfo: &proxyInfo2}},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &Sentinel{uid: "sentinel01", UIDFn: testUIDFn, RandFn: testRandFn, dbConvergenceInfos: map[string]*DBConvergenceInfo{}, proxyInfoHistories: test.proxyInfoHistories}
+			s := &Sentinel{
+				uid:                "sentinel01",
+				UIDFn:              testUIDFn,
+				RandFn:             testRandFn,
+				dbConvergenceInfos: map[string]*DBConvergenceInfo{},
+				proxyInfoHistories: test.proxyInfoHistories,
+			}
 			actualActiveProxies := s.activeProxiesInfos(test.proxiesInfos)
 
 			if !reflect.DeepEqual(actualActiveProxies, test.expectedActiveProxies) {
 				t.Errorf("Expected proxiesInfos to be %v but got %v", test.expectedActiveProxies, actualActiveProxies)
 			}
 			if !isProxyInfoHistoriesEqual(s.proxyInfoHistories, test.expectedProxyInfoHistories) {
-				t.Errorf("Expected proxyInfoHistories to be %v but got %v", test.expectedProxyInfoHistories, s.proxyInfoHistories)
+				t.Errorf("Expected proxyInfoHistories to be %v but got %v",
+					test.expectedProxyInfoHistories, s.proxyInfoHistories)
 			}
 		})
 	}
 }
 
-func isProxyInfoHistoriesEqual(actualProxyInfoHistories ProxyInfoHistories, expectedProxyInfoHistories ProxyInfoHistories) bool {
+func isProxyInfoHistoriesEqual(actualProxyInfoHistories ProxyInfoHistories,
+	expectedProxyInfoHistories ProxyInfoHistories) bool {
 	if len(actualProxyInfoHistories) != len(expectedProxyInfoHistories) {
 		return false
 	}

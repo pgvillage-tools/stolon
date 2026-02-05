@@ -24,6 +24,7 @@ import (
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
 	"github.com/sorintlab/stolon/internal/cluster"
+	"github.com/sorintlab/stolon/internal/logging"
 	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/spf13/cobra"
@@ -86,14 +87,15 @@ type ClusterStatus struct {
 }
 
 func status(_ *cobra.Command, _ []string) {
+	ctx := context.Background()
 	status, generateErr := generateStatus()
 	switch statusOpts.Format {
 	case "json":
 		renderJSON(status, generateErr)
 	case "text":
-		renderText(status, generateErr)
+		renderText(ctx, status, generateErr)
 	case "":
-		renderText(status, generateErr)
+		renderText(ctx, status, generateErr)
 	default:
 		die("unrecognised output format %s", statusOpts.Format)
 	}
@@ -115,18 +117,20 @@ func marshalJSON(value any) {
 	stdout("%s", output)
 }
 
-func tabPrint(tw *tabwriter.Writer, formatted string, args ...any) {
+func tabPrint(ctx context.Context, tw *tabwriter.Writer, formatted string, args ...any) {
 	if _, err := fmt.Fprintf(tw, formatted, args...); err != nil {
-		log.Fatalf("failed to write to tab writer: %v", err)
+		_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
+		logger.Fatal().AnErr("err", err).Msg("failed to write to tab writer")
 	}
 }
 
-func tabFlush(tw *tabwriter.Writer) {
+func tabFlush(ctx context.Context, tw *tabwriter.Writer) {
 	if err := tw.Flush(); err != nil {
-		log.Fatalf("failed to flush tab writer: %v", err)
+		_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
+		logger.Fatal().AnErr("err", err).Msg("failed to flush tab writer")
 	}
 }
-func renderText(status Status, generateErr error) {
+func renderText(ctx context.Context, status Status, generateErr error) {
 	if generateErr != nil {
 		die("%v", generateErr)
 	}
@@ -139,10 +143,10 @@ func renderText(status Status, generateErr error) {
 	if len(status.Sentinels) == 0 {
 		stdout("No active sentinels")
 	} else {
-		tabPrint(tabOut, "ID\tLEADER\n")
+		tabPrint(ctx, tabOut, "ID\tLEADER\n")
 		for _, s := range status.Sentinels {
-			tabPrint(tabOut, "%s\t%t\n", s.UID, s.Leader)
-			tabFlush(tabOut)
+			tabPrint(ctx, tabOut, "%s\t%t\n", s.UID, s.Leader)
+			tabFlush(ctx, tabOut)
 		}
 	}
 
@@ -152,10 +156,10 @@ func renderText(status Status, generateErr error) {
 	if len(status.Proxies) == 0 {
 		stdout("No active proxies")
 	} else {
-		tabPrint(tabOut, "ID\n")
+		tabPrint(ctx, tabOut, "ID\n")
 		for _, p := range status.Proxies {
-			tabPrint(tabOut, "%s\n", p.UID)
-			tabFlush(tabOut)
+			tabPrint(ctx, tabOut, "%s\n", p.UID)
+			tabFlush(ctx, tabOut)
 		}
 	}
 
@@ -166,9 +170,11 @@ func renderText(status Status, generateErr error) {
 		stdout("No keepers available")
 		stdout("")
 	} else {
-		tabPrint(tabOut, "UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
+		tabPrint(ctx, tabOut,
+			"UID\tHEALTHY\tPG LISTENADDRESS\tPG HEALTHY\tPG WANTEDGENERATION\tPG CURRENTGENERATION\n")
 		for _, k := range status.Keepers {
 			tabPrint(
+				ctx,
 				tabOut,
 				"%s\t%t\t%s\t%t\t%d\t%d\t\n",
 				k.UID,
@@ -178,7 +184,7 @@ func renderText(status Status, generateErr error) {
 				k.PgWantedGeneration,
 				k.PgCurrentGeneration,
 			)
-			tabFlush(tabOut)
+			tabFlush(ctx, tabOut)
 		}
 	}
 

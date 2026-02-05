@@ -28,17 +28,14 @@ import (
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/flagutil"
-	slog "github.com/sorintlab/stolon/internal/log"
+	"github.com/sorintlab/stolon/internal/logging"
 	"github.com/sorintlab/stolon/internal/store"
 	"github.com/sorintlab/stolon/internal/util"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sorintlab/pollon"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
-
-var log = slog.S()
 
 // CmdProxy is the cobra command which defines running stolon-proxy
 var CmdProxy = &cobra.Command{
@@ -102,7 +99,8 @@ func init() {
 		"set tcp keepalive interval (seconds)")
 
 	if err := CmdProxy.PersistentFlags().MarkDeprecated("debug", "use --log-level=debug instead"); err != nil {
-		log.Fatal(err)
+		_, logger := logging.GetLogComponent(context.Background(), logging.ProxyComponent)
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 }
 
@@ -146,14 +144,15 @@ func NewClusterChecker(uid string, cfg config) (*ClusterChecker, error) {
 	}, nil
 }
 
-func (c *ClusterChecker) startPollonProxy() error {
+func (c *ClusterChecker) startPollonProxy(ctx context.Context) error {
+	_, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
 	c.pollonMutex.Lock()
 	defer c.pollonMutex.Unlock()
 	if c.pp != nil {
 		return nil
 	}
 
-	log.Infow("Starting proxying")
+	logger.Info().Msg("Starting proxying")
 	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(cfg.listenAddress, cfg.port))
 	if err != nil {
 		return fmt.Errorf("error resolving tcp addr %q: %v", addr.String(), err)
@@ -183,15 +182,16 @@ func (c *ClusterChecker) startPollonProxy() error {
 	return nil
 }
 
-func (c *ClusterChecker) stopPollonProxy() {
+func (c *ClusterChecker) stopPollonProxy(ctx context.Context) {
+	_, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
 	c.pollonMutex.Lock()
 	defer c.pollonMutex.Unlock()
 	if c.pp != nil {
-		log.Infow("Stopping listening")
+		logger.Info().Msg("Stopping listening")
 		c.pp.Stop()
 		c.pp = nil
 		if err := c.listener.Close(); err != nil {
-			log.Fatal("Stopping listening")
+			logger.Fatal().AnErr("err", err).Msg("Stopping listening")
 		}
 		c.listener = nil
 	}
@@ -206,33 +206,36 @@ func (c *ClusterChecker) sendPollonConfData(confData pollon.ConfData) {
 }
 
 // SetProxyInfo is function which sets the proxy-info
-func (c *ClusterChecker) SetProxyInfo(_ store.Store, generation int64, proxyTimeout time.Duration) error {
+func (c *ClusterChecker) SetProxyInfo(ctx context.Context, _ store.Store, generation int64,
+	proxyTimeout time.Duration) error {
+	_, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
 	proxyInfo := &cluster.ProxyInfo{
 		InfoUID:      common.UID(),
 		UID:          c.uid,
 		Generation:   generation,
 		ProxyTimeout: proxyTimeout,
 	}
-	log.Debugf("proxyInfo dump: %s", spew.Sdump(proxyInfo))
+	logger.Debug().Str("proxyInfo dump", spew.Sdump(proxyInfo)).Msg("")
 
-	return c.e.SetProxyInfo(context.TODO(), proxyInfo, 2*proxyTimeout)
+	return c.e.SetProxyInfo(ctx, proxyInfo, 2*proxyTimeout)
 }
 
 // Check reads the cluster data and applies the right pollon configuration.
-func (c *ClusterChecker) Check() error {
-	cd, _, err := c.e.GetClusterData(context.TODO())
+func (c *ClusterChecker) Check(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
+	cd, _, err := c.e.GetClusterData(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot get cluster data: %v", err)
 	}
 
 	// Start pollon if not active
-	if err = c.startPollonProxy(); err != nil {
+	if err = c.startPollonProxy(ctx); err != nil {
 		return fmt.Errorf("failed to start proxy: %v", err)
 	}
 
-	log.Debugf("cd dump: %s", spew.Sdump(cd))
+	logger.Debug().Str("cd dump", spew.Sdump(cd)).Msg("")
 	if cd == nil {
-		log.Infow("no clusterdata available, closing connections to master")
+		logger.Info().Msg("no clusterdata available, closing connections to master")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 		return nil
 	}
@@ -260,11 +263,11 @@ func (c *ClusterChecker) Check() error {
 
 	proxy := cd.Proxy
 	if proxy == nil {
-		log.Infow("no proxy object available, closing connections to master")
+		logger.Info().Msg("no proxy object available, closing connections to master")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 		// ignore errors on setting proxy info
-		if err = c.SetProxyInfo(c.e, cluster.NoGeneration, proxyTimeout); err != nil {
-			log.Errorw("failed to update proxyInfo", zap.Error(err))
+		if err = c.SetProxyInfo(ctx, c.e, cluster.NoGeneration, proxyTimeout); err != nil {
+			logger.Error().AnErr("err", err).Msg("failed to update proxyInfo")
 		} else {
 			// update proxyCheckinterval and proxyTimeout only if we successfully updated our proxy info
 			c.configMutex.Lock()
@@ -277,11 +280,11 @@ func (c *ClusterChecker) Check() error {
 
 	db, ok := cd.DBs[proxy.Spec.MasterDBUID]
 	if !ok {
-		log.Infow("no db object available, closing connections to master", "db", proxy.Spec.MasterDBUID)
+		logger.Info().Str("db", proxy.Spec.MasterDBUID).Msg("no db object available, closing connections to master")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 		// ignore errors on setting proxy info
-		if err = c.SetProxyInfo(c.e, proxy.Generation, proxyTimeout); err != nil {
-			log.Errorw("failed to update proxyInfo", zap.Error(err))
+		if err = c.SetProxyInfo(ctx, c.e, proxy.Generation, proxyTimeout); err != nil {
+			logger.Error().AnErr("err", err).Msg("failed to update proxyInfo")
 		} else {
 			// update proxyCheckinterval and proxyTimeout only if we successfully updated our proxy info
 			c.configMutex.Lock()
@@ -294,12 +297,12 @@ func (c *ClusterChecker) Check() error {
 
 	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(db.Status.ListenAddress, db.Status.Port))
 	if err != nil {
-		log.Errorw("cannot resolve db address", zap.Error(err))
+		logger.Error().AnErr("err", err).Msg("cannot resolve db address")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 		return nil
 	}
-	log.Infow("master address", "address", addr)
-	if err = c.SetProxyInfo(c.e, proxy.Generation, proxyTimeout); err != nil {
+	logger.Info().Any("address", addr).Msg("master address")
+	if err = c.SetProxyInfo(ctx, c.e, proxy.Generation, proxyTimeout); err != nil {
 		// if we failed to update our proxy info when a master is defined we
 		// cannot ignore this error since the sentinel won't know that we exist
 		// and are sending connections to a master so, when electing a new
@@ -315,10 +318,12 @@ func (c *ClusterChecker) Check() error {
 	// start proxing only if we are inside enabledProxies, this ensures that the
 	// sentinel has read our proxyinfo and knows we are alive
 	if util.StringInSlice(proxy.Spec.EnabledProxies, c.uid) {
-		log.Infow("proxying to master address", "address", addr)
+		logger.Info().Any("address", addr).Msg("proxying to master address")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: addr})
 	} else {
-		log.Infow("not proxying to master address since we aren't in the enabled proxies list", "address", addr)
+		logger.Info().
+			Any("address", addr).
+			Msg("not proxying to master address since we aren't in the enabled proxies list")
 		c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 	}
 
@@ -326,7 +331,8 @@ func (c *ClusterChecker) Check() error {
 }
 
 // TimeoutChecker is a function that checks the timeouts
-func (c *ClusterChecker) TimeoutChecker(checkOkCh chan struct{}) {
+func (c *ClusterChecker) TimeoutChecker(ctx context.Context, checkOkCh chan struct{}) {
+	_, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
 	c.configMutex.Lock()
 	timeoutTimer := time.NewTimer(c.proxyTimeout)
 	c.configMutex.Unlock()
@@ -334,17 +340,17 @@ func (c *ClusterChecker) TimeoutChecker(checkOkCh chan struct{}) {
 	for {
 		select {
 		case <-timeoutTimer.C:
-			log.Infow("check timeout timer fired")
+			logger.Info().Msg("check timeout timer fired")
 			// if the check timeouts close all connections and stop listening
 			// (for example to avoid load balancers forward connections to us
 			// since we aren't ready or in a bad state)
 			c.sendPollonConfData(pollon.ConfData{DestAddr: nil})
 			if c.stopListening {
-				c.stopPollonProxy()
+				c.stopPollonProxy(ctx)
 			}
 
 		case <-checkOkCh:
-			log.Debugw("check ok message received")
+			logger.Debug().Msg("check ok message received")
 
 			// ignore if stop succeeded or not due to timer already expired
 			timeoutTimer.Stop()
@@ -357,7 +363,8 @@ func (c *ClusterChecker) TimeoutChecker(checkOkCh chan struct{}) {
 }
 
 // Start is function that starts the procy
-func (c *ClusterChecker) Start() error {
+func (c *ClusterChecker) Start(ctx context.Context) error {
+	_, logger := logging.GetLogComponent(ctx, logging.ProxyComponent)
 	checkOkCh := make(chan struct{})
 	checkCh := make(chan error)
 	timerCh := time.NewTimer(0).C
@@ -366,18 +373,18 @@ func (c *ClusterChecker) Start() error {
 	// if the Check method is blocked somewhere.
 	// The idomatic/cleaner solution will be to use a context instead of this
 	// TimeoutChecker but we have to change the libkv stores to support contexts.
-	go c.TimeoutChecker(checkOkCh)
+	go c.TimeoutChecker(ctx, checkOkCh)
 
 	for {
 		select {
 		case <-timerCh:
 			go func() {
-				checkCh <- c.Check()
+				checkCh <- c.Check(ctx)
 			}()
 		case err := <-checkCh:
 			if err != nil {
 				// don't report check ok since it returned an error
-				log.Infow("check function error", zap.Error(err))
+				logger.Info().AnErr("err", err).Msg("check function error")
 			} else {
 				// report that check was ok
 				checkOkCh <- struct{}{}
@@ -396,78 +403,60 @@ func (c *ClusterChecker) Start() error {
 
 // Execute is the main executor of the proxy
 func Execute() {
+	_, logger := logging.GetLogComponent(context.Background(), logging.ProxyComponent)
 	if err := flagutil.SetFlagsFromEnv(CmdProxy.PersistentFlags(), "STPROXY"); err != nil {
-		log.Fatal(err)
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 
 	if err := CmdProxy.Execute(); err != nil {
-		log.Fatal(err)
+		logger.Fatal().AnErr("err", err).Msg("")
 	}
 }
 
 func proxy(c *cobra.Command, _ []string) {
-	switch cfg.LogLevel {
-	case "error":
-		slog.SetLevel(zap.ErrorLevel)
-	case "warn":
-		slog.SetLevel(zap.WarnLevel)
-	case "info":
-		slog.SetLevel(zap.InfoLevel)
-	case "debug":
-		slog.SetLevel(zap.DebugLevel)
-	default:
-		log.Fatalf("invalid log level: %v", cfg.LogLevel)
-	}
+	ctx, logger := logging.GetLogComponent(context.Background(), logging.ProxyComponent)
+	logging.SetStaticLevel(cfg.LogLevel)
 	if cfg.debug {
-		slog.SetDebug()
+		logging.SetStaticLevel("debug")
 	}
 	if cmd.IsColorLoggerEnable(c, &cfg.CommonConfig) {
-		log = slog.SColor()
-	}
-	if slog.IsDebug() {
-		if cmd.IsColorLoggerEnable(c, &cfg.CommonConfig) {
-			stdlog := slog.StdLogColor()
-			pollon.SetLogger(stdlog)
-		} else {
-			stdlog := slog.StdLog()
-			pollon.SetLogger(stdlog)
-		}
+		logging.EnableColor()
 	}
 
 	if err := cmd.CheckCommonConfig(&cfg.CommonConfig); err != nil {
-		log.Fatalf(err.Error())
+		logger.Fatal().Msgf(err.Error())
 	}
 
 	cmd.SetMetrics(&cfg.CommonConfig, "proxy")
 
 	if cfg.keepAliveIdle < 0 {
-		log.Fatalf("tcp keepalive idle value must be greater or equal to 0")
+		logger.Fatal().Msgf("tcp keepalive idle value must be greater or equal to 0")
 	}
 	if cfg.keepAliveCount < 0 {
-		log.Fatalf("tcp keepalive count value must be greater or equal to 0")
+		logger.Fatal().Msgf("tcp keepalive count value must be greater or equal to 0")
 	}
 	if cfg.keepAliveInterval < 0 {
-		log.Fatalf("tcp keepalive interval value must be greater or equal to 0")
+		logger.Fatal().Msgf("tcp keepalive interval value must be greater or equal to 0")
 	}
 
 	uid := common.UID()
-	log.Infow("proxy uid", "uid", uid)
+	logger.Info().Str("uid", uid).Msg("proxy uid")
 
 	if cfg.MetricsListenAddress != "" {
 		http.Handle("/metrics", promhttp.Handler())
 		go func() {
 			err := http.ListenAndServe(cfg.MetricsListenAddress, nil)
 			if err != nil {
-				log.Fatalf("metrics http server error", zap.Error(err))
+				logger.Fatal().AnErr("err", err).Msg("metrics http server error")
 			}
 		}()
 	}
 
 	clusterChecker, err := NewClusterChecker(uid, cfg)
 	if err != nil {
-		log.Fatalf("cannot create cluster checker: %v", err)
+		logger.Fatal().Msgf("cannot create cluster checker: %v", err)
 	}
-	if err = clusterChecker.Start(); err != nil {
-		log.Fatalf("cluster checker ended with error: %v", err)
+	if err = clusterChecker.Start(ctx); err != nil {
+		logger.Fatal().Msgf("cluster checker ended with error: %v", err)
 	}
 }
