@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       backend: ${{ steps.filter.outputs.backend_any_changed }}
+      ci: ${{ steps.filter.outputs.ci_any_changed }}
     steps:
       - uses: actions/checkout@8410ad0602e1e429cee44a835ae9f77f654a6694 # v4.0.0
       - uses: tj-actions/changed-files@e9772d140489982e0e3704fea5ee93d536f1e275 # v45.0.1
@@ -148,8 +149,8 @@ jobs:
         shell: bash
         run: echo "coverage check failed" && exit 1
 
-  e2e-test:
-    name: Run e2e tests
+  e2e-keeper-images:
+    name: Build keeper images for running e2e
     runs-on: ubuntu-22.04
     needs:
       - codechanges
@@ -160,10 +161,134 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@8410ad0602e1e429cee44a835ae9f77f654a6694 # v4.0.0
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: stolon-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            name=keeper-${{ matrix.pgversion }},enable=true
+          tags: |
+            type=semver,pattern={{raw}}
+            type=raw,value=latest
+            type=sha
+
+      - name: Build stolon images
+        uses: docker/build-push-action@v6
+        with:
+          load: true
+          build-args: PGVERSION=${{ matrix.pgversion }}
+          context: .
+          file: ./Dockerfile.keeper
+          push: false
+          platforms: linux/amd64
+          tags: ${{ steps.stolon-meta.outputs.tags }}
+          labels: ${{ steps.stolon-meta.outputs.labels }}
+
+      - name: Save image to tar
+        run: docker save keeper-${{ matrix.pgversion }} > keeper-${{ matrix.pgversion }}.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keeper-image-${{ matrix.pgversion }}
+          path: keeper-${{ matrix.pgversion }}.tar
+
+  e2e-other-images:
+    name: Build other images for running e2e
+    runs-on: ubuntu-22.04
+    needs:
+      - codechanges
+    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    strategy:
+      matrix:
+        image:
+          - proxy
+          - sentinel
+          - stolonctl
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8410ad0602e1e429cee44a835ae9f77f654a6694 # v4.0.0
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: stolon-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            name=${{ matrix.image }},enable=true
+          tags: |
+            type=semver,pattern={{raw}}
+            type=raw,value=latest
+            type=sha
+
+      - name: Build stolon images
+        uses: docker/build-push-action@v6
+        with:
+          load: true
+          context: .
+          file: ./Dockerfile.${{ matrix.image }}
+          push: false
+          platforms: linux/amd64
+          tags: ${{ steps.stolon-meta.outputs.tags }}
+          labels: ${{ steps.stolon-meta.outputs.labels }}
+
+      - name: Save image to tar
+        run: docker save ${{ matrix.image }} > ${{ matrix.image }}.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.image }}-image
+          path: ${{ matrix.image }}.tar
+
+  e2e-test:
+    name: Run e2e tests
+    runs-on: ubuntu-22.04
+    needs:
+      - codechanges
+      - e2e-keeper-images
+      - e2e-other-images
+    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    strategy:
+      matrix:
+        pgversion: ['14','15','16','17','18']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8410ad0602e1e429cee44a835ae9f77f654a6694 # v4.0.0
+
       - name: Setup Golang
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: ${{ env.GOLANG_VERSION }}
+
+      - name: Download keeper artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: images
+          merge-multiple: true
+          pattern: keeper-image-${{ matrix.pgversion }}
+
+      - name: Download other artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: images
+          merge-multiple: true
+          pattern: '*-image'
+
+      - name: Load image
+        run: |
+          for f in images/*.tar; do
+            if [ -f "$f" ]; then
+              echo "Loading $f..."
+              docker load < "$f"
+            fi
+          done
+
       - name: Test
         run: make e2e-test
         env:
