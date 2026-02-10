@@ -28,6 +28,9 @@ const (
 	// PgUtilsComponent is the component for all PostgreSQL logging
 	PgUtilsComponent Component = iota
 
+	// StoreComponent is the logging component for all code dealing with KV stores
+	StoreComponent Component = iota
+
 	// UnknownComponent represents a logging component with unknown origin
 	UnknownComponent Component = iota
 	// TestComponent represents a logging component only used in unittests
@@ -42,6 +45,7 @@ var (
 		"stolon-cmd":          CmdComponent,
 		"postgres":            PgComponent,
 		"postgres-utils":      PgUtilsComponent,
+		"kv-store":            StoreComponent,
 		"undefined_component": UnknownComponent,
 		"unittest_component":  TestComponent,
 	}

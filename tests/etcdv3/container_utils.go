@@ -56,6 +56,7 @@ func runStolonCtl(
 				Cmd: command,
 				Env: map[string]string{
 					"STOLONCTL_STORE_ENDPOINTS": etcdEndpoints,
+					"STOLONCTL_LOG_LEVEL":       "debug",
 				},
 				Networks: []string{nw.Name},
 				Image:    "stolonctl",
@@ -75,7 +76,10 @@ func runKeeper(
 	if pgVersion == "" {
 		pgVersion = "19"
 	}
-	envSettings := map[string]string{"STKEEPER_STORE_ENDPOINTS": etcdEndpoints}
+	envSettings := map[string]string{
+		"STKEEPER_STORE_ENDPOINTS": etcdEndpoints,
+		"STKEEPER_LOG_LEVEL":       "debug",
+	}
 	for k, v := range settings {
 		k = fmt.Sprintf("STKEEPER_%s",
 			strings.ReplaceAll(strings.ToUpper(k), "-", "_"))
@@ -105,6 +109,7 @@ func runSentinel(
 			ContainerRequest: testcontainers.ContainerRequest{
 				Env: map[string]string{
 					"STSENTINEL_STORE_ENDPOINTS": etcdEndpoints,
+					"STSENTINEL_LOG_LEVEL":       "debug",
 				},
 				Networks:   []string{nw.Name},
 				ExtraHosts: []string{},
@@ -120,7 +125,10 @@ func runProxy(
 	nw *testcontainers.DockerNetwork,
 	aliasses map[string][]string,
 ) (testcontainers.Container, error) {
-	envSettings := map[string]string{"STPROXY_STORE_ENDPOINTS": etcdEndpoints}
+	envSettings := map[string]string{
+		"STPROXY_STORE_ENDPOINTS": etcdEndpoints,
+		"STPROXY_LOG_LEVEL":       "debug",
+	}
 	return testcontainers.GenericContainer(
 		ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{

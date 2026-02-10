@@ -254,7 +254,7 @@ func NewStore(ctx context.Context, cfg *CommonConfig) (store.Store, error) {
 
 		kvstore, err := NewKVStore(ctx, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create kv store: %v", err)
+			return nil, fmt.Errorf("NewStore: cannot create etcdv3 store: %v", err)
 		}
 		s = store.NewKVBackedStore(kvstore, storePath)
 	case "kubernetes":
@@ -264,7 +264,7 @@ func NewStore(ctx context.Context, cfg *CommonConfig) (store.Store, error) {
 		}
 		s, err = store.NewKubeStore(kubecli, podName, namespace, cfg.ClusterName)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create store: %v", err)
+			return nil, fmt.Errorf("NewStore: cannot create k8s store: %v", err)
 		}
 	}
 
@@ -285,7 +285,7 @@ func NewElection(ctx context.Context, cfg *CommonConfig, uid string) (store.Elec
 
 		kvstore, err := NewKVStore(ctx, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create kv store: %v", err)
+			return nil, fmt.Errorf("NewElection: cannot create kv store: %v", err)
 		}
 		election = store.NewKVBackedElection(
 			kvstore,
