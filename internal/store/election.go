@@ -44,6 +44,8 @@ func NewCandidate(client store.Store, key, node string, ttl time.Duration) *Cand
 
 // IsLeader returns true if the candidate is currently a leader.
 func (c *Candidate) IsLeader() bool {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	return c.leader
 }
 
@@ -73,18 +75,24 @@ func (c *Candidate) Stop() {
 // took it, then the Candidate will end up being a leader again.
 func (c *Candidate) Resign() {
 	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	if c.leader {
-		c.resignCh <- true
+	leader := c.leader
+	c.lock.Unlock()
+	if !leader {
+		return
+	}
+	select {
+	case <-c.stopCh:
+		return
+	case c.resignCh <- true:
+	default:
 	}
 }
 
 func (c *Candidate) update(status bool) {
 	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	c.leader = status
+	c.lock.Unlock()
 	c.electedCh <- status
 }
 
@@ -99,8 +107,10 @@ func (c *Candidate) initLock(ctx context.Context) (store.Locker, error) {
 		Value: []byte(c.node),
 	}
 
-	if c.lockTTL != defaultLockTTL {
+	if c.lockTTL > 0 {
 		lockOpts.TTL = c.lockTTL
+	} else {
+		lockOpts.TTL = defaultLockTTL
 	}
 
 	lockOpts.RenewLock = make(chan struct{})
@@ -143,6 +153,15 @@ func (c *Candidate) campaign(ctx context.Context) {
 			// Give up the leadership and quit.
 			if c.leader {
 				// TODO: implement zerolog
+				_ = lock.Unlock(ctx)
+			}
+			return
+		case <-ctx.Done():
+			c.lock.Lock()
+			wasLeader := c.leader
+			c.leader = false
+			c.lock.Unlock()
+			if wasLeader {
 				_ = lock.Unlock(ctx)
 			}
 			return

@@ -93,8 +93,7 @@ func (s *libKVStore) Delete(ctx context.Context, key string) error {
 
 func (s *libKVStore) Close() error {
 	// TODO: implement zerolog
-	_ = s.store.Close()
-	return nil
+	return s.store.Close()
 }
 
 type libkvElection struct {

@@ -110,18 +110,13 @@ func (c Config) TLSConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-// EndpointScheme returns the schem of all endpoints
+// EndpointScheme returns the scheme of all endpoints
 // (they should all have the same scheme, or an error occurs)
 func (c Config) EndpointScheme() (string, error) {
 	endpoints, err := c.EndPoints()
 	if err != nil {
 		return "", err
 	}
-	// 1) since libkv wants endpoints as a list of IP and not URLs but we
-	// want to also support them then parse and strip them
-	// 2) since libkv will enable TLS for all endpoints when config.TLS
-	// isn't nil we have to check that all the endpoints have the same
-	// scheme
 	var scheme string
 	for _, e := range endpoints {
 		var curscheme string
@@ -151,11 +146,6 @@ func (c Config) EndpointAddrs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// 1) since libkv wants endpoints as a list of IP and not URLs but we
-	// want to also support them then parse and strip them
-	// 2) since libkv will enable TLS for all endpoints when config.TLS
-	// isn't nil we have to check that all the endpoints have the same
-	// scheme
 	addrs := []string{}
 	var scheme string
 	for _, e := range endpoints {
@@ -248,7 +238,7 @@ func NewKVStore(ctx context.Context, cfg Config) (KVStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug().Any("tls config", tlsConfig).Msg("")
+	logger.Debug().Bool("tls enabled", tlsConfig != nil).Msg("")
 
 	var config valkeyrie.Config
 	switch cfg.Backend {
@@ -266,7 +256,7 @@ func NewKVStore(ctx context.Context, cfg Config) (KVStore, error) {
 	case ETCDV3:
 		config = &etcdv3.Config{
 			TLS:               tlsConfig,
-			ConnectionTimeout: dialTimeout,
+			ConnectionTimeout: cfg.Timeout,
 			SyncPeriod:        cfg.Timeout,
 		}
 	default:
