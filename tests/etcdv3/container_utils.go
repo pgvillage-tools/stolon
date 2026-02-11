@@ -58,10 +58,7 @@ func runStolonCtl(
 					"STOLONCTL_STORE_ENDPOINTS": etcdEndpoints,
 				},
 				Networks: []string{nw.Name},
-				FromDockerfile: testcontainers.FromDockerfile{
-					Context:    "../../",
-					Dockerfile: "Dockerfile.stolonctl",
-				},
+				Image:    "stolonctl",
 			},
 			Started: true,
 		})
@@ -87,15 +84,8 @@ func runKeeper(
 	return testcontainers.GenericContainer(
 		ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
-				Env: envSettings,
-				FromDockerfile: testcontainers.FromDockerfile{
-					KeepImage: true,
-					BuildArgs: map[string]*string{
-						"PGVERSION": &pgVersion,
-					},
-					Context:    "../../",
-					Dockerfile: "Dockerfile.keeper",
-				},
+				Env:            envSettings,
+				Image:          fmt.Sprintf("keeper-%s", pgVersion),
 				Networks:       []string{nw.Name},
 				NetworkAliases: aliasses,
 				WaitingFor: wait.ForLog(
@@ -118,10 +108,7 @@ func runSentinel(
 				},
 				Networks:   []string{nw.Name},
 				ExtraHosts: []string{},
-				FromDockerfile: testcontainers.FromDockerfile{
-					Context:    "../../",
-					Dockerfile: "Dockerfile.sentinel",
-				},
+				Image:      "sentinel",
 			},
 			Started: true,
 		})
@@ -137,11 +124,8 @@ func runProxy(
 	return testcontainers.GenericContainer(
 		ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
-				Env: envSettings,
-				FromDockerfile: testcontainers.FromDockerfile{
-					Context:    "../../",
-					Dockerfile: "Dockerfile.proxy",
-				},
+				Env:            envSettings,
+				Image:          "proxy",
 				Networks:       []string{nw.Name},
 				NetworkAliases: aliasses,
 				WaitingFor: wait.ForLog(
