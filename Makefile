@@ -5,6 +5,8 @@ $(shell cd $(PROJDIR))
 
 REPO_PATH=github.com/sorintlab/stolon
 
+PGVERSION ?= 18
+
 VERSION ?= $(shell scripts/git-version.sh)
 
 LD_FLAGS="-w -X $(REPO_PATH)/cmd.Version=$(VERSION)"
@@ -39,7 +41,6 @@ stolonctl:
 
 .PHONY: docker
 docker:
-	if [ -z $${PGVERSION} ]; then echo 'PGVERSION is undefined'; exit 1; fi; \
 	if [ -z $${TAG} ]; then echo 'TAG is undefined'; exit 1; fi; \
 	docker build --build-arg PGVERSION=${PGVERSION} -t ${TAG} -f examples/kubernetes/image/docker/Dockerfile .
 
@@ -67,7 +68,7 @@ check-coverage: install-go-test-coverage test
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: build-images
 build-images: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t keeper --build-arg PGVERSION=$(or $(PGVERSION),18) -f Dockerfile.keeper .
+	$(CONTAINER_TOOL) build -t keeper-$(PGVERSION) --build-arg PGVERSION=$(PGVERSION) -f Dockerfile.keeper .
 	$(CONTAINER_TOOL) build -t stolonctl -f Dockerfile.stolonctl .
 	$(CONTAINER_TOOL) build -t proxy -f Dockerfile.proxy .
 	$(CONTAINER_TOOL) build -t sentinel -f Dockerfile.sentinel .
@@ -79,12 +80,12 @@ clean-e2e-containers: ## Clean containers for previous e2e runs
 
 .PHONY: clean-e2e-images
 clean-e2e-images: ## Clean containers for previous e2e runs
-	$(CONTAINER_TOOL) images | awk '{if (length($1)==54)print $1":"$2}' | xargs $(CONTAINER_TOOL) rmi
-	$(CONTAINER_TOOL) images | grep '^<none>' | awk '{print $3}' | xargs $(CONTAINER_TOOL) rmi
+	$(CONTAINER_TOOL) images | awk '{if (length($$1)==54)print $$1":"$$2}' | xargs $(CONTAINER_TOOL) rmi
+	$(CONTAINER_TOOL) images | awk '/<none>/{print $$3}' | xargs $(CONTAINER_TOOL) rmi
 
 .PHONY: fast-e2e-test
 fast-e2e-test:
-	cd ./tests/etcdv3 && go test -count=1 ./...
+	cd ./tests/etcdv3 && PGVERSION=$(PGVERSION) go test -count=1 -v ./...
 
 .PHONY: full-e2e-test
 full-e2e-test: build-images clean-e2e-containers clean-images fast-e2e-test

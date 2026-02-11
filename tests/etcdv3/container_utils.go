@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/etcd"
 	"github.com/testcontainers/testcontainers-go/network"
@@ -33,6 +34,11 @@ func runEtcd(
 	etcdContainer, startErr := etcd.Run(ctx,
 		etcdImage,
 		network.WithNetwork([]string{"etcd"}, nw),
+		etcd.WithAdditionalArgs(
+			"--advertise-client-urls", "http://etcd:2379",
+			"--initial-advertise-peer-urls", "http://etcd:2380",
+			"--initial-cluster", "default=http://etcd:2380",
+		),
 	)
 	if startErr != nil {
 		return nil, "", startErr
@@ -74,7 +80,7 @@ func runKeeper(
 ) (testcontainers.Container, error) {
 	pgVersion := os.Getenv("PGVERSION")
 	if pgVersion == "" {
-		pgVersion = "19"
+		pgVersion = "18"
 	}
 	envSettings := map[string]string{
 		"STKEEPER_STORE_ENDPOINTS": etcdEndpoints,
@@ -85,11 +91,13 @@ func runKeeper(
 			strings.ReplaceAll(strings.ToUpper(k), "-", "_"))
 		envSettings[k] = v
 	}
+	image := fmt.Sprintf("keeper-%s", pgVersion)
+	fmt.Fprintf(GinkgoWriter, "DEBUG - Keeper image: %s", image)
 	return testcontainers.GenericContainer(
 		ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
 				Env:            envSettings,
-				Image:          fmt.Sprintf("keeper-%s", pgVersion),
+				Image:          image,
 				Networks:       []string{nw.Name},
 				NetworkAliases: aliasses,
 				WaitingFor: wait.ForLog(
