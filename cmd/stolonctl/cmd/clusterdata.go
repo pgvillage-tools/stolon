@@ -90,7 +90,9 @@ func init() {
 }
 
 func readClusterdata(_ *cobra.Command, _ []string) {
-	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	e, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
 	}
@@ -161,7 +163,9 @@ func writeClusterdata(reader io.Reader, s ststore.Store) error {
 }
 
 func runWriteClusterdata(_ *cobra.Command, _ []string) {
-	_, logger := logging.GetLogComponent(context.Background(), logging.CmdComponent)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	_, logger := logging.GetLogComponent(ctx, logging.CmdComponent)
 	var reader io.Reader
 	if writeClusterdataOpts.file == "" || writeClusterdataOpts.file == "-" {
 		reader = os.Stdin
@@ -175,7 +179,7 @@ func runWriteClusterdata(_ *cobra.Command, _ []string) {
 		}
 		reader = file
 	}
-	s, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	s, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("failed to create new store %v", err)
 	}

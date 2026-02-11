@@ -87,11 +87,12 @@ type ClusterStatus struct {
 }
 
 func status(_ *cobra.Command, _ []string) {
-	ctx := context.Background()
-	status, generateErr := generateStatus()
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	status, generateErr := generateStatus(ctx)
 	switch statusOpts.Format {
 	case "json":
-		renderJSON(status, generateErr)
+		renderJSON(ctx, status, generateErr)
 	case "text":
 		renderText(ctx, status, generateErr)
 	case "":
@@ -101,7 +102,7 @@ func status(_ *cobra.Command, _ []string) {
 	}
 }
 
-func renderJSON(status Status, generateErr error) {
+func renderJSON(_ context.Context, status Status, generateErr error) {
 	if generateErr != nil {
 		marshalJSON(generateErr)
 	} else {
@@ -202,7 +203,7 @@ func renderText(ctx context.Context, status Status, generateErr error) {
 	}
 
 	// This tree data isn't currently available in the Status struct
-	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	e, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
 	}
@@ -264,17 +265,17 @@ func printTree(dbuid string, cd *cluster.Data, level int, prefix string, tail bo
 	}
 }
 
-func generateStatus() (Status, error) {
+func generateStatus(ctx context.Context) (Status, error) {
 	status := Status{}
 	tabOut := new(tabwriter.Writer)
 	tabOut.Init(os.Stdout, 0, tabWidth, 1, '\t', 0)
 
-	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	e, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return status, err
 	}
 
-	election, err := cmdcommon.NewElection(&cfg.CommonConfig, "")
+	election, err := cmdcommon.NewElection(ctx, &cfg.CommonConfig, "")
 	if err != nil {
 		return status, err
 	}

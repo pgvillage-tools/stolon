@@ -979,6 +979,8 @@ func newTestStore(t *testing.T, dir string, a ...string) (*testStore, error) {
 }
 
 func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...string) (*testStore, error) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -1010,7 +1012,7 @@ func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...strin
 		Endpoints: storeEndpoints,
 		Timeout:   defaultStoreTimeout,
 	}
-	kvstore, err := store.NewKVStore(storeConfig)
+	kvstore, err := store.NewKVStore(ctx, storeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}
@@ -1037,6 +1039,8 @@ func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...strin
 }
 
 func newTestConsul(t *testing.T, dir string, a ...string) (*testStore, error) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 	u := uuid.Must(uuid.NewV4())
 	uid := fmt.Sprintf("%x", u[:4])
 
@@ -1094,7 +1098,7 @@ func newTestConsul(t *testing.T, dir string, a ...string) (*testStore, error) {
 		Endpoints: storeEndpoints,
 		Timeout:   defaultStoreTimeout,
 	}
-	kvstore, err := store.NewKVStore(storeConfig)
+	kvstore, err := store.NewKVStore(ctx, storeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}

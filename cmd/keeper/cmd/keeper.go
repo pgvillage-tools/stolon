@@ -577,8 +577,10 @@ type PostgresKeeper struct {
 
 // NewPostgresKeeper is function which makes a new postgreskeeper
 func NewPostgresKeeper(ctx context.Context, cfg *config, end chan error) (*PostgresKeeper, error) {
-	_, logger := logging.GetLogComponent(ctx, logging.KeeperComponent)
-	e, err := cmd.NewStore(&cfg.CommonConfig)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	ctx, logger := logging.GetLogComponent(ctx, logging.KeeperComponent)
+	e, err := cmd.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}
@@ -2199,8 +2201,9 @@ func keeper(c *cobra.Command, _ []string) {
 	ip := net.ParseIP(cfg.pgAdvertiseAddress)
 	if ip == nil {
 		logger.Warn().
-			Str(listenAddFlag, cfg.pgAdvertiseAddress).
-			Msg("provided --%s %q: is not an ip address but a hostname. " +
+			Str("flag", listenAddFlag).
+			Str("value", cfg.pgAdvertiseAddress).
+			Msg("provided flag is not an ip address but a hostname. " +
 				"This will be advertized to the other components and may have undefined behaviors " +
 				"if resolved differently by other hosts")
 	}

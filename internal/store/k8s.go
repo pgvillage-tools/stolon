@@ -410,14 +410,14 @@ func NewKubeElection(
 }
 
 // RunForElection starts a campaign for getting elected
-func (e *KubeElection) RunForElection() (<-chan bool, <-chan error) {
+func (e *KubeElection) RunForElection(ctx context.Context) (<-chan bool, <-chan error) {
 	if e.running {
 		panic("already running")
 	}
 
 	e.electedCh = make(chan bool)
 	e.errCh = make(chan error)
-	e.ctx, e.cancel = context.WithCancel(context.Background())
+	e.ctx, e.cancel = context.WithCancel(ctx)
 
 	e.running = true
 	go e.campaign()

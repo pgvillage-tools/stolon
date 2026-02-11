@@ -26,12 +26,13 @@ import (
 	"strings"
 	"time"
 
-	etcdclientv3 "github.com/coreos/etcd/clientv3"
-	"github.com/docker/leadership"
-	"github.com/docker/libkv"
-	libkvstore "github.com/docker/libkv/store"
+	"github.com/kvtools/consul"
+	"github.com/kvtools/etcdv2"
+	"github.com/kvtools/etcdv3"
+	"github.com/kvtools/valkeyrie"
 	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
+	"github.com/sorintlab/stolon/internal/logging"
 )
 
 // BackendType represents a type of KV Store BackendType
@@ -39,12 +40,22 @@ type BackendType string
 
 const (
 	// CONSUL means that consul is used as backend
-	CONSUL BackendType = "consul"
+	CONSUL BackendType = consul.StoreName
 	// ETCDV2 means that etcd is used as backend and that the v2 api is used
-	ETCDV2 BackendType = "etcdv2"
+	ETCDV2 BackendType = etcdv2.StoreName
 	// ETCDV3 means that etcd is used as backend and that the v3 api is used
-	ETCDV3 BackendType = "etcdv3"
+	ETCDV3 BackendType = etcdv3.StoreName
 )
+
+var storeTypes = []string{
+	consul.StoreName,
+	etcdv2.StoreName,
+	etcdv3.StoreName,
+}
+
+func (bt BackendType) string() string {
+	return string(bt)
+}
 
 const (
 	keepersInfoDir   = "/keepers/info/"
@@ -77,6 +88,109 @@ type Config struct {
 	KeyFile       string
 	CAFile        string
 	SkipTLSVerify bool
+}
+
+// TLSConfig creates and returns a TLSConfig from a Config if applicable
+func (c Config) TLSConfig() (*tls.Config, error) {
+	scheme, err := c.EndpointScheme()
+	if err != nil {
+		return nil, err
+	}
+	if scheme != "http" && scheme != "https" {
+		return nil, errors.New("endpoints scheme must be http or https")
+	}
+	if scheme != "https" {
+		return nil, nil
+	}
+
+	tlsConfig, err := common.NewTLSConfig(c.CertFile, c.KeyFile, c.CAFile, c.SkipTLSVerify)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create store tls config: %v", err)
+	}
+	return tlsConfig, nil
+}
+
+// EndpointScheme returns the scheme of all endpoints
+// (they should all have the same scheme, or an error occurs)
+func (c Config) EndpointScheme() (string, error) {
+	endpoints, err := c.EndPoints()
+	if err != nil {
+		return "", err
+	}
+	var scheme string
+	for _, e := range endpoints {
+		var curscheme string
+		if urlSchemeRegexp.Match([]byte(e)) {
+			u, err := url.Parse(e)
+			if err != nil {
+				return "", fmt.Errorf("cannot parse endpoint %q: %v", e, err)
+			}
+			curscheme = u.Scheme
+		} else {
+			// Assume it's a schemeless endpoint
+			curscheme = "http"
+		}
+		if scheme == "" {
+			scheme = curscheme
+		}
+		if scheme != curscheme {
+			return "", errors.New("all the endpoints must have the same scheme")
+		}
+	}
+	return scheme, nil
+}
+
+// EndpointAddrs returns the addresses of the endpoints
+func (c Config) EndpointAddrs() ([]string, error) {
+	endpoints, err := c.EndPoints()
+	if err != nil {
+		return nil, err
+	}
+	addrs := []string{}
+	var scheme string
+	for _, e := range endpoints {
+		var curscheme, addr string
+		if urlSchemeRegexp.Match([]byte(e)) {
+			u, err := url.Parse(e)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse endpoint %q: %v", e, err)
+			}
+			curscheme = u.Scheme
+			addr = u.Host
+		} else {
+			// Assume it's a schemeless endpoint
+			curscheme = "http"
+			addr = e
+		}
+		if scheme == "" {
+			scheme = curscheme
+		}
+		if scheme != curscheme {
+			return nil, errors.New("all the endpoints must have the same scheme")
+		}
+		addrs = append(addrs, addr)
+	}
+	return addrs, nil
+}
+
+// EndPoints returns a list of endpoints as strings
+func (c Config) EndPoints() ([]string, error) {
+	endpointsStr := c.Endpoints
+	if endpointsStr == "" {
+		switch c.Backend {
+		case CONSUL:
+			endpointsStr = DefaultConsulEndpoints
+		case ETCDV2, ETCDV3:
+			endpointsStr = DefaultEtcdEndpoints
+		default:
+			return nil, fmt.Errorf(
+				"unexpected store '%s', should be any of %v",
+				c.Backend,
+				strings.Join(storeTypes, ","),
+			)
+		}
+	}
+	return strings.Split(endpointsStr, ","), nil
 }
 
 // KVPair represents {Key, Value, Lastindex} tuple
@@ -112,101 +226,49 @@ type KVStore interface {
 	Close() error
 }
 
-// NewKVStore retruns a freshly initialized KVStore
-func NewKVStore(cfg Config) (KVStore, error) {
-	var kvBackend libkvstore.Backend
+// NewKVStore returns a freshly initialized KVStore
+func NewKVStore(ctx context.Context, cfg Config) (KVStore, error) {
+	ctx, logger := logging.GetLogComponent(ctx, logging.StoreComponent)
+	addrs, err := cfg.EndpointAddrs()
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug().Any("endpoints", addrs).Msg("")
+	tlsConfig, err := cfg.TLSConfig()
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug().Bool("tls enabled", tlsConfig != nil).Msg("")
+
+	var config valkeyrie.Config
 	switch cfg.Backend {
 	case CONSUL:
-		kvBackend = libkvstore.CONSUL
+		config = &consul.Config{
+			TLS:               tlsConfig,
+			ConnectionTimeout: cfg.Timeout,
+		}
 	case ETCDV2:
-		kvBackend = libkvstore.ETCD
-	case ETCDV3:
-	default:
-		return nil, fmt.Errorf("Unknown store backend: %q", cfg.Backend)
-	}
-
-	endpointsStr := cfg.Endpoints
-	if endpointsStr == "" {
-		switch cfg.Backend {
-		case CONSUL:
-			endpointsStr = DefaultConsulEndpoints
-		case ETCDV2, ETCDV3:
-			endpointsStr = DefaultEtcdEndpoints
-		}
-	}
-	endpoints := strings.Split(endpointsStr, ",")
-
-	// 1) since libkv wants endpoints as a list of IP and not URLs but we
-	// want to also support them then parse and strip them
-	// 2) since libkv will enable TLS for all endpoints when config.TLS
-	// isn't nil we have to check that all the endpoints have the same
-	// scheme
-	addrs := []string{}
-	var scheme string
-	for _, e := range endpoints {
-		var curscheme, addr string
-		if urlSchemeRegexp.Match([]byte(e)) {
-			u, err := url.Parse(e)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse endpoint %q: %v", e, err)
-			}
-			curscheme = u.Scheme
-			addr = u.Host
-		} else {
-			// Assume it's a schemeless endpoint
-			curscheme = "http"
-			addr = e
-		}
-		if scheme == "" {
-			scheme = curscheme
-		}
-		if scheme != curscheme {
-			return nil, errors.New("all the endpoints must have the same scheme")
-		}
-		addrs = append(addrs, addr)
-	}
-
-	var tlsConfig *tls.Config
-	if scheme != "http" && scheme != "https" {
-		return nil, errors.New("endpoints scheme must be http or https")
-	}
-	if scheme == "https" {
-		var err error
-		tlsConfig, err = common.NewTLSConfig(cfg.CertFile, cfg.KeyFile, cfg.CAFile, cfg.SkipTLSVerify)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create store tls config: %v", err)
-		}
-	}
-
-	switch cfg.Backend {
-	case CONSUL, ETCDV2:
-		config := &libkvstore.Config{
+		config = &etcdv2.Config{
 			TLS:               tlsConfig,
 			ConnectionTimeout: cfg.Timeout,
 		}
 
-		store, err := libkv.NewStore(kvBackend, addrs, config)
-		if err != nil {
-			return nil, err
-		}
-		return &libKVStore{store: store}, nil
 	case ETCDV3:
-		config := etcdclientv3.Config{
-			Endpoints:            addrs,
-			TLS:                  tlsConfig,
-			DialTimeout:          dialTimeout,
-			DialKeepAliveTime:    time.Second,
-			DialKeepAliveTimeout: cfg.Timeout,
+		config = &etcdv3.Config{
+			TLS:               tlsConfig,
+			ConnectionTimeout: cfg.Timeout,
+			SyncPeriod:        cfg.Timeout,
 		}
-
-		c, err := etcdclientv3.New(config)
-		if err != nil {
-			return nil, err
-		}
-		return &etcdV3Store{c: c, requestTimeout: cfg.Timeout}, nil
 	default:
 		return nil, fmt.Errorf("Unknown store backend: %q", cfg.Backend)
 	}
+	logger.Debug().Any("store config", config).Msg("")
+
+	store, err := valkeyrie.NewStore(ctx, cfg.Backend.string(), addrs, config)
+	if err != nil {
+		return nil, err
+	}
+	return &libKVStore{store: store}, nil
 }
 
 // KVBackedStore defines a config store backed by a KV backend
@@ -373,7 +435,7 @@ func NewKVBackedElection(kvStore KVStore, path, candidateUID string, timeout tim
 	switch kvStore := kvStore.(type) {
 	case *libKVStore:
 		s := kvStore
-		candidate := leadership.NewCandidate(s.store, path, candidateUID, minTTL)
+		candidate := NewCandidate(s.store, path, candidateUID, minTTL)
 		return &libkvElection{store: s, path: path, candidate: candidate}
 	case *etcdV3Store:
 		etcdV3Store := kvStore

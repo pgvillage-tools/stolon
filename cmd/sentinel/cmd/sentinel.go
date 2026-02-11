@@ -105,7 +105,7 @@ func (s *Sentinel) electionLoop(ctx context.Context) {
 	_, logger := logging.GetLogComponent(ctx, logging.SentinelComponent)
 	for {
 		logger.Info().Msg("Trying to acquire sentinels leadership")
-		electedCh, errCh := s.election.RunForElection()
+		electedCh, errCh := s.election.RunForElection(ctx)
 		for {
 			select {
 			case elected := <-electedCh:
@@ -2079,12 +2079,12 @@ func NewSentinel(ctx context.Context, uid string, cfg *config, end chan bool) (*
 		}
 	}
 
-	e, err := cmd.NewStore(&cfg.CommonConfig)
+	e, err := cmd.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create store: %v", err)
 	}
 
-	election, err := cmd.NewElection(&cfg.CommonConfig, uid)
+	election, err := cmd.NewElection(ctx, &cfg.CommonConfig, uid)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create election: %v", err)
 	}

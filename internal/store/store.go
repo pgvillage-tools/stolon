@@ -56,7 +56,7 @@ type Election interface {
 	// the consuming code calls election.Stop(). Failure to do so can cause
 	// subsequent elections to hang indefinitely across all participants of an
 	// election.
-	RunForElection() (<-chan bool, <-chan error)
+	RunForElection(context.Context) (<-chan bool, <-chan error)
 	Leader() (string, error)
 	Stop()
 }

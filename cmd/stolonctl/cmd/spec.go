@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
@@ -110,7 +111,9 @@ type ClusterSpecDefaults struct {
 }
 
 func spec(_ *cobra.Command, _ []string) {
-	e, err := cmdcommon.NewStore(&cfg.CommonConfig)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	e, err := cmdcommon.NewStore(ctx, &cfg.CommonConfig)
 	if err != nil {
 		die("%v", err)
 	}
