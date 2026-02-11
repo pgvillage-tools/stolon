@@ -53,7 +53,7 @@ endif
 
 .PHONY: test
 test:
-	go test $$(go list ./... | grep -v /tests/integration) -coverprofile cover.out -coverpkg=./...
+	go test $$(go list ./... | grep -v github.com/sorintlab/stolon/tests) -coverprofile cover.out -coverpkg=./...
 
 .PHONY: install-go-test-coverage
 install-go-test-coverage:
