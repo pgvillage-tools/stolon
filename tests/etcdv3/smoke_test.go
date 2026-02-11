@@ -100,8 +100,9 @@ var _ = Describe("Smoke", Ordered, func() {
 			alias := fmt.Sprintf("keeper_%d", i)
 			settings := maps.Clone(keeperSettings)
 			settings["pg-listen-address"] = alias
-			aliasses := map[string][]string{nw.Name: []string{alias}}
-			cnt, keeperErr := runKeeper(ctx, etcdEndpoints, nw, aliasses, settings)
+			aliases := map[string][]string{}
+			aliases[nw.Name] = []string{alias}
+			cnt, keeperErr := runKeeper(ctx, etcdEndpoints, nw, aliases, settings)
 			Ω(keeperErr).NotTo(HaveOccurred())
 			keeperContainers = append(keeperContainers, cnt)
 			allContainers = append(allContainers, cnt)
@@ -109,8 +110,9 @@ var _ = Describe("Smoke", Ordered, func() {
 
 		// Start proxy
 		var proxyErr error
-		proxyCnt, proxyErr = runProxy(ctx, etcdEndpoints, nw,
-			map[string][]string{nw.Name: []string{"proxy"}})
+		aliases := map[string][]string{}
+		aliases[nw.Name] = []string{"proxy"}
+		proxyCnt, proxyErr = runProxy(ctx, etcdEndpoints, nw, aliases)
 		Ω(proxyErr).NotTo(HaveOccurred())
 		allContainers = append(allContainers, proxyCnt)
 
