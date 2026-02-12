@@ -39,8 +39,6 @@ override:
   #  threshold: 100
   - path: ^cmd
 
-  - path: ^internal/log/log.go
-    threshold: 52
   - path: ^internal/mock/store/store.go
     threshold: 22
   - path: ^internal/postgresql/main.go
@@ -64,8 +62,6 @@ override:
   - path: scripts/gen_commands_doc.go
     threshold: 0
 
-  - path: ^internal/log$
-    threshold: 52
   - path: ^internal/mock/store$
     threshold: 22
   - path: ^internal/postgresql$
