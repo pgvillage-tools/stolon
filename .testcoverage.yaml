@@ -47,8 +47,6 @@ override:
     threshold: 0
   - path: ^internal/postgresql/recovery_options.go
     threshold: 0
-  - path: ^internal/flagutil/env.go
-    threshold: 0
   - path: ^internal/store/election.go
     threshold: 0
   - path: ^internal/store/etcdv3.go
@@ -66,8 +64,6 @@ override:
     threshold: 22
   - path: ^internal/postgresql$
     threshold: 13.9
-  - path: ^internal/flagutil$
-    threshold: 0
   - path: ^internal/store$
     threshold: 0
   - path: ^scripts$
