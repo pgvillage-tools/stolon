@@ -76,10 +76,16 @@ var _ = Describe("ConnParams", func() {
 			cp2 := cp1.WithUser("someoneelse").
 				WithAppName("myapp").
 				WithPort(5433).
-				WithSSLMode("verify-full")
+				WithSSLMode("verify-full").
+				WithHost("newhost").
+				WithDbName("newdb").
+				WithPassword("newpassword")
 			Ω(cp1).To(HaveKeyWithValue(ConnParamKeyUser, "myself"))
 			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyUser, "someoneelse"))
-			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyHost, cp1[ConnParamKeyHost]))
+			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyHost, "newhost"))
+			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyDbName, "newdb"))
+			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyPassword, "newpassword"))
+			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyHost, "newhost"))
 			Ω(cp2).To(HaveKeyWithValue(ConnParamKeyPort, "5433"))
 		})
 	})
