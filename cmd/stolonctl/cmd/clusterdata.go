@@ -24,7 +24,7 @@ import (
 	"os"
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/logging"
 	ststore "github.com/sorintlab/stolon/internal/store"
 

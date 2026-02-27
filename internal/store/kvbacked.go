@@ -30,7 +30,7 @@ import (
 	"github.com/kvtools/etcdv2"
 	"github.com/kvtools/etcdv3"
 	"github.com/kvtools/valkeyrie"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/logging"
 )

@@ -26,7 +26,7 @@ import (
 	pgmocks "github.com/sorintlab/stolon/internal/mock/postgresql"
 	pg "github.com/sorintlab/stolon/internal/postgresql"
 
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/common"
 )
 

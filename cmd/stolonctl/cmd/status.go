@@ -23,7 +23,7 @@ import (
 	"text/tabwriter"
 
 	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/logging"
 	"github.com/sorintlab/stolon/internal/store"
 

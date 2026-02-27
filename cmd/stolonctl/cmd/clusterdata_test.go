@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	mockstore "github.com/sorintlab/stolon/internal/mock/store"
 )
 

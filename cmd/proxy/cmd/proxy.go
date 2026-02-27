@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/flagutil"
 	"github.com/sorintlab/stolon/internal/logging"

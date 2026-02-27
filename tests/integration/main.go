@@ -1,6 +1,6 @@
 package integration
 
-import "github.com/sorintlab/stolon/internal/cluster"
+import cluster "github.com/sorintlab/stolon/api/v1"
 
 var (
 	newCluster      = cluster.New
