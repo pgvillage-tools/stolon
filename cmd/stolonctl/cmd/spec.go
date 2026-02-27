@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 
-	cmdcommon "github.com/sorintlab/stolon/cmd"
 	cluster "github.com/sorintlab/stolon/api/v1"
+	cmdcommon "github.com/sorintlab/stolon/cmd"
 
 	"github.com/spf13/cobra"
 )

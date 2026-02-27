@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mockregister "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
 	cluster "github.com/sorintlab/stolon/api/v1"
+	mockregister "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
 	mockstore "github.com/sorintlab/stolon/internal/mock/store"
 	"github.com/sorintlab/stolon/internal/store"
 
