@@ -25,7 +25,7 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/store"
 	"github.com/sorintlab/stolon/internal/util"

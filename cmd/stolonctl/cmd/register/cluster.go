@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	stolonstore "github.com/sorintlab/stolon/internal/store"
 )
 

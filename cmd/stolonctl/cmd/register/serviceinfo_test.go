@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 )
 
 func TestNewServiceInfo(t *testing.T) {

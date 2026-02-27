@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/store"
 )

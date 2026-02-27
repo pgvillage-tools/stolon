@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/cluster"
+	cluster "github.com/sorintlab/stolon/api/v1"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/timer"
 	"github.com/sorintlab/stolon/internal/util"

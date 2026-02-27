@@ -18,8 +18,8 @@ import (
 	"context"
 	"os"
 
+	cluster "github.com/sorintlab/stolon/api/v1"
 	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/cluster"
 	"github.com/sorintlab/stolon/internal/store"
 
 	"github.com/spf13/cobra"
