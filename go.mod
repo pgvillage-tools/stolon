@@ -6,7 +6,6 @@ require (
 	github.com/docker/go-connections v0.6.0
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/consul/api v1.30.0
