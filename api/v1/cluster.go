@@ -19,11 +19,9 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
-	"github.com/mitchellh/copystructure"
 	"github.com/sorintlab/stolon/internal/common"
 	"github.com/sorintlab/stolon/internal/postgresql"
 	"github.com/sorintlab/stolon/internal/util"
@@ -306,28 +304,12 @@ type Cluster struct {
 
 // DeepCopy copies the entire structure and returns a complete clone
 func (c *Cluster) DeepCopy() (dc *Cluster) {
-	var ok bool
-	if nc, err := copystructure.Copy(c); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(c, nc) {
-		panic("not equal")
-	} else if dc, ok = nc.(*Cluster); !ok {
-		panic("different type after copy")
-	}
-	return dc
+	return util.DeepCopy(c)
 }
 
 // DeepCopy copies the entire structure and returns a complete clone
 func (s *Spec) DeepCopy() (dc *Spec) {
-	var ok bool
-	if nc, err := copystructure.Copy(s); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(s, nc) {
-		panic("not equal")
-	} else if dc, ok = nc.(*Spec); !ok {
-		panic("different type after copy")
-	}
-	return dc
+	return util.DeepCopy(s)
 }
 
 // DefSpec returns a new Spec with unspecified values populated with

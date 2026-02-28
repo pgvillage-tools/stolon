@@ -15,12 +15,10 @@
 package cluster
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/sorintlab/stolon/internal/common"
-
-	"github.com/mitchellh/copystructure"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 // PostgresTimelinesHistory stores all PostgreSQL timelines belonging to this cluster
@@ -65,18 +63,7 @@ type PostgresState struct {
 
 // DeepCopy returns a copy of the PostgresState resource
 func (p *PostgresState) DeepCopy() (dc *PostgresState) {
-	var ok bool
-	if p == nil {
-		return nil
-	}
-	if np, err := copystructure.Copy(p); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(p, np) {
-		panic("not equal")
-	} else if dc, ok = np.(*PostgresState); !ok {
-		panic("different type after copy")
-	}
-	return dc
+	return util.DeepCopy(p)
 }
 
 // SentinelsInfo stores all SentinelInfo resources for a cluster
@@ -111,19 +98,8 @@ type ProxyInfo struct {
 type ProxiesInfo map[string]*ProxyInfo
 
 // DeepCopy returns a copy of the ProxiesInfo resource
-func (p ProxiesInfo) DeepCopy() (dc ProxiesInfo) {
-	var ok bool
-	if p == nil {
-		return nil
-	}
-	if np, err := copystructure.Copy(p); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(p, np) {
-		panic("not equal")
-	} else if dc, ok = np.(ProxiesInfo); !ok {
-		panic("different type after copy")
-	}
-	return dc
+func (p *ProxiesInfo) DeepCopy() (dc *ProxiesInfo) {
+	return util.DeepCopy(p)
 }
 
 // ToSlice converts the ProxiesInfo map into a slice of ProxyInfo resources

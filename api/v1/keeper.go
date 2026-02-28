@@ -1,11 +1,10 @@
 package cluster
 
 import (
-	"reflect"
 	"sort"
 	"time"
 
-	"github.com/mitchellh/copystructure"
+	"github.com/sorintlab/stolon/internal/util"
 )
 
 // KeeperSpec defines a spec for a Keeper resource
@@ -70,15 +69,8 @@ func (kss Keepers) SortedKeys() []string {
 type KeepersInfo map[string]*KeeperInfo
 
 // DeepCopy returns a copy of the KeepersInfo resource
-func (k KeepersInfo) DeepCopy() (dc KeepersInfo) {
-	if k == nil {
-		return nil
-	}
-	nkis := make(KeepersInfo, len(k))
-	for k, v := range k {
-		nkis[k] = v.DeepCopy()
-	}
-	return nkis
+func (k *KeepersInfo) DeepCopy() (dc *KeepersInfo) {
+	return util.DeepCopy(k)
 }
 
 // KeeperInfo can store all info belonging to a Keeper
@@ -99,20 +91,7 @@ type KeeperInfo struct {
 	CanBeSynchronousReplica *bool `json:"canBeSynchronousReplica,omitempty"`
 }
 
-// TODO: replace all specific DeepCopy method bodies with call of a generic function
-
 // DeepCopy returns a copy of the KeeperInfo resource
 func (k *KeeperInfo) DeepCopy() (dc *KeeperInfo) {
-	var ok bool
-	if k == nil {
-		return nil
-	}
-	if nk, err := copystructure.Copy(k); err != nil {
-		panic(err)
-	} else if !reflect.DeepEqual(k, nk) {
-		panic("not equal")
-	} else if dc, ok = nk.(*KeeperInfo); !ok {
-		panic("different type after copy")
-	}
-	return dc
+	return util.DeepCopy(k)
 }
