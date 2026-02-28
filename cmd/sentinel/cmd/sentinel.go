@@ -215,10 +215,10 @@ func (s *Sentinel) updateKeepersStatus(
 	tmpKeepersInfo := keepersInfo.DeepCopy()
 	for _, ki := range keepersInfo {
 		if ki.ClusterUID != cd.Cluster.UID {
-			delete(tmpKeepersInfo, ki.UID)
+			delete(*tmpKeepersInfo, ki.UID)
 		}
 	}
-	keepersInfo = tmpKeepersInfo
+	keepersInfo = *tmpKeepersInfo
 
 	// On first run just insert keepers info in the history with Seen set
 	// to false and don't do any change to the keepers' state
@@ -236,10 +236,10 @@ func (s *Sentinel) updateKeepersStatus(
 			if kih.KeeperInfo.InfoUID == ki.InfoUID {
 				if !kih.Seen {
 					// Remove since it was already there and wasn't updated
-					delete(tmpKeepersInfo, ki.UID)
+					delete(*tmpKeepersInfo, ki.UID)
 				} else if kih.Seen && timer.Since(kih.Timer) > s.sleepInterval {
 					// Remove since it wasn't updated
-					delete(tmpKeepersInfo, ki.UID)
+					delete(*tmpKeepersInfo, ki.UID)
 				}
 			}
 			if kih.KeeperInfo.InfoUID != ki.InfoUID {
@@ -249,7 +249,7 @@ func (s *Sentinel) updateKeepersStatus(
 			kihs[keeperUID] = &KeeperInfoHistory{KeeperInfo: ki, Seen: true, Timer: timer.Now()}
 		}
 	}
-	keepersInfo = tmpKeepersInfo
+	keepersInfo = *tmpKeepersInfo
 
 	// Create new keepers from keepersInfo
 	for keeperUID, ki := range keepersInfo {
@@ -396,7 +396,7 @@ func (s *Sentinel) activeProxiesInfos(proxiesInfo cluster.ProxiesInfo) cluster.P
 		if pih, ok := pihs[pi.UID]; ok {
 			if pih.ProxyInfo.InfoUID == pi.InfoUID {
 				if timer.Since(pih.Timer) > 2*pi.ProxyTimeout {
-					delete(activeProxiesInfo, pi.UID)
+					delete(*activeProxiesInfo, pi.UID)
 				}
 			} else {
 				pihs[pi.UID] = &ProxyInfoHistory{ProxyInfo: pi, Timer: timer.Now()}
@@ -409,7 +409,7 @@ func (s *Sentinel) activeProxiesInfos(proxiesInfo cluster.ProxiesInfo) cluster.P
 
 	s.proxyInfoHistories = pihs
 
-	return activeProxiesInfo
+	return *activeProxiesInfo
 }
 
 func (s *Sentinel) findInitialKeeper(cd *cluster.Data) (*cluster.Keeper, error) {

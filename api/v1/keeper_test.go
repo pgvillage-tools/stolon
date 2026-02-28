@@ -14,7 +14,8 @@ var _ = Describe("Keeper", func() {
 		)
 		BeforeEach(func() {
 			orgKIs = randomKeepersInfo(3)
-			newKIs = orgKIs.DeepCopy()
+			dc := orgKIs.DeepCopy()
+			newKIs = *dc
 		})
 		It("should be a copy", func() {
 			for key := range newKIs {
@@ -60,7 +61,8 @@ var _ = Describe("Keeper", func() {
 		)
 		BeforeEach(func() {
 			orgPIs = randomProxiesInfo(5)
-			newPIs = orgPIs.DeepCopy()
+			dc := orgPIs.DeepCopy()
+			newPIs = *dc
 		})
 		It("should be a copy", func() {
 			for key := range newPIs {
