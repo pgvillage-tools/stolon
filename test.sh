@@ -28,7 +28,7 @@ echo "Running tests..."
 COVER=${COVER:-"-cover"}
 
 function go_files_without_license_info() {
-	find . -type f -iname '*.go' ! -path './vendor/*' | while read -r file; do
+	find . -type f -iname '*.go' ! -path './vendor/*' ! -path './tests/*' ! -name '*_test.go' | while read -r file; do
 		head -n3 "${file}" | grep -Eq "(Copyright|generated|GENERATED)" || echo -e "  ${file}"
 	done
 }

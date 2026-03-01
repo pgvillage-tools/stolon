@@ -42,8 +42,6 @@ import (
 
 	"github.com/gofrs/uuid"
 
-	// TODO: This can probably go
-	_ "github.com/lib/pq"
 	"github.com/sgotti/gexpect"
 )
 
@@ -61,8 +59,7 @@ var (
 
 	errTimeout = errors.New("timeout")
 
-	driverName = "postgres"
-	dbName     = "postgres"
+	dbName = "postgres"
 )
 
 var curPort = minPort
