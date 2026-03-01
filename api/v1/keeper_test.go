@@ -26,8 +26,8 @@ var _ = Describe("Keeper", func() {
 		It("should copy all fields", func() {
 			Ω(newKIs).To(Equal(orgKIs))
 		})
-		It("should return empty struct when KeepersInfo is empty struct", func() {
-			var kis KeepersInfo
+		It("should return empty struct when KeepersInfo is nil", func() {
+			var kis *KeepersInfo
 			Ω(kis.DeepCopy()).To(BeNil())
 		})
 	})
@@ -74,7 +74,7 @@ var _ = Describe("Keeper", func() {
 			Ω(newPIs).To(Equal(orgPIs))
 		})
 		It("should return nil when ProxiesInfo is nil", func() {
-			var pis ProxiesInfo
+			var pis *ProxiesInfo
 			Ω(pis.DeepCopy()).To(BeNil())
 		})
 	})
