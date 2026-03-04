@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2016 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +19,9 @@ import (
 	"context"
 	"os"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/internal/store"
 
 	"github.com/spf13/cobra"
 )

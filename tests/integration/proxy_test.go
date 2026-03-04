@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,9 +25,9 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/store"
 )
 
 func TestProxyListening(t *testing.T) {

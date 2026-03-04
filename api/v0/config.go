@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 const (

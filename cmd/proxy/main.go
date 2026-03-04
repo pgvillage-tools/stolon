@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,7 @@
 package main
 
 import (
-	"github.com/sorintlab/stolon/cmd/proxy/cmd"
+	"github.com/pgvillage-tools/stolon/cmd/proxy/cmd"
 )
 
 func main() {

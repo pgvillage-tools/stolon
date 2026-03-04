@@ -1,4 +1,4 @@
-module github.com/sorintlab/stolon
+module github.com/pgvillage-tools/stolon
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0

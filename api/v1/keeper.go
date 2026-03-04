@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2016 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +19,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 // KeeperSpec defines a spec for a Keeper resource

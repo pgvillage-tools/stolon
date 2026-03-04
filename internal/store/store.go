@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +20,7 @@ import (
 	"errors"
 	"time"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
 )
 
 //go:generate mockgen -destination=../mock/store/store.go -source=$GOFILE

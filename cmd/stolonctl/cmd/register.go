@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2019 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +23,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
-	"github.com/sorintlab/stolon/internal/logging"
-	stolonstore "github.com/sorintlab/stolon/internal/store"
+	"github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/register"
+	"github.com/pgvillage-tools/stolon/internal/logging"
+	stolonstore "github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/spf13/cobra"
 )
 

@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2019 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	mockstore "github.com/sorintlab/stolon/internal/mock/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	mockstore "github.com/pgvillage-tools/stolon/internal/mock/store"
 )
 
 func TestNewCluster(t *testing.T) {

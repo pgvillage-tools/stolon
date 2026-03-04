@@ -10,8 +10,8 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	store "github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	store "github.com/pgvillage-tools/stolon/internal/store"
 )
 
 // MockStore is a mock of Store interface

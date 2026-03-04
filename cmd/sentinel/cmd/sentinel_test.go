@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +25,10 @@ import (
 	"testing"
 	"time"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/timer"
-	"github.com/sorintlab/stolon/internal/util"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/timer"
+	"github.com/pgvillage-tools/stolon/internal/util"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"

@@ -3,7 +3,7 @@ package v0
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/sorintlab/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/common"
 )
 
 var _ = Describe("Member", func() {

@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2015 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,9 +38,9 @@ import (
 	"unicode"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/logging"
 	"github.com/rs/zerolog"
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/logging"
 
 	// TODO: This can probably go
 	"github.com/lib/pq"

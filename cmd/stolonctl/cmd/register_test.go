@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2019 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +19,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	mockregister "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
-	mockstore "github.com/sorintlab/stolon/internal/mock/store"
-	"github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	mockregister "github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/internal/mock/register"
+	mockstore "github.com/pgvillage-tools/stolon/internal/mock/store"
+	"github.com/pgvillage-tools/stolon/internal/store"
 
-	"github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
+	"github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/register"
 )
 
 func TestCheckConfig(t *testing.T) {

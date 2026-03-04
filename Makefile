@@ -3,7 +3,7 @@ PROJDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 # change to project dir so we can express all as relative paths
 $(shell cd $(PROJDIR))
 
-REPO_PATH=github.com/sorintlab/stolon
+REPO_PATH=github.com/pgvillage-tools/stolon
 
 PGVERSION ?= 18
 
@@ -53,7 +53,7 @@ endif
 
 .PHONY: test
 test:
-	go test $$(go list ./... | grep -v github.com/sorintlab/stolon/tests) -coverprofile cover.out -coverpkg=./...
+	go test $$(go list ./... | grep -v github.com/pgvillage-tools/stolon/tests) -coverprofile cover.out -coverpkg=./...
 
 .PHONY: install-go-test-coverage
 install-go-test-coverage:

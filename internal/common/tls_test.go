@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2016 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/sorintlab/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/common"
 )
 
 var _ = Describe("TLS", func() {

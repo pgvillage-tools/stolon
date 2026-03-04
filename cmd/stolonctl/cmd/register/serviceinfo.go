@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2019 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/consul/api"
-	cluster "github.com/sorintlab/stolon/api/v1"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
 )
 
 // HealthCheck holds necessary information for performing

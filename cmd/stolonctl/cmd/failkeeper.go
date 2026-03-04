@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2018 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +18,7 @@ package cmd
 import (
 	"context"
 
-	cmdcommon "github.com/sorintlab/stolon/cmd"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
 	"github.com/spf13/cobra"
 )
 

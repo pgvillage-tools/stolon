@@ -1,3 +1,4 @@
+// Copyright 2026 PgVillage
 // Copyright 2016 Sorint.lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/postgresql"
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/postgresql"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 // TODO: Rename XLOG to WAL everywhere
