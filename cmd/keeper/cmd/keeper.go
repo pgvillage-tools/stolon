@@ -36,7 +36,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/copystructure"
-	"github.com/rs/zerolog"
 	cluster "github.com/pgvillage-tools/stolon/api/v1"
 	"github.com/pgvillage-tools/stolon/cmd"
 	"github.com/pgvillage-tools/stolon/internal/common"
@@ -45,6 +44,7 @@ import (
 	pg "github.com/pgvillage-tools/stolon/internal/postgresql"
 	"github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/pgvillage-tools/stolon/internal/util"
+	"github.com/rs/zerolog"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

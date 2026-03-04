@@ -38,9 +38,9 @@ import (
 	"unicode"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/rs/zerolog"
 	"github.com/pgvillage-tools/stolon/internal/common"
 	"github.com/pgvillage-tools/stolon/internal/logging"
+	"github.com/rs/zerolog"
 
 	// TODO: This can probably go
 	"github.com/lib/pq"

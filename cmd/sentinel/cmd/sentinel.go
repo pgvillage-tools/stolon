@@ -31,7 +31,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	cluster "github.com/pgvillage-tools/stolon/api/v1"
 	"github.com/pgvillage-tools/stolon/cmd"
 	"github.com/pgvillage-tools/stolon/internal/common"
@@ -42,6 +41,7 @@ import (
 	"github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/pgvillage-tools/stolon/internal/timer"
 	"github.com/pgvillage-tools/stolon/internal/util"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/mitchellh/copystructure"

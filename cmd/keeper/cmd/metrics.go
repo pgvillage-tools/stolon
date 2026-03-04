@@ -17,8 +17,8 @@
 package cmd
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (

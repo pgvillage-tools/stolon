@@ -25,11 +25,11 @@ import (
 	"time"
 
 	"github.com/mattn/go-isatty"
-	"github.com/prometheus/client_golang/prometheus"
 	cluster "github.com/pgvillage-tools/stolon/api/v1"
 	"github.com/pgvillage-tools/stolon/internal/common"
 	"github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/pgvillage-tools/stolon/internal/util"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 )
