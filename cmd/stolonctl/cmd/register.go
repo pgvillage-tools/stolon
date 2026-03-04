@@ -22,10 +22,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
-	"github.com/sorintlab/stolon/internal/logging"
-	stolonstore "github.com/sorintlab/stolon/internal/store"
+	"github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/register"
+	"github.com/pgvillage-tools/stolon/internal/logging"
+	stolonstore "github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/spf13/cobra"
 )
 

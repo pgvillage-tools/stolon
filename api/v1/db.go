@@ -17,7 +17,7 @@ package cluster
 import (
 	"time"
 
-	"github.com/sorintlab/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/common"
 )
 
 // DBSpec defines the spec of a database

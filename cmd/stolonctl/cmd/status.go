@@ -22,10 +22,10 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/logging"
-	"github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/internal/logging"
+	"github.com/pgvillage-tools/stolon/internal/store"
 
 	"github.com/spf13/cobra"
 )

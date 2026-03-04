@@ -20,8 +20,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/consul/api"
-	mock_register "github.com/sorintlab/stolon/cmd/stolonctl/cmd/internal/mock/register"
-	"github.com/sorintlab/stolon/cmd/stolonctl/cmd/register"
+	mock_register "github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/internal/mock/register"
+	"github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd/register"
 )
 
 func TestNewServiceDiscovery(t *testing.T) {

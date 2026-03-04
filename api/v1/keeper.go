@@ -18,7 +18,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 // KeeperSpec defines a spec for a Keeper resource

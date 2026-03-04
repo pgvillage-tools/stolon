@@ -22,9 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/postgresql"
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/postgresql"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 // TODO: Rename XLOG to WAL everywhere

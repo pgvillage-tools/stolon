@@ -23,11 +23,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	pgmocks "github.com/sorintlab/stolon/internal/mock/postgresql"
-	pg "github.com/sorintlab/stolon/internal/postgresql"
+	pgmocks "github.com/pgvillage-tools/stolon/internal/mock/postgresql"
+	pg "github.com/pgvillage-tools/stolon/internal/postgresql"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
 )
 
 func TestParseSynchronousStandbyNames(t *testing.T) {

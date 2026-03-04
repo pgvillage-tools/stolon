@@ -17,8 +17,8 @@ package cluster
 import (
 	"time"
 
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/util"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 // PostgresTimelinesHistory stores all PostgreSQL timelines belonging to this cluster

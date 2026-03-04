@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	cmdcommon "github.com/sorintlab/stolon/cmd"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
 
 	"github.com/spf13/cobra"
 )

@@ -20,10 +20,10 @@ import (
 	"log"
 	"os"
 
-	keepercmd "github.com/sorintlab/stolon/cmd/keeper/cmd"
-	proxycmd "github.com/sorintlab/stolon/cmd/proxy/cmd"
-	sentinelcmd "github.com/sorintlab/stolon/cmd/sentinel/cmd"
-	stolonctlcmd "github.com/sorintlab/stolon/cmd/stolonctl/cmd"
+	keepercmd "github.com/pgvillage-tools/stolon/cmd/keeper/cmd"
+	proxycmd "github.com/pgvillage-tools/stolon/cmd/proxy/cmd"
+	sentinelcmd "github.com/pgvillage-tools/stolon/cmd/sentinel/cmd"
+	stolonctlcmd "github.com/pgvillage-tools/stolon/cmd/stolonctl/cmd"
 
 	"github.com/spf13/cobra/doc"
 )

@@ -17,7 +17,7 @@ package cmd
 import (
 	"context"
 
-	cmdcommon "github.com/sorintlab/stolon/cmd"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
 	"github.com/spf13/cobra"
 )
 

@@ -34,11 +34,11 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
-	pg "github.com/sorintlab/stolon/internal/postgresql"
-	"github.com/sorintlab/stolon/internal/store"
-	"github.com/sorintlab/stolon/internal/util"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	pg "github.com/pgvillage-tools/stolon/internal/postgresql"
+	"github.com/pgvillage-tools/stolon/internal/store"
+	"github.com/pgvillage-tools/stolon/internal/util"
 
 	"github.com/gofrs/uuid"
 

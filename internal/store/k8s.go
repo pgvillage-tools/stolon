@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"time"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/util"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/util"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	corev1 "k8s.io/api/core/v1"

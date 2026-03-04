@@ -25,10 +25,10 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/prometheus/client_golang/prometheus"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/store"
-	"github.com/sorintlab/stolon/internal/util"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/store"
+	"github.com/pgvillage-tools/stolon/internal/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 )

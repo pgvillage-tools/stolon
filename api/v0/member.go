@@ -16,7 +16,7 @@ package v0
 
 // TODO: Remove duplication with internal/cluster/member.go
 
-import "github.com/sorintlab/stolon/internal/common"
+import "github.com/pgvillage-tools/stolon/internal/common"
 
 // KeepersInfo stores all info on all keepers belonging to this cluster
 type KeepersInfo map[string]*KeeperInfo

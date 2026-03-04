@@ -23,10 +23,10 @@ import (
 	"io"
 	"os"
 
-	cluster "github.com/sorintlab/stolon/api/v1"
-	cmdcommon "github.com/sorintlab/stolon/cmd"
-	"github.com/sorintlab/stolon/internal/logging"
-	ststore "github.com/sorintlab/stolon/internal/store"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	cmdcommon "github.com/pgvillage-tools/stolon/cmd"
+	"github.com/pgvillage-tools/stolon/internal/logging"
+	ststore "github.com/pgvillage-tools/stolon/internal/store"
 
 	"github.com/spf13/cobra"
 )

@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	cluster "github.com/sorintlab/stolon/api/v1"
-	"github.com/sorintlab/stolon/internal/common"
-	"github.com/sorintlab/stolon/internal/store"
-	"github.com/sorintlab/stolon/internal/util"
+	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/common"
+	"github.com/pgvillage-tools/stolon/internal/store"
+	"github.com/pgvillage-tools/stolon/internal/util"
 )
 
 func TestInitStandbyCluster(t *testing.T) {
