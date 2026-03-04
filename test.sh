@@ -20,7 +20,7 @@ if [ "$PWD" != "$BASEDIR" ]; then
 	cd "$BASEDIR"
 fi
 
-ORG_PATH="github.com/sorintlab"
+ORG_PATH="github.com/pgvillage-tools"
 REPO_PATH="${ORG_PATH}/stolon"
 
 echo "Running tests..."
