@@ -32,6 +32,10 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	return mock
 }
 
+func (m *MockStore) Healthy(ctx context.Context) error {
+	return nil
+}
+
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
