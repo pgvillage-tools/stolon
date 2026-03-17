@@ -80,7 +80,7 @@ type KeeperStatus struct {
 	PgCurrentGeneration int64  `json:"pg_current_generation"`
 }
 
-// ClusterStatus stores the status of the CLuster
+// ClusterStatus stores the status of the Cluster
 type ClusterStatus struct {
 	Available       bool   `json:"available"`
 	MasterKeeperUID string `json:"master_keeper_uid"`

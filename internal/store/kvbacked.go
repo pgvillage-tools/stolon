@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kvtools/consul"
 	"github.com/kvtools/etcdv2"
 	"github.com/kvtools/etcdv3"
@@ -284,6 +285,38 @@ func NewKVBackedStore(kvStore KVStore, path string) *KVBackedStore {
 		clusterPath: path,
 		store:       kvStore,
 	}
+}
+
+// Healthy stores keeper info to a kv store
+func (s *KVBackedStore) Healthy(ctx context.Context) error {
+	var (
+		healthMsg = uuid.NewString()
+		err       error
+		pair      *KVPair
+	)
+	ctx, logger := logging.GetLogComponent(ctx, logging.StoreComponent)
+	id, ctx := logging.GetID(ctx)
+	if err = s.store.Put(ctx, id, []byte(healthMsg), &WriteOptions{TTL: minTTL}); err != nil {
+		logger.Debug().
+			AnErr("error", err).
+			Msg("Error occurred while asserting if the store is healthy")
+		return err
+	} else if pair, err = s.store.Get(ctx, id); err != nil {
+		logger.Debug().
+			AnErr("error", err).
+			Msg("Error occurred while asserting if the store is healthy")
+	} else if string(pair.Value) != healthMsg {
+		logger.Debug().
+			Bytes("msg", pair.Value).
+			Bytes("expected", []byte(healthMsg)).
+			Msg("Error occurred while asserting if the store is healthy")
+	} else if err = s.store.Delete(ctx, id); err != nil {
+		logger.Debug().
+			Bytes("msg", pair.Value).
+			Bytes("expected", []byte(healthMsg)).
+			Msg("Error occurred while asserting if the store is healthy")
+	}
+	return err
 }
 
 // AtomicPutClusterData is an atomic way to store CLusterData to a kv store

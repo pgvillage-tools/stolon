@@ -24,6 +24,7 @@ import (
 	"time"
 
 	cluster "github.com/pgvillage-tools/stolon/api/v1"
+	"github.com/pgvillage-tools/stolon/internal/logging"
 	"github.com/pgvillage-tools/stolon/internal/util"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -74,6 +75,19 @@ func NewKubeStore(kubecli *kubernetes.Clientset, podName, namespace, clusterName
 		clusterName:  clusterName,
 		resourceName: fmt.Sprintf("%s-%s", util.KubeResourcePrefix, clusterName),
 	}, nil
+}
+
+// Healthy stores keeper info to a kv store
+func (s *KubeStore) Healthy(ctx context.Context) error {
+	ctx, logger := logging.GetLogComponent(ctx, logging.StoreComponent)
+	discoveryClient := s.client.Discovery()
+	version, err := discoveryClient.ServerVersion()
+	if err != nil {
+		logger.Error().AnErr("error", err).Msg("Error while connecting to k8s")
+		return err
+	}
+	logger.Debug().Str("k8s version", version.GitVersion).Msg("")
+	return nil
 }
 
 func (s *KubeStore) labelSelector(componentLabel ComponentLabelValue) labels.Selector {

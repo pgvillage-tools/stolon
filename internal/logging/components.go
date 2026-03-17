@@ -29,14 +29,16 @@ type Components map[Component]zerolog.Level
 type Component int
 
 const (
+	// CmdComponent is the main component specifically for stolon-cmd commands
+	CmdComponent Component = iota
 	// KeeperComponent is the main component specifically for the Keeper commands
 	KeeperComponent Component = iota
 	// ProxyComponent is the main component specifically for the Proxy commands
 	ProxyComponent Component = iota
 	// SentinelComponent is the main component specifically for the Sentinel commands
 	SentinelComponent Component = iota
-	// CmdComponent is the main component specifically for stolon-cmd commands
-	CmdComponent Component = iota
+	// WebApiComponent is the main component specifically for the WebApi
+	WebApiComponent Component = iota
 
 	// PgComponent is the component for all PostgreSQL logging
 	PgComponent Component = iota
@@ -55,14 +57,15 @@ const (
 var (
 	componentConverter = map[string]Component{
 		"keeper":              KeeperComponent,
+		"kv-store":            StoreComponent,
 		"proxy":               ProxyComponent,
-		"sentinel":            SentinelComponent,
-		"stolon-cmd":          CmdComponent,
 		"postgres":            PgComponent,
 		"postgres-utils":      PgUtilsComponent,
-		"kv-store":            StoreComponent,
+		"sentinel":            SentinelComponent,
+		"stolon-cmd":          CmdComponent,
 		"undefined_component": UnknownComponent,
 		"unittest_component":  TestComponent,
+		"web-api":             WebApiComponent,
 	}
 	reverseComponentMap map[Component]string
 )

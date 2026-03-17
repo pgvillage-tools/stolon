@@ -41,6 +41,10 @@ type etcdV3Store struct {
 	requestTimeout time.Duration
 }
 
+func (s *etcdV3Store) Healthy(pctx context.Context) error {
+	return nil
+	// _, err := s.c.Status(pctx, )
+}
 func (s *etcdV3Store) Put(pctx context.Context, key string, value []byte, options *WriteOptions) error {
 	etcdv3Options := []etcdclientv3.OpOption{}
 	if options != nil {
