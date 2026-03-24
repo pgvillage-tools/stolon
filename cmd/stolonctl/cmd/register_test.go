@@ -199,7 +199,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
 			clusterData := cluster.Data{
-				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
+				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -231,7 +231,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
 			clusterData := cluster.Data{
-				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
+				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid2": &cluster.DB{
 						UID:    "uid2",
@@ -257,7 +257,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
 			clusterData := cluster.Data{
-				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
+				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -288,7 +288,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
 			clusterData := cluster.Data{
-				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid2"}},
+				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid2"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",
@@ -343,7 +343,7 @@ func TestCheckAndRegisterMasterAndSlaves(t *testing.T) {
 
 			mockServiceDiscovery.EXPECT().Services(clusterName).Return(discoveredServices, nil)
 			clusterData := cluster.Data{
-				Cluster: &cluster.Cluster{Status: cluster.Status{Master: "uid1"}},
+				Cluster: &cluster.Cluster{Status: cluster.ClusterStatus{Master: "uid1"}},
 				DBs: cluster.DBs{
 					"uid1": &cluster.DB{
 						UID:    "uid1",

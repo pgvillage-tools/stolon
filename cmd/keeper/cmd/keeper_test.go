@@ -96,7 +96,7 @@ func TestGenerateHBA(t *testing.T) {
 	cd := &cluster.Data{
 		Cluster: &cluster.Cluster{
 			Spec:   &cluster.Spec{},
-			Status: cluster.Status{},
+			Status: cluster.ClusterStatus{},
 		},
 		Keepers: cluster.Keepers{},
 		DBs: cluster.DBs{

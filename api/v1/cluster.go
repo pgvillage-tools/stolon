@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cluster defines all resources used at the cluster level
-package cluster
+// Package v1 defines all resources for version v1
+package v1
 
 // TODO: Split into multiple modules
 import (
@@ -284,8 +284,8 @@ type Spec struct {
 	AutomaticPgRestart *bool `json:"automaticPgRestart"`
 }
 
-// Status stores the status info for this cluster
-type Status struct {
+// ClusterStatus stores the status info for this cluster
+type ClusterStatus struct {
 	CurrentGeneration int64 `json:"currentGeneration,omitempty"`
 	Phase             Phase `json:"phase,omitempty"`
 	// Master DB UID
@@ -300,7 +300,7 @@ type Cluster struct {
 
 	Spec *Spec `json:"spec,omitempty"`
 
-	Status Status `json:"status,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // DeepCopy copies the entire structure and returns a complete clone
@@ -543,7 +543,7 @@ func NewCluster(uid string, cs *Spec) *Cluster {
 		Generation: InitialGeneration,
 		ChangeTime: time.Now(),
 		Spec:       cs,
-		Status: Status{
+		Status: ClusterStatus{
 			Phase: Initializing,
 		},
 	}

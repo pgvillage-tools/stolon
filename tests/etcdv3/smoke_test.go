@@ -19,7 +19,7 @@ import (
 var _ = Describe("Smoke", Ordered, func() {
 	const (
 		numEtcd       = 1
-		autoRemove    = true
+		autoRemove    = false
 		initialConfig = `{"stolon_custom_config":{"defaultSUReplAccessMode":"strict","pgParameters":{},"pgHBA":[]}}`
 
 		numKeepers = 3

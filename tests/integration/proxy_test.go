@@ -90,7 +90,7 @@ func TestProxyListening(t *testing.T) {
 				InitMode:     &newCluster,
 				FailInterval: &cluster.Duration{Duration: 10 * time.Second},
 			},
-			Status: cluster.Status{
+			Status: cluster.ClusterStatus{
 				CurrentGeneration: 1,
 				Phase:             cluster.Normal,
 				Master:            "01",
