@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cluster
+package v1
 
 // FollowType is an enum for following internal (local primary keeper) or external (other cluster)
 type FollowType string

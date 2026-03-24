@@ -89,7 +89,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
@@ -116,7 +116,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
@@ -147,7 +147,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
@@ -183,7 +183,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 						Master:            d1,
@@ -244,7 +244,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
@@ -287,7 +287,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:               &newCluster,
 						MergePgParameters:      util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 						Master:            d1,
@@ -353,7 +353,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:             &newCluster,
 						MergePgParameters:    util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 						Master:            d1,
@@ -410,7 +410,7 @@ func TestUpdateCluster(t *testing.T) {
 						InitMode:             &newCluster,
 						MergePgParameters:    util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Initializing,
 					},
@@ -451,7 +451,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -541,7 +541,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -634,7 +634,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -722,7 +722,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -809,7 +809,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -893,7 +893,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -986,7 +986,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1074,7 +1074,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1165,7 +1165,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1253,7 +1253,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -1342,7 +1342,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1440,7 +1440,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1543,7 +1543,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1639,7 +1639,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1764,7 +1764,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1885,7 +1885,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -1986,7 +1986,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2076,7 +2076,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(uint16(1)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2170,7 +2170,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2235,7 +2235,7 @@ func TestUpdateCluster(t *testing.T) {
 						SyncTimeout:          &cluster.Duration{Duration: cluster.DefaultSyncTimeout},
 						MaxStandbysPerSender: util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2302,7 +2302,7 @@ func TestUpdateCluster(t *testing.T) {
 						UsePgrewind:            util.ToPtr(true),
 						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2402,7 +2402,7 @@ func TestUpdateCluster(t *testing.T) {
 						UsePgrewind:            util.ToPtr(true),
 						PGParameters:           cluster.PGParameters{p1: v1, p2: v2},
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2505,7 +2505,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2594,7 +2594,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -2686,7 +2686,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2775,7 +2775,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -2866,7 +2866,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -2956,7 +2956,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -3048,7 +3048,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3138,7 +3138,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3235,7 +3235,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3360,7 +3360,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3491,7 +3491,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3616,7 +3616,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3745,7 +3745,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -3871,7 +3871,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4003,7 +4003,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4129,7 +4129,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4259,7 +4259,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4385,7 +4385,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4517,7 +4517,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4642,7 +4642,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d3,
@@ -4769,7 +4769,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -4894,7 +4894,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d3,
@@ -5021,7 +5021,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5115,7 +5115,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5215,7 +5215,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5309,7 +5309,7 @@ func TestUpdateCluster(t *testing.T) {
 						MaxStandbysPerSender:   util.ToPtr(cluster.DefaultMaxStandbysPerSender),
 						SynchronousReplication: util.ToPtr(true),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5411,7 +5411,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5501,7 +5501,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -5593,7 +5593,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5684,7 +5684,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d2,
@@ -5777,7 +5777,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5868,7 +5868,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -5966,7 +5966,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,
@@ -6061,7 +6061,7 @@ func TestUpdateCluster(t *testing.T) {
 						SynchronousReplication: util.ToPtr(true),
 						MinSynchronousStandbys: util.ToPtr(uint16(0)),
 					},
-					Status: cluster.Status{
+					Status: cluster.ClusterStatus{
 						CurrentGeneration: g1,
 						Phase:             cluster.Normal,
 						Master:            d1,

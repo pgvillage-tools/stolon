@@ -99,7 +99,7 @@ func TestServiceInfos(t *testing.T) {
 			cd: &cluster.Data{
 				DBs: map[string]*cluster.DB{"master": master, "slave1": slave, "slave2": anotherSlave},
 				Cluster: &cluster.Cluster{
-					Status: cluster.Status{Master: "master"},
+					Status: cluster.ClusterStatus{Master: "master"},
 				},
 			},
 			name:        "test",

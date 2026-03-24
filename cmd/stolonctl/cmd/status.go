@@ -50,7 +50,7 @@ func init() {
 	CmdStolonCtl.AddCommand(cmdStatus)
 }
 
-// Status stores that state of all se3ntinels, proxies, keepers and the cluster
+// Status stores that state of all sentinels, proxies, keepers and the cluster
 type Status struct {
 	Sentinels []SentinelStatus `json:"sentinels"`
 	Proxies   []ProxyStatus    `json:"proxies"`
