@@ -33,6 +33,7 @@ func (h *Handlers) Routes() []Route {
 	var routes []Route
 	routes = append(routes, h.HealthRoutes()...)
 	routes = append(routes, h.StatusRoutes()...)
+	routes = append(routes, h.UpdateRoutes()...)
 	return routes
 }
 

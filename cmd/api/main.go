@@ -18,7 +18,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -56,7 +55,6 @@ func init() {
 }
 
 var ready atomic.Bool
-var logLevel = new(slog.LevelVar)
 
 const (
 	defaultPort = uint(8080)
