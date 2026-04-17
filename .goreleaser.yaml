@@ -68,12 +68,12 @@ builds:
       - -s -w -X "cmd.Version={{.Version}}"
 
 archives:
-  - format_overrides:
-      - formats: 
-        - tar.gz
+  - formats:
+      - tar.gz
+    format_overrides:
       - goos: windows
-        formats: 
-        - zip
+        formats:
+          - zip
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: stolon_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}
 
