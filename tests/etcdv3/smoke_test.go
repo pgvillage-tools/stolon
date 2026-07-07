@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go"
@@ -142,7 +141,7 @@ var _ = Describe("Smoke", Ordered, func() {
 		It("should work properly", func() {
 			for _, cnt := range keeperContainers {
 				natPort, err := cnt.MappedPort(ctx,
-					nat.Port(fmt.Sprintf("%d/tcp", keeperPort)))
+					fmt.Sprintf("%d/tcp", keeperPort))
 				Ω(err).NotTo(HaveOccurred())
 				Ω(pgPing(
 					ctx,
@@ -154,7 +153,7 @@ var _ = Describe("Smoke", Ordered, func() {
 	Context("when connecting through proxy", func() {
 		It("should work properly", func() {
 			natPort, err := proxyCnt.MappedPort(ctx,
-				nat.Port(fmt.Sprintf("%d/tcp", proxyPort)))
+				fmt.Sprintf("%d/tcp", proxyPort))
 			Ω(err).NotTo(HaveOccurred())
 			proxyConnSettings := pgConn.setParam("port", natPort.Port())
 			// This does not work directly after starting the container but does after 5s.
