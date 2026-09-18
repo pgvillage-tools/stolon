@@ -212,7 +212,7 @@ func (p *Manager) Restore(ctx context.Context, command string) error {
 
 	command = expandRecoveryCommand(command, p.dataDir, p.walDir)
 
-	if err = os.MkdirAll(p.dataDir, urwx); err != nil {
+	if err = os.MkdirAll(p.dataDir, uRWX); err != nil {
 		err = fmt.Errorf("cannot create data dir: %v", err)
 		goto out
 	}
@@ -284,7 +284,7 @@ func (p *Manager) moveWal(ctx context.Context) (err error) {
 	}
 	// We use tmpPath here first and (if needed) mv tmpPath to desiredPath when all is copied.
 	// This allows stolon-keeper to re-read symlink dest and continue should stolon-keeper be restarted while copying.
-	if err = moveDirRecursive(ctx, curPath, tmpPath); err != nil {
+	if err = moveDir(ctx, curPath, tmpPath); err != nil {
 		return err
 	}
 
@@ -851,7 +851,7 @@ func (p *Manager) writeConf(useTmpPostgresConf, writeRecoveryParams bool) error 
 		confFile = tmpPostgresConf
 	}
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, confFile), urw,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, confFile), uRW,
 		func(f io.Writer) error {
 			if useTmpPostgresConf {
 				// include postgresql.conf if it exists
@@ -894,7 +894,7 @@ func (p *Manager) writeRecoveryConf() error {
 		return nil
 	}
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoveryConf), urw,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoveryConf), uRW,
 		func(f io.Writer) error {
 			if p.recoveryOptions.RecoveryMode == RecoveryModeStandby {
 				if _, err := f.Write([]byte("standby_mode = 'on'\n")); err != nil {
@@ -919,7 +919,7 @@ func (p *Manager) writeStandbySignal(ctx context.Context) error {
 
 	logger.Info().Msg("writing standby signal file")
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresStandbySignal), urw,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresStandbySignal), uRW,
 		func(_ io.Writer) error {
 			return nil
 		})
@@ -934,14 +934,14 @@ func (p *Manager) writeRecoverySignal(ctx context.Context) error {
 
 	logger.Info().Msg("writing recovery signal file")
 
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoverySignal), urw,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, postgresRecoverySignal), uRW,
 		func(_ io.Writer) error {
 			return nil
 		})
 }
 
 func (p *Manager) writePgHba() error {
-	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, "pg_hba.conf"), urw,
+	return common.WriteFileAtomicFunc(filepath.Join(p.dataDir, "pg_hba.conf"), uRW,
 		func(f io.Writer) error {
 			if p.hba != nil {
 				for _, e := range p.hba {
