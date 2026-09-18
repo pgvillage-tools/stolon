@@ -19,6 +19,7 @@ package postgresql
 import (
 	"bufio"
 	"context"
+	"slices"
 
 	// TODO: replace with jackc
 	"database/sql"
@@ -33,7 +34,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 	"unicode"
 
@@ -310,8 +310,8 @@ const (
 	walSegSize = (16 * 1024 * 1024) // 16MiB
 	globalDB   = "postgres"
 
-	urwx = 0o700
-	urw  = 0o600
+	uRWX = 0o700
+	uRW  = 0o600
 
 	logCmd = "cmd"
 
@@ -919,44 +919,102 @@ func moveFile(sourcePath, destPath string) error {
 	return nil
 }
 
-func moveDirRecursive(ctx context.Context, src string, dest string) (err error) {
+func moveDir(ctx context.Context, src string, dst string) (err error) {
 	_, logger := logging.GetLogComponent(ctx, logging.PgComponent)
+	src, err = filepath.Abs(src)
+	if err != nil {
+		return err
+	}
+	dst, err = filepath.Abs(dst)
+	if err != nil {
+		return err
+	}
+
 	var stat fs.FileInfo
-	logger.Info().Str("src", src).Str("dest", dest).Msg("Moving")
+	logger.Info().Str("src", src).Str("dest", dst).Msg("Moving")
 	if stat, err = os.Stat(src); err != nil {
 		logger.Error().Str("path", src).AnErr("err", err).Msg("could not get stat of file")
 		return err
 	} else if !stat.IsDir() {
-		return moveFile(src, dest)
-	}
-	// Make the dir if it doesn't exist
-	if _, err = os.Stat(dest); errors.Is(err, os.ErrNotExist) {
-		if err = os.MkdirAll(dest, stat.Mode()&os.ModePerm); err != nil {
-			return err
-		}
-	} else if err != nil {
-		logger.Error().Str("path", dest).AnErr("err", err).Msg("could not get stat of file")
-		return err
-	}
-	// Copy all files and folders in this folder
-	var entries []fs.DirEntry
-	if entries, err = os.ReadDir(src); err != nil {
-		logger.Error().Str("path", src).AnErr("err", err).Msg("could not read contents of folder")
-		return err
-	}
-	for _, entry := range entries {
-		srcEntry := filepath.Join(src, entry.Name())
-		dstEntry := filepath.Join(dest, entry.Name())
-		if err := moveDirRecursive(ctx, srcEntry, dstEntry); err != nil {
-			return err
-		}
+		return moveFile(src, dst)
 	}
 
-	// Remove this folder, which is now supposedly empty
-	if err := syscall.Rmdir(src); err != nil {
-		logger.Error().Str("path", src).AnErr("err", err).Msg("could not remove folder")
-		// If this is a mountpoint or you don't have enough permissions, you might nog be able to. But that is fine.
-		// return err
+	if src == dst {
+		logger.Info().Str("src", src).Str("dest", dst).Msg("same location")
+		return nil
+	}
+	var cleanupDirs []string
+	err = filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == dst {
+			return filepath.SkipDir
+		}
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		targetPath := filepath.Join(dst, relPath)
+
+		if d.IsDir() {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			if src != path {
+				cleanupDirs = append(cleanupDirs, path)
+			} else {
+				rel, err := filepath.Rel(src, dst)
+				// if Rel can work out the relative path of dst, and it is not inside src,
+				// it will be .., or start with ../. In that case, we cn clean out src too.
+				if err == nil && rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+					cleanupDirs = append(cleanupDirs, path)
+				}
+			}
+			return os.MkdirAll(targetPath, info.Mode())
+		}
+		return moveFile(path, targetPath)
+	})
+
+	if err != nil {
+		logger.Info().Str("src", src).Str("dest", dst).AnErr("error", err).Msg("error while copying")
+		return err
+	}
+	slices.Reverse(cleanupDirs)
+	return removeDirs(cleanupDirs)
+}
+
+func removeDirs(cleanupDirs []string) error {
+	for _, path := range cleanupDirs {
+		isEmpty, err := isDirEmpty(path)
+		if err != nil {
+			return err
+		} else if !isEmpty {
+			return fmt.Errorf("%s/ is not empty", path)
+		}
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func isDirEmpty(dirPath string) (bool, error) {
+	f, err := os.Open(dirPath)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if closeErr := f.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
