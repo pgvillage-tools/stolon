@@ -17,7 +17,7 @@ jobs:
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
@@ -43,7 +43,7 @@ jobs:
             type=sha
 
       - name: Build and push stolon images
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile.proxy
