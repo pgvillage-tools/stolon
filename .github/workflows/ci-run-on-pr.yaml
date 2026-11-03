@@ -75,8 +75,11 @@ jobs:
         with:
           go-version: ${{ env.GOLANG_VERSION }}
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
+          # Pin golangci-lint itself; the action otherwise installs the latest
+          # release, and new linter rules then break CI on unrelated PRs.
+          version: v2.13.2
           args: --verbose --timeout=10m
 
   shellcheck:
@@ -277,14 +280,14 @@ jobs:
           rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 
       - name: Download keeper artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: images
           merge-multiple: true
           pattern: keeper-image-${{ matrix.pgversion }}
 
       - name: Download other artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: images
           merge-multiple: true
