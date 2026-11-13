@@ -2,14 +2,12 @@ name: CI run on PR
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # In the merge queue everything runs (no path filter or draft condition): the tested commit is what lands on main
+  merge_group:
 
 env:
   # Golang version to use across CI steps
   GOLANG_VERSION: '1.26'
-  DOWNLOAD_URL: https://github.com/etcd-io/etcd/releases/download
-  ETCD_VER: v3.6.8
-  ETCD_PATH: /usr/local/bin/
-  ETCD_BIN: /usr/local/bin/etcd
 
 permissions:
   contents: read
@@ -18,12 +16,14 @@ jobs:
   codechanges:
     runs-on: ubuntu-22.04
     outputs:
-      backend: ${{ steps.filter.outputs.backend_any_changed }}
-      ci: ${{ steps.filter.outputs.ci_any_changed }}
+      run: ${{ steps.decide.outputs.run }}
     steps:
+      # changed-files only works on pull requests; the merge queue always runs everything
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v4.0.0
+        if: github.event_name == 'pull_request'
       - uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: filter
+        if: github.event_name == 'pull_request'
         with:
           # Any file which is not under docs/, examples/, or is not a markdown file is counted as a backend file
           # Also run on any change under .github/ (workflows, action bumps, dependabot config):
@@ -38,13 +38,32 @@ jobs:
               - '!.github/**'
             ci:
               - '.github/**'
+      - name: Decide whether the jobs run
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          BACKEND_CHANGED: ${{ steps.filter.outputs.backend_any_changed }}
+          CI_CHANGED: ${{ steps.filter.outputs.ci_any_changed }}
+        run: |
+          if [ "${EVENT}" != pull_request ]; then
+            # Everything runs in the merge queue
+            run=true
+          elif [ "${DRAFT}" = true ]; then
+            run=false
+          elif [ "${BACKEND_CHANGED}" = true ] || [ "${CI_CHANGED}" = true ]; then
+            run=true
+          else
+            run=false
+          fi
+          echo "run=${run}" | tee -a "${GITHUB_OUTPUT}"
 
   check-go:
     name: Ensure Go modules synchronicity
     runs-on: ubuntu-22.04
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v4.0.0
@@ -65,7 +84,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     permissions:
       contents: read # for actions/checkout to fetch code
       pull-requests: read # for golangci/golangci-lint-action to fetch pull requests
@@ -81,19 +100,24 @@ jobs:
         with:
           # Pin golangci-lint itself; the action otherwise installs the latest
           # release, and new linter rules then break CI on unrelated PRs.
-          version: v2.13.2
+          # Built with go install (from the Go module proxy) instead of downloaded from GitHub releases
+          version: v2.15.0
+          install-mode: goinstall
           args: --verbose --timeout=10m
 
   shellcheck:
     name: Shellcheck
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.0.0
+      # shellcheck is preinstalled on the ubuntu runners, so this doesn't depend on a download from GitHub releases
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
+        run: |
+          shellcheck --version
+          git ls-files -z '*.sh' '*.bash' | xargs -0 --no-run-if-empty shellcheck
 
   unit-test:
     name: Run unit tests
@@ -102,7 +126,7 @@ jobs:
       - codechanges
     permissions:
       pull-requests: write
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.0.0
@@ -125,6 +149,7 @@ jobs:
           name: unittests-coverage
           path: cover.out
       - name: find pull request ID
+        if: github.event_name == 'pull_request'
         run: |
           PR_ID=${GITHUB_REF_NAME%%/merge}
           echo "PR_ID: $PR_ID"
@@ -142,7 +167,7 @@ jobs:
           git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
           git-branch: badges
       - name: post coverage report
-        if: env.pull_request_id
+        if: github.event_name == 'pull_request' && env.pull_request_id
         uses: thollander/actions-comment-pull-request@v3
         continue-on-error: true #we need pull_request_target or this will fail when not running pr in BD organisation
         with:
@@ -163,7 +188,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     strategy:
       matrix:
         pgversion: ['14','15','16','17','18']
@@ -210,7 +235,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     strategy:
       matrix:
         image:
@@ -262,7 +287,7 @@ jobs:
       - codechanges
       - e2e-keeper-images
       - e2e-other-images
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     strategy:
       matrix:
         pgversion: ['14','15','16','17','18']
@@ -275,12 +300,7 @@ jobs:
         with:
           go-version: ${{ env.GOLANG_VERSION }}
 
-      - name: installe etcd
-        run: |
-          curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-          tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C "${ETCD_PATH}" --strip-components=1 --no-same-owner
-          rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-
+      # No etcd binary needed: the e2e tests run etcd in a container (testcontainers)
       - name: Download keeper artifact
         uses: actions/download-artifact@v8
         with:
@@ -315,7 +335,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - codechanges
-    if: ${{ (needs.codechanges.outputs.backend == 'true' || needs.codechanges.outputs.ci == 'true') && github.event.pull_request.draft == false}}
+    if: ${{ needs.codechanges.outputs.run == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # v4.0.0
@@ -335,3 +355,33 @@ jobs:
           fi
 
           echo Success
+
+  # The only required check of this workflow, so the ruleset doesn't change when jobs are added. It must always run,
+  # and only passes when every job it needs succeeded (a skipped required check would count as a pass).
+  ci-result:
+    name: CI result
+    runs-on: ubuntu-latest
+    needs:
+      - codechanges
+      - check-go
+      - lint-go
+      - shellcheck
+      - unit-test
+      - e2e-keeper-images
+      - e2e-other-images
+      - e2e-test
+      - license-header-test
+    if: always()
+    steps:
+      - name: Evaluate the results
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "Results: ${RESULTS} (event: ${EVENT})"
+          # A job skipped by a path filter is fine on a pull request; everywhere else everything must run
+          if [ "${EVENT}" = pull_request ]; then ok='. == "success" or . == "skipped"'; else ok='. == "success"'; fi
+          if [ "$(echo "${RESULTS}" | jq -r "all(${ok})")" != true ]; then
+            echo "::error::All CI jobs must succeed"
+            exit 1
+          fi
