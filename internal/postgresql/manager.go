@@ -440,7 +440,7 @@ func (p *Manager) start(ctx context.Context, args ...string) error {
 		default:
 		}
 
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(pollInterval)
 	}
 
 	if !ok {
@@ -565,6 +565,9 @@ func (p *Manager) Restart(ctx context.Context, fast bool) error {
 	return p.Start(ctx)
 }
 
+// pollInterval is the time between two checks while waiting for PostgreSQL
+const pollInterval = 200 * time.Millisecond
+
 // WaitReady will wait for PostgreSQL to be available
 func (p *Manager) WaitReady(ctx context.Context, timeout time.Duration) error {
 	start := time.Now()
@@ -572,7 +575,7 @@ func (p *Manager) WaitReady(ctx context.Context, timeout time.Duration) error {
 		if err := p.Ping(ctx); err == nil {
 			return nil
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(pollInterval)
 	}
 	return errors.New("timeout waiting for db ready")
 }

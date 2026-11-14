@@ -449,6 +449,13 @@ func (e *KubeElection) Leader() (string, error) {
 	return ler.HolderIdentity, nil
 }
 
+// Timings of the kubernetes leader election
+const (
+	leaseDuration = 15 * time.Second
+	renewDeadline = 10 * time.Second
+	retryPeriod   = 2 * time.Second
+)
+
 func (e *KubeElection) campaign() {
 	defer close(e.electedCh)
 	defer close(e.errCh)
@@ -458,9 +465,9 @@ func (e *KubeElection) campaign() {
 
 		leaderelection.RunOrDie(e.ctx, leaderelection.LeaderElectionConfig{
 			Lock:          e.rl,
-			LeaseDuration: 15 * time.Second,
-			RenewDeadline: 10 * time.Second,
-			RetryPeriod:   2 * time.Second,
+			LeaseDuration: leaseDuration,
+			RenewDeadline: renewDeadline,
+			RetryPeriod:   retryPeriod,
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(context.Context) {
 					e.electedCh <- true

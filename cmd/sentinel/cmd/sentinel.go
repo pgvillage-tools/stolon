@@ -50,6 +50,8 @@ import (
 
 const (
 	fakeStandbyName = "stolonfakestandby"
+	// electionRetryInterval is the time to wait before taking part in the election again
+	electionRetryInterval = 10 * time.Second
 )
 
 const (
@@ -141,7 +143,7 @@ func (s *Sentinel) electionLoop(ctx context.Context) {
 			}
 		}
 	end:
-		time.Sleep(10 * time.Second)
+		time.Sleep(electionRetryInterval)
 	}
 }
 
