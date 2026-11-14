@@ -33,7 +33,7 @@ jobs:
 
       - name: Docker meta
         id: stolon-meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             name=ghcr.io/${{ github.repository }},enable=true
