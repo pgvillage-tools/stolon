@@ -201,7 +201,7 @@ jobs:
 
       - name: Docker meta
         id: stolon-meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             name=keeper-${{ matrix.pgversion }},enable=true
@@ -251,7 +251,7 @@ jobs:
 
       - name: Docker meta
         id: stolon-meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             name=${{ matrix.image }},enable=true
