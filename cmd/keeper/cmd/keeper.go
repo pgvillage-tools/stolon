@@ -52,6 +52,8 @@ import (
 )
 
 const (
+	// walSegmentSizeMB is the default size of a WAL segment (16MiB)
+	walSegmentSizeMB        = 16
 	errorMsgPgInst          = "failed to stop pg instance"
 	errorMsgDbState         = "failed to save db local state"
 	followedStr             = "followedDB"
@@ -304,8 +306,8 @@ func (p *PostgresKeeper) walKeepSegments(db *cluster.DB) int {
 }
 
 func (p *PostgresKeeper) walKeepSize(db *cluster.DB) string {
-	// assume default 16Mib wal segment size
-	walKeepSize := strconv.Itoa(minWalKeepSegments * 16)
+	// assume the default wal segment size
+	walKeepSize := strconv.Itoa(minWalKeepSegments * walSegmentSizeMB)
 
 	// TODO(sgotti) currently we ignore if wal_keep_size value is less than our
 	// min value or wrong and just return it as is
@@ -2404,7 +2406,9 @@ func keeper(c *cobra.Command, _ []string) {
 	}
 	go p.Start(ctx)
 
-	<-end
+	if endErr := <-end; endErr != nil {
+		logger.Error().AnErr("err", endErr).Msg("keeper stopped with an error")
+	}
 
 	if !cfg.disableDataDirLocking {
 		if err := lockFile.Close(); err != nil {

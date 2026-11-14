@@ -29,7 +29,7 @@ linters:
           arguments:
             - allowInts: 0,1,2,3
               allowStrs: '"","error: %v"'
-              ignoreFuncs: assert\.Len,require\.Len
+              ignoreFuncs: assert\.Len,require\.Len,\.AnErr$,\.Str$,\.Any$
               maxLitCount: '5'
         - name: line-length-limit
           arguments:

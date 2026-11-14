@@ -58,10 +58,13 @@ var Roles = []Role{
 	RoleReplica,
 }
 
+// uidBytes is the number of bytes of a UUID that make a UID
+const uidBytes = 4
+
 // UID returns a new UID (4 bytes of a UUID)
 func UID() string {
 	u := uuid.Must(uuid.NewV4())
-	return fmt.Sprintf("%x", u[:4])
+	return fmt.Sprintf("%x", u[:uidBytes])
 }
 
 // UUID returns a new UUID

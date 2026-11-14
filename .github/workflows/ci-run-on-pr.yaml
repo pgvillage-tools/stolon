@@ -101,7 +101,7 @@ jobs:
           # Pin golangci-lint itself; the action otherwise installs the latest
           # release, and new linter rules then break CI on unrelated PRs.
           # Built with go install (from the Go module proxy) instead of downloaded from GitHub releases
-          version: v2.13.2
+          version: v2.15.0
           install-mode: goinstall
           args: --verbose --timeout=10m
 

@@ -41,8 +41,6 @@ import (
 	"github.com/pgvillage-tools/stolon/internal/store"
 	"github.com/pgvillage-tools/stolon/internal/util"
 
-	"github.com/gofrs/uuid"
-
 	"github.com/sgotti/gexpect"
 )
 
@@ -440,8 +438,7 @@ func newTestKeeper(
 	storeEndpoints string,
 	a ...string,
 ) (*testKeeper, error) {
-	u := uuid.Must(uuid.NewV4())
-	uid := fmt.Sprintf("%x", u[:4])
+	uid := common.UID()
 
 	return newTestKeeperWithID(t, dir, uid, clusterName, pgSUUsername, pgSUPassword,
 		pgReplUsername, pgReplPassword, storeBackend, storeEndpoints, a...)
@@ -735,8 +732,7 @@ func newTestSentinel(
 	storeEndpoints string,
 	a ...string,
 ) (*testSentinel, error) {
-	u := uuid.Must(uuid.NewV4())
-	uid := fmt.Sprintf("%x", u[:4])
+	uid := common.UID()
 
 	args := []string{}
 	args = append(args, fmt.Sprintf("--cluster-name=%s", clusterName))
@@ -781,8 +777,7 @@ func newTestProxy(
 	storeEndpoints string,
 	a ...string,
 ) (*testProxy, error) {
-	u := uuid.Must(uuid.NewV4())
-	uid := fmt.Sprintf("%x", u[:4])
+	uid := common.UID()
 
 	listenAddress, port, err := getFreePort(true, false)
 	if err != nil {
@@ -979,8 +974,7 @@ func newTestStore(t *testing.T, dir string, a ...string) (*testStore, error) {
 func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...string) (*testStore, error) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	u := uuid.Must(uuid.NewV4())
-	uid := fmt.Sprintf("%x", u[:4])
+	uid := common.UID()
 
 	dataDir := filepath.Join(dir, fmt.Sprintf("etcd%s", uid))
 
@@ -1039,8 +1033,7 @@ func newTestEtcd(t *testing.T, dir string, backend store.BackendType, a ...strin
 func newTestConsul(t *testing.T, dir string, a ...string) (*testStore, error) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	u := uuid.Must(uuid.NewV4())
-	uid := fmt.Sprintf("%x", u[:4])
+	uid := common.UID()
 
 	dataDir := filepath.Join(dir, fmt.Sprintf("consul%s", uid))
 
