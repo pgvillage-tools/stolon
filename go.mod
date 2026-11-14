@@ -8,7 +8,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/consul/api v1.34.3
+	github.com/hashicorp/consul/api v1.35.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/kvtools/consul v1.0.2
 	github.com/kvtools/etcdv2 v1.0.2
@@ -91,7 +91,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
-	github.com/hashicorp/serf v0.10.2 // indirect
+	github.com/hashicorp/serf v0.10.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -167,7 +167,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-go 1.26.0
+go 1.26.9
 
 replace (
 	github.com/armon/go-metrics => github.com/hashicorp/go-metrics v0.4.1
