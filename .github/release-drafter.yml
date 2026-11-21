@@ -26,9 +26,11 @@ categories:
       - 'refactor'
       - 'style'
       - 'test'
+      - 'revert'
+      # Dependabot sets this next to the chore label of its title: same category, listed once
+      - 'dependencies'
   - title: '🔒 Security'
     labels:
-      - 'dependencies'
       - 'security'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
@@ -50,6 +52,9 @@ version-resolver:
       - 'style'
       - 'test'
   default: patch
+# Labels only from the conventional prefix in the title (enforced by pr-title-checker), so a PR
+# gets one category. Matching on files gave e.g. a fix that also changes docs three labels, and
+# release-drafter lists a PR once for every category it matches.
 autolabeler:
   - label: 'breaking'
     title:
@@ -62,17 +67,9 @@ autolabeler:
   - label: 'ci'
     title:
       - '/^(ci|build)(\([a-z]*\))?!?:/i'
-    files:
-      - '.github/*'
-      - '.github/**/*'
   - label: 'documentation'
     title:
       - '/^docs(\([a-z]*\))?!?:/i'
-    files:
-      - 'docs/*'
-      - 'docs/**/*'
-      - '*.md'
-      - '**/*.md'
   - label: 'enhancement'
     title:
       - '/^(feat|perf)(\([a-z]*\))?!?:/i'
