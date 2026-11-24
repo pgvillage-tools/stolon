@@ -90,6 +90,7 @@ func TestGenerateHBA(t *testing.T) {
 		db1 = "db1"
 		db2 = "db2"
 		db3 = "db3"
+		db4 = "db4"
 	)
 
 	// minimal clusterdata with only the fields used by generateHBA
@@ -133,6 +134,16 @@ func TestGenerateHBA(t *testing.T) {
 				},
 				Status: cluster.DBStatus{
 					ListenAddress: "192.168.0.3",
+				},
+			},
+			db4: &cluster.DB{
+				UID: db4,
+				Spec: &cluster.DBSpec{
+					Role: common.RoleReplica,
+					FollowConfig: &cluster.FollowConfig{
+						Type:  cluster.FollowTypeInternal,
+						DBUID: db1,
+					},
 				},
 			},
 		},
