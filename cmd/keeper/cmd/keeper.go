@@ -2072,7 +2072,7 @@ func (p *PostgresKeeper) generateHBA(ctx context.Context, cd *cluster.Data, db *
 		if IsMaster(db) {
 			addresses := []string{}
 			for _, dbElt := range cd.DBs {
-				if dbElt.UID != db.UID {
+				if dbElt.UID != db.UID && dbElt.Status.ListenAddress != "" {
 					addresses = append(addresses, dbElt.Status.ListenAddress)
 				}
 			}
